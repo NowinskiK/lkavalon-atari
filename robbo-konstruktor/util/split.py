@@ -15,7 +15,7 @@ BLOCKS = [
     ('HOOK.ASM',    0x0480, 0x0482, 'restart hook: JMP $A810'),
     ('BOOT.ASM',    0x0500, 0x067F, 'boot sectors 1-3: boot record and binary-file loader (cracked)'),
     ('EDIT08.ASM',  0x0800, 0x0C6C, 'code: JMP $09A6 at $0800, tables, routines'),
-    ('HELP.DTA',    0x0C6D, 0x1DD0, 'help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space'),
+    ('HELP.ASM',    0x0C6D, 0x1DD0, 'help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space'),
     ('ENGINE1.ASM', 0x1E00, 0x23FC, 'game engine: jump table $1E00, display list, DLIs'),
     ('ENGINE2.ASM', 0x243D, 0x35A3, 'game engine: object behaviour (table $31EF), VBI $2F54'),
     ('ENGINE3.ASM', 0x35C0, 0x395C, 'game engine: display list, code'),
@@ -27,7 +27,7 @@ BLOCKS = [
     ('EDITOR.ASM',  0x94E0, 0x9F7A, 'editor: menu dispatch, cursor, commands'),
     ('TEXTS.DTA',   0x9F7B, 0xA808, 'editor tables and texts (menu table $9F8E)'),
     ('EDITOR2.ASM', 0xA810, 0xB5FF, 'editor: jump table $A810, main loop, screen, DLI, text input'),
-    ('LOADSCR.DTA', 0xBC40, 0xBC67, 'loading screen line "Robbo Konstruktor (C) 1990 Avalon"'),
+    ('LOADSCR.ASM', 0xBC40, 0xBC67, 'loading screen line "Robbo Konstruktor (C) 1990 Avalon"'),
 ]
 
 # fixed entry points (the dispatch-table entries are added by entries())
@@ -60,6 +60,13 @@ def entries(mem):
 
 # Variables, names and comments taken from the original Robbo sources where the engine code matches them
 # (instruction-shape match, NOTES.md section 5); the rest is added as it is understood.
+# data written as strings: first -> (last, format); 'help' = ATASCII, bit 7 = a space follows, $00 nn = page
+# marker, Polish letters as CONTROL codes; 'screen' = ANTIC screen codes (dta d'...')
+TEXTS = {
+    0x0C7B: (0x1DD0, 'help'),     # help pages 0-15 (after the preamble $0C6D-$0C7A)
+    0xBC40: (0xBC67, 'screen'),   # loading screen line, inverse video
+}
+
 VARIABLES = [
     '* zero page - engine (Robbo layout, names from robbo/d1/R1.ASM) ---',
     (0x0080, 2, 'ADDR', 'pointer'),
@@ -333,7 +340,7 @@ def main():
         assert n.upper() not in taken, '%s clashes with a variable or OS name' % n
         if a in labels or a in code: labels[a] = n          # also names a fall-through entry
         else: print('WARNING: name %s for $%04X - not an instruction start' % (n, a))
-    lst = Lister(mem, code, labels, VARIABLES, POKES, COMMENTS)
+    lst = Lister(mem, code, labels, VARIABLES, POKES, COMMENTS, TEXTS)
     os.makedirs(SRC, exist_ok=True)
 
     prev = -1
@@ -348,10 +355,10 @@ def main():
         if name == 'VECTORS.ASM':
             vec = [mem[a] | mem[a + 1] << 8 for a in (0xFFFA, 0xFFFC, 0xFFFE)]
             body = ['         dta %-40s ; %s' % ('a(%s)' % lst.nm(v, 2), n) for v, n in zip(vec, ('NMI', 'RESET', 'IRQ'))]
-            open(path, 'w', newline='\n').write('\n'.join(header(name, lo, hi, desc) + body) + '\n')
+            open(path, 'w', encoding='utf-8', newline='\n').write('\n'.join(header(name, lo, hi, desc) + body) + '\n')
         elif name.endswith('.ASM'):
             body = lst.lines(lo, hi)
-            open(path, 'w', newline='\n').write('\n'.join(header(name, lo, hi, desc) + body) + '\n')
+            open(path, 'w', encoding='utf-8', newline='\n').write('\n'.join(header(name, lo, hi, desc) + body) + '\n')
         else:
             open(path, 'wb').write(bytes([0xFF, 0xFF, lo & 0xFF, lo >> 8, hi & 0xFF, hi >> 8]) + mem[lo:hi + 1])
 
@@ -383,7 +390,7 @@ def main():
     if extra:
         joint += ['', '; labels not at an instruction boundary or outside the source blocks', '']
         joint += ['%-10s equ $%04X' % (lst.used[a], a) for a in extra]
-    open(os.path.join(SRC, 'JOINT.ASM'), 'w', newline='\n').write('\n'.join(joint) + '\n')
+    open(os.path.join(SRC, 'JOINT.ASM'), 'w', encoding='utf-8', newline='\n').write('\n'.join(joint) + '\n')
 
     out = ['; Robbo Konstruktor (1990, L.K. Avalon) - memory image of the program rebuilt from blocks',
            '; Output is a segment file matching game.bin, not a runnable executable.', '',
@@ -395,7 +402,7 @@ def main():
             out += ['', '         opt %s' % want]; h = want
         line = ('icl' if name.endswith('.ASM') else 'ins') + ' "%s/%s"' % (SRC, name)
         out.append('         %-26s ; $%04X-$%04X %s' % (line, lo, hi, desc))
-    open('main.asm', 'w', newline='\n').write('\n'.join(out) + '\n')
+    open('main.asm', 'w', encoding='utf-8', newline='\n').write('\n'.join(out) + '\n')
 
     print('blocks:', len(BLOCKS), 'code bytes:', sum(code.values()), 'labels:', len(labels),
           'extra equ labels:', len(extra))

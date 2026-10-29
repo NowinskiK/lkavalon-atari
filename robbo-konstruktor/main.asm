@@ -11,11 +11,7 @@
          icl "src/HOOK.ASM"         ; $0480-$0482 restart hook: JMP $A810
          icl "src/BOOT.ASM"         ; $0500-$067F boot sectors 1-3: boot record and binary-file loader (cracked)
          icl "src/EDIT08.ASM"       ; $0800-$0C6C code: JMP $09A6 at $0800, tables, routines
-
-         opt h-
-         ins "src/HELP.DTA"         ; $0C6D-$1DD0 help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space
-
-         opt h+
+         icl "src/HELP.ASM"         ; $0C6D-$1DD0 help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space
          icl "src/ENGINE1.ASM"      ; $1E00-$23FC game engine: jump table $1E00, display list, DLIs
          icl "src/ENGINE2.ASM"      ; $243D-$35A3 game engine: object behaviour (table $31EF), VBI $2F54
          icl "src/ENGINE3.ASM"      ; $35C0-$395C game engine: display list, code
@@ -35,6 +31,4 @@
 
          opt h+
          icl "src/EDITOR2.ASM"      ; $A810-$B5FF editor: jump table $A810, main loop, screen, DLI, text input
-
-         opt h-
-         ins "src/LOADSCR.DTA"      ; $BC40-$BC67 loading screen line "Robbo Konstruktor (C) 1990 Avalon"
+         icl "src/LOADSCR.ASM"      ; $BC40-$BC67 loading screen line "Robbo Konstruktor (C) 1990 Avalon"

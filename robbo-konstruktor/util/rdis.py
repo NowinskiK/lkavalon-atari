@@ -71,6 +71,40 @@ def analyze(mem, entries, nofollow=()):
 
 VECTORS = (0x0200, 0x0222, 0x0224)   # OS vectors: the high byte is written as NAME+1
 
+# Polish letters typed as CONTROL + a,c,e,l,n,o,s,z (ATASCII $01..$1A, glyphs replaced in the font);
+# z stands for both ż and ź. $14 is a quotation mark, $1C-$1F the arrow characters.
+POLISH = {0x01: 'ą', 0x03: 'ć', 0x05: 'ę', 0x0C: 'ł', 0x0E: 'ń', 0x0F: 'ó', 0x13: 'ś', 0x1A: 'ż',
+          0x14: '"', 0x1C: '↑', 0x1D: '↓', 0x1E: '←', 0x1F: '→'}
+
+
+def internal_to_atascii(c):
+    """ANTIC screen code (7 bits) -> ATASCII."""
+    return c + 0x20 if c < 0x40 else (c - 0x40 if c < 0x60 else c)
+
+
+def plain(c):
+    """Can ATASCII character c stand inside a MADS '...' string?"""
+    return 0x20 <= c < 0x7B and c not in (0x27, 0x22)
+
+
+def text_items(codes, kind):
+    """dta items for a run of bytes: strings for printable characters ('c' ATASCII / 'd' screen code), with a
+    trailing * for a run of inverse characters (bit 7), numbers for the rest."""
+    items, run, inv = [], '', False
+    def flush():
+        nonlocal run
+        if run: items.append("%s'%s'%s" % (kind, run, '*' if inv else '')); run = ''
+    for b in codes:
+        c = b & 0x7F
+        ch = internal_to_atascii(c) if kind == 'd' else c
+        if plain(ch):
+            if run and inv != bool(b & 0x80): flush()
+            inv = bool(b & 0x80); run += chr(ch)
+        else:
+            flush(); items.append('$%02X' % b)
+    flush()
+    return items
+
 
 class Lister:
     """Turns an analysed image into listing lines; remembers which labels it placed and used.
@@ -78,9 +112,11 @@ class Lister:
     variables: list of '* group' strings and (address, size, name, comment) tuples. A variable inside a
     listed range is written in place as `NAME dta ... ; comment`; operands use NAME / NAME+n.
     pokes: {address: count} – tables of (address lo, hi, value) entries, written as `dta a(NAME),$vv`.
-    comments: {address: text} – group comment `* text ---` written above that address."""
+    comments: {address: text} – group comment `* text ---` written above that address.
+    texts: {first: (last, format)} – data written as strings; format 'help' (ATASCII, bit 7 = a space follows,
+    `$00 nn` = page marker, Polish letters) or 'screen' (ANTIC screen codes)."""
 
-    def __init__(s, mem, code, labels, variables=(), pokes=None, comments=None):
+    def __init__(s, mem, code, labels, variables=(), pokes=None, comments=None, texts=None):
         s.mem, s.code, s.labels = mem, code, labels
         s.placed = set()   # addresses whose label was written at its own position
         s.used = {}        # address -> name, for every label referenced in an operand
@@ -97,6 +133,37 @@ class Lister:
         s.pokes = pokes or {}
         s.comments = comments or {}
         s.placed_comments = set()
+        s.texts = texts or {}
+
+    def text_lines(s, lo, hi, fmt):
+        """Strings with the decoded text as a comment above each dta line (about 56 characters each)."""
+        mem, out = s.mem, []
+        if fmt == 'screen':
+            for a in range(lo, hi + 1, 40):
+                codes = mem[a:min(a + 40, hi + 1)]
+                text = ''.join(chr(internal_to_atascii(b & 0x7F)) for b in codes)
+                out += ['; ' + text.rstrip(), '         dta %-40s ; %04X' % (','.join(text_items(codes, 'd')), a)]
+            return out
+        a, line, text = lo, [], ''
+        def flush(at):
+            if line:
+                out.extend(['; ' + text.rstrip(), '         dta %s ; %04X' % (','.join(text_items(line, 'c')), at)])
+        start = a
+        while a <= hi:
+            b = mem[a]
+            if b == 0 and a < hi and 0 < mem[a + 1] < 0x40:          # page marker
+                flush(start); line, text = [], ''
+                out += ['', '* help page %d ' % mem[a + 1] + '-' * 44, '         dta $00,$%02X%s ; %04X' % (mem[a + 1], ' ' * 30, a)]
+                a += 2; start = a
+                continue
+            line.append(b)
+            c = b & 0x7F
+            text += POLISH.get(c, chr(c) if 0x20 <= c < 0x7F else '?') + (' ' if b & 0x80 else '')
+            a += 1
+            if len(text) >= 56 and text.endswith(' '):
+                flush(start); line, text, start = [], '', a
+        flush(start)
+        return out
 
     def nm(s, a, w):
         if a in s.var_at:
@@ -126,6 +193,10 @@ class Lister:
                 s.placed_comments.add(a)
                 text = '* %s ' % s.comments[a]
                 out += ['', text + '-' * max(3, 60 - len(text))]
+            if a in s.texts and a not in code:
+                last, fmt = s.texts[a]
+                out += s.text_lines(a, last, fmt); a = last + 1
+                continue
             if a in s.pokes and a not in code:
                 out += s.poke_lines(a, s.pokes[a]); a += 3 * s.pokes[a]
                 continue
@@ -158,7 +229,7 @@ class Lister:
             else:
                 st = a; row = []
                 while (a <= hi and a not in code and (a == st or (a not in labels and a not in s.vars
-                       and a not in s.pokes and a not in s.comments)) and len(row) < 16):
+                       and a not in s.pokes and a not in s.comments and a not in s.texts)) and len(row) < 16):
                     row.append(mem[a]); a += 1
                 out.append('         dta %-40s ; %04X' % (','.join('$%02X' % b for b in row), st))
         return out

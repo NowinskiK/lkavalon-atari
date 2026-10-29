@@ -30,7 +30,7 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [src/HOOK.ASM](src/HOOK.ASM) | $0480-$0482 | restart hook: JMP $A810 |
 | [src/BOOT.ASM](src/BOOT.ASM) | $0500-$067F | boot sectors 1-3: boot record and binary-file loader (cracked) |
 | [src/EDIT08.ASM](src/EDIT08.ASM) | $0800-$0C6C | code: JMP $09A6 at $0800, tables, routines |
-| [src/HELP.DTA](src/HELP.DTA) | $0C6D-$1DD0 | help text: 16 pages in Polish (HELP key) – see "Help text" below |
+| [src/HELP.ASM](src/HELP.ASM) | $0C6D-$1DD0 | help text: 16 pages in Polish (HELP key) as `dta c'…'` strings with the decoded text in comments – see "Help text" below |
 | [src/ENGINE1.ASM](src/ENGINE1.ASM) | $1E00-$23FC | game engine: jump table $1E00, display list, DLIs |
 | [src/ENGINE2.ASM](src/ENGINE2.ASM) | $243D-$35A3 | game engine: object behaviour (table $31EF), VBI $2F54 |
 | [src/ENGINE3.ASM](src/ENGINE3.ASM) | $35C0-$395C | game engine: display list, code |
@@ -42,7 +42,7 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [src/EDITOR.ASM](src/EDITOR.ASM) | $94E0-$9F7A | editor: menu dispatch, cursor, commands |
 | [src/TEXTS.DTA](src/TEXTS.DTA) | $9F7B-$A808 | editor tables and texts (menu table $9F8E) |
 | [src/EDITOR2.ASM](src/EDITOR2.ASM) | $A810-$B5FF | editor: jump table $A810, main loop, screen, DLI, text input |
-| [src/LOADSCR.DTA](src/LOADSCR.DTA) | $BC40-$BC67 | loading screen line "Robbo Konstruktor (C) 1990 Avalon" |
+| [src/LOADSCR.ASM](src/LOADSCR.ASM) | $BC40-$BC67 | loading screen line, `dta d'  Robbo Konstruktor    (C) 1990 Avalon  '*` (screen codes, inverse) |
 
 A first cut by segments; blocks will be regrouped into modules once the code is understood (step 6).
 
@@ -122,8 +122,9 @@ original label names from `robbo/d1/*.ASM` can be used.
 
 The program's manual, shown with the HELP key. Format: `$00 nn` starts page *nn* (the text before marker 1 is
 page 0); a character with **bit 7 set is followed by a space** (simple compression); Polish letters use low codes:
-`$01` ą, `$03` ć, `$05` ę, `$0C` ł, `$0F` ó, `$13` ś, `$1A` ż (also where ź is expected), `$14` = quotation mark,
-`$1C-$1F` = arrows ↑↓←→ (`$0E` probably ń – to confirm).
+they are typed as CONTROL + a, c, e, l, n, o, s, z (help page 8 lists them in that order), so `$01` ą, `$03` ć,
+`$05` ę, `$0C` ł, `$0E` ń, `$0F` ó, `$13` ś, `$1A` ż – only one z, so ż and ź share it; `$14` = quotation mark,
+`$1C-$1F` = arrows ↑↓←→.
 
 | Page | Title | Function |
 |---|---|---|

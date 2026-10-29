@@ -9,6 +9,8 @@ Sources of LK Avalon (and related) games for 8-bit Atari, assembled with MADS. O
   included in `main.asm` with `opt h-` + `ins`.
 - `make test` must prove the build is byte-exact (md5 checksums or a verify script).
 - Keep the style of the existing sources: MADS syntax, lower-case mnemonics, labels in column 1.
+- Texts in data go into the `.ASM` source as strings, not binary files: `dta c'…'` (ATASCII) or `dta d'…'` (screen
+  codes), `*` = inverse, other bytes as `$xx`, with the decoded text as a comment (example: `robbo/d1/TITLE.ASM`).
 - Add a new game to the list in the root `README.md`.
 - **Reverse-engineering a new game from a binary: follow [DISASSEMBLY-GUIDE.md](DISASSEMBLY-GUIDE.md)** (steps,
   gates, plan template, Atari hints, lessons). Add new general lessons there, game-specific ones to the game's NOTES.md.

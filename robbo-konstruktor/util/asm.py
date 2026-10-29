@@ -8,6 +8,41 @@ from xex import M, segments
 OP = {(mn, mode): o for o, (mn, mode) in M.items()}
 
 
+QUOTES = ("'", '"')
+
+
+def strip_comment(line):
+    """Cut a ';' comment, but not inside quotes."""
+    q = None
+    for i, ch in enumerate(line):
+        if q:
+            if ch == q: q = None
+        elif ch in QUOTES: q = ch
+        elif ch == ';': return line[:i]
+    return line
+
+
+def split_items(arg):
+    """Split dta arguments at commas outside quotes and parentheses."""
+    items, cur, q, depth = [], '', None, 0
+    for ch in arg:
+        if q:
+            cur += ch
+            if ch == q: q = None
+        elif ch in QUOTES: q = ch; cur += ch
+        elif ch == '(': depth += 1; cur += ch
+        elif ch == ')': depth -= 1; cur += ch
+        elif ch == ',' and depth == 0: items.append(cur.strip()); cur = ''
+        else: cur += ch
+    if cur.strip(): items.append(cur.strip())
+    return items
+
+
+def to_internal(c):
+    """ATASCII -> ANTIC screen code (7 bits)."""
+    return c + 0x40 if c < 0x20 else (c - 0x20 if c < 0x60 else c)
+
+
 class Asm:
     def __init__(s, root):
         s.root = root; s.sym = {}
@@ -25,8 +60,8 @@ class Asm:
         return v & 0xFFFF
 
     def lines(s, path):
-        for n, line in enumerate(open(os.path.join(s.root, path)), 1):
-            line = line.split(';')[0].rstrip()
+        for n, line in enumerate(open(os.path.join(s.root, path), encoding='utf-8'), 1):
+            line = strip_comment(line).rstrip()
             if not line.strip() or line.lstrip().startswith('*'): continue
             label = None
             if not line[0].isspace():
@@ -61,10 +96,16 @@ class Asm:
                         s.pc = st; s.new_seg = True; s.emit(data)
                 elif mn == 'dta':
                     out = []
-                    for item in arg.split(','):
-                        m = re.fullmatch(r'a\((.*)\)', item.strip(), re.I)
+                    for item in split_items(arg):
+                        m = re.fullmatch(r'a\((.*)\)', item, re.I)
+                        t = re.fullmatch(r"""([cd])(?P<q>["'])(.*)(?P=q)(\*?)""", item, re.I | re.S)
                         if m:
                             v = s.val(m.group(1), strict) or 0; out += [v & 0xFF, v >> 8]
+                        elif t:                                   # c'...' ATASCII / d'...' screen codes, * = inverse
+                            for ch in t.group(3):
+                                b = ord(ch)
+                                if t.group(1).lower() == 'd': b = to_internal(b)
+                                out.append(b | (0x80 if t.group(4) else 0))
                         else:
                             out.append((s.val(item, strict) or 0) & 0xFF)
                     s.emit(out)

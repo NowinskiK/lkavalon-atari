@@ -212,6 +212,10 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
   Background "colour" is per scanline: read the DLIs before rendering.
 - **Init tables:** `(lo, hi, value)` triples applied in a loop (`lda tab,x / sta ($C0),y`) – decode them early.
 - **Text** is often in screen codes of a custom font, or in tiles – a plain ATASCII search finds nothing.
+  Two codings: ATASCII (OS, keyboard; MADS `c'…'`) and the screen code ANTIC reads (MADS `d'…'`): ATASCII `$00-$1F`
+  +$40, `$20-$5F` −$20, `$60-$7F` same, bit 7 = inverse (`*`). Write found texts as such strings in the source with
+  the decoded text as a comment. Polish letters: CONTROL + a,c,e,l,n,o,s,z (ATASCII `$01`…`$1A`) with replaced
+  glyphs (Robbo Konstruktor), or glyphs on `@ \ [ ] _ { ^ |` (Robbo TITLE.ASM).
 - **Keyboard:** KBCODE values (+$40 = Shift) – a table compared with KBCODE in the VBI is likely a cheat code.
 - **Music:** CMC players use `jmp` table at +0 (init), +3 (command: A=$70 init tune with X/Y = address,
   $10 = song position, $40 = stop), +6 (play, from the VBI).

@@ -27,6 +27,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 2026-10-29 | Engine named from Robbo's sources: 110 routines + zero page (section 5) |
 | 2026-10-29 | Abbreviations translated by the user; comments corrected (section 6) |
 | 2026-10-29 | `$0C6D-$1DD0` = help text, 16 pages decoded – the program's full feature list (section 7) |
+| 2026-10-29 | Texts written as `dta c'…'` / `d'…'` strings in the sources; Polish letter codes confirmed (section 8) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -239,6 +240,40 @@ Block renamed `D0C6D.DTA` → `HELP.DTA` (`git rm` of the old file), sources reg
 Lesson: a Python write without `encoding='utf-8'` failed on "ą" *after* opening the file and left README.md empty;
 restored from git. Always pass the encoding when writing text with non-ASCII characters on Windows.
 
+## 8. Texts as strings in the sources (2026-10-29)
+
+Suggested by the user (example: `robbo/d1/TITLE.ASM`, which writes its texts as `DTA D'…'`): texts are more
+readable in the `.ASM` source than in a binary data file, and MADS encodes them.
+
+**Atari character codes.** Two codings: **ATASCII** (OS, keyboard; MADS `c'…'`) and the **screen (internal) code**
+that ANTIC reads from screen memory (MADS `d'…'`). ATASCII → screen: `$00-$1F` +$40, `$20-$5F` −$20, `$60-$7F` same;
+bit 7 = inverse in both; a trailing `*` sets bit 7 on the whole string (MADS docs, "dta"). The help text is ATASCII,
+the loading-screen line is screen code in inverse video.
+
+**Polish letters confirmed** (both open questions answered from the program itself): help page 8 says Polish letters
+are typed as CONTROL + a, c, e, l, n, o, s, z and lists them – "ą,ć,ę,ł,ń,ó,ś,ż" – exactly in the order of the codes
+`$01 $03 $05 $0C $0E $0F $13 $1A` (= CONTROL + that letter in ATASCII). So `$0E` = ń, and there is only one z: ż and
+ź share `$1A` ("podpowiedż"). Robbo's own TITLE.ASM solves the same problem differently (Polish glyphs on `@ \ [ ] _
+{ ^ |`).
+
+**Implementation.** `util/split.py` `TEXTS` = address ranges with a format; `util/rdis.py` renders them:
+printable characters as `c'…'` (ATASCII) or `d'…'` (screen code), runs of inverse characters as `…'*`, everything
+else (Polish CONTROL codes, quotes) as `$xx`; above each `dta` line a comment with the decoded Polish text (help
+format: bit 7 = a space follows, `$00 nn` = page marker → `* help page N ---`). `HELP.DTA` → `HELP.ASM`,
+`LOADSCR.DTA` → `LOADSCR.ASM` (old binaries removed with `git rm`). Sources are now written as UTF-8 (Polish letters in
+comments); MADS ignores comment text. `util/asm.py` learnt `c'…'`/`d'…'` strings and quote-aware comment/argument
+parsing. MADS and `asm.py` builds both byte-exact.
+
+Example (`src/HELP.ASM`):
+
+```
+; Mamy zaszczyt przedstawić pierwszy szeroko dostępny program
+         dta c'Mamy zaszczyt przedstawi',$03,c' pierwsz',c'y'*,c'szeroko dost',$05,c'pny program ' ; 0C7B
+```
+
+Lesson: generating Python code from a shell here-document mangled `\2` into the byte `$02` (twice) – avoid
+backslash-digit sequences in generated code (use named groups) and check for control characters after scripted edits.
+
 ## Open questions
 
 
@@ -248,7 +283,6 @@ restored from git. Always pass the encoding when writing text with non-ASCII cha
 - `JMP $F556` in the jump table – an OS ROM routine or RAM under the OS?
 - Data to classify: `$0803-$09A5` (display list + tables), `$3142-$3333`, `$35D0-$3682` (display list),
   `$4000-$47FF`, `$9F7B-$A808` (editor tables and texts); help-text preamble `$0C77`: `79 0C 80 01`.
-- Polish letters in the help text: is `$0E` ń? Does the font have a separate ź (the text uses `$1A` ż for it)?
 - Editor screen layout: is it a 16-column board window + palette (cursor X 0-19 skipping 16)?
 - The 26 remaining `sub_XXXX` in the engine and the editor code (no source): analyse and name.
 - Engine data tables: compare with Robbo's (e.g. `$33CC` = Robbo `R1.ASM` 1624 ff.).
