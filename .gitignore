@@ -3,3 +3,4 @@
 .idea
 build.atr
 __pycache__/
+out/

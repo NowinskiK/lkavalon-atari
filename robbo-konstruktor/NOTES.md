@@ -61,6 +61,7 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Saving planet sets failed (error 139): OS-B's `DSKINV` sends `P` as a read – use the XL/XE OS; `mkatr.py` also clears the ATR write-protect flag and keeps saved sets (section 26) |
 | 2026-10-29 | Title-page editor typed wrong letters: XL ROM keyboard table read at a fixed address; fixed build uses `KEYDEF` (section 27) |
 | 2026-10-29 | The fixed version gets its own disk: `bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr` (section 28) |
+| 2026-10-29 | GitHub Actions workflow: MADS from source, original (byte-exact) and fixed version, disk images as artifacts (section 29) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -910,6 +911,26 @@ A second screenshot, the **editor** (fixed version in Altirra, 1075 × 702): sav
 the right shows all entries as the running program draws them, including the variants of the placeholder entries
 22-29 (bats, guns, laser, blaster, teleport) – to compare with `img/palette.png`. Note: taken in Altirra, whose
 default palette may differ from XFormer's.
+
+## 29. CI on GitHub Actions (2026-10-29)
+
+Asked by the user: a pipeline that builds both versions. **`.github/workflows/robbo-konstruktor.yml`** (`ubuntu-latest`;
+on push / pull request touching `robbo-konstruktor/**`, `util/findtext.py` or the workflow, and by hand):
+
+1. MADS 2.1.5 from source – `mads.pas` from the tag (raw.githubusercontent.com/tebe6502/Mad-Assembler/2.1.5),
+   `apt-get install fp-compiler`, `fpc -Mdelphi -vh -O3 mads.pas` (the command in MADS's README); the binary is
+   cached (`actions/cache`, key `mads-2.1.5-<os>`).
+2. Original: `mads main.asm`, `verify.py` (byte for byte), `../util/findtext.py src` must end with "0 candidate",
+   `mkatr.py` → `out/original/…[rebuilt].atr`, its log must say "data identical to the original".
+3. Fixed: `mads nocopyprot.asm`, `helppage.py … 15` into the log, `mkatr.py` → `out/fixed/…[cr CAMOsoft 2026].atr`.
+4. Both uploaded (`actions/upload-artifact`) as `robbo-konstruktor-original` / `robbo-konstruktor-fixed`. The files
+   go into folders of their own and the folders are uploaded: upload-artifact treats paths as globs, and the
+   `[cr …]` in the name would be a character class. `out/` is ignored by git.
+
+Checked locally: every `run` step, in order, on a clean `git archive HEAD` export (local MADS, `py -3` for
+`python3`) – all pass, both disks written. **Not checked locally**: the Free Pascal build of MADS on Ubuntu and the
+actions themselves – the first run on GitHub will show (needs a push; the user's decision). Linux is case-sensitive:
+`main.asm` names the `src/` files exactly as they are (upper case).
 
 ## Open questions
 

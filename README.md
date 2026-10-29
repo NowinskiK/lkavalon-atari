@@ -1,5 +1,7 @@
 # LK Avalon sources
 
+[![Robbo Konstruktor](https://github.com/NowinskiK/lkavalon-atari/actions/workflows/robbo-konstruktor.yml/badge.svg)](https://github.com/NowinskiK/lkavalon-atari/actions/workflows/robbo-konstruktor.yml)
+
 Repository contains sources of the LK Avalon games for 8-bit Atari, released around 1990.
 
 Sources were downloaded from [Atari XL/XE Source Archive](http://sources.pigwa.net/), transformed from ATASCII to ASCII with [convert-atascii.go](util/convert-atascii.go) and manually cleaned up. Now they can be compiled with [MADS](https://mads.atari8.info/).
@@ -15,6 +17,8 @@ Sources were downloaded from [Atari XL/XE Source Archive](http://sources.pigwa.n
 Reverse-engineered from the binary (no original source):
 
 * [Jaskiniowiec](jaskiniowiec) (StanBit, 1995)
+* [Robbo Konstruktor](robbo-konstruktor) (L.K. Avalon, 1990) – with a fixed version without the copy protection
+  ([PROTECTION.md](robbo-konstruktor/PROTECTION.md))
 
 How to do this for another game: [DISASSEMBLY-GUIDE.md](DISASSEMBLY-GUIDE.md).
 
@@ -99,3 +103,16 @@ Checksums can be validated with:
 ```bash
 make test
 ```
+
+## Continuous integration
+
+[.github/workflows/robbo-konstruktor.yml](.github/workflows/robbo-konstruktor.yml) (GitHub Actions, on pushes and
+pull requests that touch `robbo-konstruktor/`, or started by hand) builds MADS 2.1.5 from its official source with
+Free Pascal and then two versions of Robbo Konstruktor:
+
+| Version | Checks | Artifact |
+|---|---|---|
+| original (`main.asm`) | byte for byte equal to `game.bin`; no texts left in data bytes (`util/findtext.py`); the rebuilt disk's data equals the original image | `robbo-konstruktor-original`: `Robbo Konstruktor (1990)(L.K. Avalon)(PL)[rebuilt].atr` |
+| fixed (`nocopyprot.asm`) | builds; help page 15 printed in the log | `robbo-konstruktor-fixed`: `Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr` |
+
+The disk images are made by `util/mkatr.py` from the original image in the repository (writable copies).

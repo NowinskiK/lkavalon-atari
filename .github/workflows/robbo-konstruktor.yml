@@ -1,0 +1,96 @@
+# Robbo Konstruktor: builds the original (byte-exact check) and the fixed version (nocopyprot.asm) and publishes
+# both disk images as artifacts. See robbo-konstruktor/README.md and robbo-konstruktor/PROTECTION.md.
+name: Robbo Konstruktor
+
+on:
+  push:
+    paths:
+      - 'robbo-konstruktor/**'
+      - 'util/findtext.py'
+      - '.github/workflows/robbo-konstruktor.yml'
+  pull_request:
+    paths:
+      - 'robbo-konstruktor/**'
+      - 'util/findtext.py'
+      - '.github/workflows/robbo-konstruktor.yml'
+  workflow_dispatch:
+
+env:
+  MADS_VERSION: '2.1.5'
+  ORIGINAL_ATR: 'bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr'
+  # written into folders of their own: upload-artifact reads paths as globs, and [...] is a glob class
+  FIXED_ATR: 'out/fixed/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr'
+  REBUILT_ATR: 'out/original/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[rebuilt].atr'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: robbo-konstruktor
+    steps:
+      - uses: actions/checkout@v4
+
+      # MADS is built from its official source (tag 2.1.5), as the README of MADS describes
+      - name: Cache MADS
+        id: cache-mads
+        uses: actions/cache@v4
+        with:
+          path: ~/mads
+          key: mads-${{ env.MADS_VERSION }}-${{ runner.os }}
+
+      - name: Build MADS ${{ env.MADS_VERSION }}
+        if: steps.cache-mads.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fp-compiler
+          curl -fsSL -o mads.pas "https://raw.githubusercontent.com/tebe6502/Mad-Assembler/${MADS_VERSION}/mads.pas"
+          fpc -Mdelphi -vh -O3 mads.pas
+          mkdir -p ~/mads
+          cp mads ~/mads/mads
+
+      - name: Set MADS
+        run: echo "MADS=$HOME/mads/mads" >> "$GITHUB_ENV"
+
+      # --- the original: must rebuild game.bin byte for byte ---
+      - name: Build the original
+        run: |
+          "$MADS" main.asm -o:bin/game.obx
+          python3 util/verify.py bin/game.obx
+
+      - name: No texts hidden in data bytes
+        run: |
+          python3 ../util/findtext.py src | tee findtext.log
+          tail -n 1 findtext.log | grep -q '^0 candidate'
+
+      - name: Disk image of the original
+        run: |
+          mkdir -p out/original
+          python3 util/mkatr.py bin/game.obx "$ORIGINAL_ATR" "$REBUILT_ATR" | tee mkatr.log
+          grep -q 'data identical to the original' mkatr.log
+
+      # --- the fixed version: protections off, help page 15, keyboard fix (nocopyprot.asm) ---
+      - name: Build the fixed version
+        run: |
+          "$MADS" nocopyprot.asm -o:bin/nocopyprot.obx
+          python3 util/helppage.py bin/nocopyprot.obx 15
+
+      - name: Disk image of the fixed version
+        run: |
+          mkdir -p out/fixed
+          python3 util/mkatr.py bin/nocopyprot.obx "$ORIGINAL_ATR" "$FIXED_ATR"
+
+      - name: Upload the original (rebuilt)
+        uses: actions/upload-artifact@v4
+        with:
+          name: robbo-konstruktor-original
+          path: robbo-konstruktor/out/original/
+          if-no-files-found: error
+
+      - name: Upload the fixed version
+        uses: actions/upload-artifact@v4
+        with:
+          name: robbo-konstruktor-fixed
+          path: robbo-konstruktor/out/fixed/
+          if-no-files-found: error

@@ -91,6 +91,9 @@ py -3 util/verify.py bin/game.obx                                               
 
 `konstruktor.xex` is an intermediate (ignored by git, rebuilt from the disk).
 
+CI: the GitHub Actions workflow `../.github/workflows/robbo-konstruktor.yml` builds the original (byte-exact check)
+and the fixed version and publishes both disk images as artifacts (root README, "Continuous integration").
+
 Run in the emulator: `py -3 util/mkatr.py bin/game.obx "bin\Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr" bin/build.atr`
 puts the build back on a copy of the disk (identical to the original while the build is byte-exact); the VS Code
 tasks do this and start Altirra (root README, "Altirra location").
