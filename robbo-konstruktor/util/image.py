@@ -6,7 +6,6 @@ Usage (from robbo-konstruktor/): py -3 util/image.py <disk.atr> game.bin"""
 import sys, os
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-sys.path.insert(0, os.path.join(HERE, '..', '..', 'jaskiniowiec', 'util'))
 from atr import ATR
 from xex import segments
 

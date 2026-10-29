@@ -4,7 +4,8 @@ Level editor for [Robbo](../robbo). Analysis of the disk image
 `bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr` (133,136 bytes), following
 [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). Process and findings: [NOTES.md](NOTES.md).
 
-Status: steps 1-2 of the guide done (disk read, memory image); disassembly not started yet.
+Status: steps 1-2 of the guide done (disk read, memory image); step 3 in progress – 11.4 KB of code found
+from 100 entry points (NOTES.md section 3).
 
 ## Files
 
@@ -14,8 +15,18 @@ Status: steps 1-2 of the guide done (disk read, memory image); disassembly not s
 | `game.bin` | 64 KB memory image at program start (boot loader + all segments) |
 | [util/atr.py](util/atr.py) | ATR reader: header, boot record, used sectors, DOS 2-style sector chains |
 | [util/image.py](util/image.py) | builds `game.bin` from the disk |
+| `util/xex.py`, `rdis.py`, `asm.py`, `verify.py` | copied from [../jaskiniowiec/util/](../jaskiniowiec/util/) (segments, disassembler, checks) |
 
-The XEX tools (`xex.py` …) are used from [../jaskiniowiec/util/](../jaskiniowiec/util/) for now.
+## Program structure (first look)
+
+| Area | What |
+|---|---|
+| $A810 | jump table, 16 entries; start $A9A7, main loop $A9B5 (every 4 frames, OS timer 3) |
+| $94E0-$9F7A | editor: menu dispatch (table $9F8E, menu words "kolory", "test", "planety", "strona"), cursor, commands |
+| $9F7B-$A808 | editor texts |
+| $A810-$B4F8 | editor: screen, DLI ($B05F), text input (key table $B330) |
+| $1E00-$3919 | game engine (Robbo-based): jump table $1E00 / $1E03 (called by the menu's "test"), DLIs, object behaviour table $31EF (97 object codes) |
+| $3C00-$4FFF | fonts (modified Robbo fonts) |
 
 ## How to regenerate
 
