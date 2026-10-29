@@ -3,6 +3,8 @@
 
          org $9E97
 
+
+* music init -----------------------------------------------
 entry_9E97
          jsr  sub_8FBF             ; 9E97
          lda  #$C0                 ; 9E9A
@@ -14,6 +16,8 @@ entry_9E97
          lda  #$00                 ; 9EA8
          sta  $9F6C                ; 9EAA
          rts                       ; 9EAD
+
+* NMI: DLI -> (VDSLST), else VBI ---------------------------
 entry_9EAE
          cld                       ; 9EAE
          bit  NMIST                ; 9EAF
@@ -33,6 +37,8 @@ L9EB7
          tax                       ; 9EC5
          pla                       ; 9EC6
          rti                       ; 9EC7
+
+* IRQ: disable POKEY interrupts ----------------------------
 entry_9EC8
          pha                       ; 9EC8
          lda  IRQEN                ; 9EC9
@@ -41,6 +47,8 @@ entry_9EC8
          sta  IRQEN                ; 9ED1
          pla                       ; 9ED4
          rti                       ; 9ED5
+
+* VBI: shadow registers, joystick, cheat keys, music -------
 entry_9ED6
          lda  #$FF                 ; 9ED6
          sta  PORTB                ; 9ED8
@@ -100,14 +108,14 @@ L9F06
          beq  L9F6B                ; 9F47
          sta  $9F46                ; 9F49
          ldx  #$00                 ; 9F4C
-         cmp  $9F75,x              ; 9F4E
+         cmp  CHEAT_KEYS,x         ; 9F4E
          bne  L9F66                ; 9F51
          inx                       ; 9F53
          stx  $9F4D                ; 9F54
          cpx  #$08                 ; 9F57
          bne  L9F6B                ; 9F59
          lda  #$08                 ; 9F5B
-         sta  $A7                  ; 9F5D
+         sta  LIVES                ; 9F5D
          lda  #$14                 ; 9F5F
          sta  $9F67                ; 9F61
          bne  L9F6B                ; 9F64
@@ -120,7 +128,12 @@ L9F6B
          jsr  entry_F2E7           ; 9F6F
 L9F72
          jmp  (VVBLKD)             ; 9F72
-         dta $4A,$4D,$6A,$68,$6E,$7E,$57,$6B,$4D      ; 9F75
+
+* cheat -------------------------
+CHEAT_KEYS       dta $4A,$4D,$6A,$68,$6E,$7E,$57,$6B  ; 9F75 KBCODEs of "PIERWSZY" (shifted); typed in the VBI -> 8 lives
+         dta $4D                                      ; 9F7D
+
+* clear screens and level fonts ----------------------------
 sub_9F7E
          ldx  #$00                 ; 9F7E
          txa                       ; 9F80

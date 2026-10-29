@@ -3,8 +3,12 @@
 
          org $6200
 
+
+* crack stub: DOSINI = trainer, warm start -----------------
          dta $A9,$02,$85,$09,$A9,$00,$8D,$44,$02,$A2,$14,$A0,$62,$86,$02,$84 ; 6200
          dta $03,$4C,$74,$E4                          ; 6210
+
+* CAMOsoft trainer: "Unlimited lives ? [Y/N]" --------------
 entry_6214
          ldx  #$85                 ; 6214
          ldy  #$63                 ; 6216
@@ -13,7 +17,7 @@ entry_6214
          ldx  #$DF                 ; 621E
          ldy  #$62                 ; 6220
          stx  VDSLST               ; 6222
-         sty  $0201                ; 6225
+         sty  VDSLST+1             ; 6225
          lda  #$21                 ; 6228
          sta  SDMCTL               ; 622A
          lda  #$C0                 ; 622D
@@ -106,6 +110,8 @@ L62D7
          dex                       ; 62DB
          bne  L62D5                ; 62DC
          rts                       ; 62DE
+
+* trainer DLIs ---------------------------------------------
 entry_62DF
          pha                       ; 62DF
          txa                       ; 62E0
@@ -128,7 +134,7 @@ L62F1
          ldx  #$09                 ; 62FC
          ldy  #$63                 ; 62FE
          stx  VDSLST               ; 6300
-         sty  $0201                ; 6303
+         sty  VDSLST+1             ; 6303
          jmp  XITVBV               ; 6306
 irq_6309
          pha                       ; 6309
@@ -160,7 +166,7 @@ L6325
          ldx  #$42                 ; 6335
          ldy  #$63                 ; 6337
          stx  VDSLST               ; 6339
-         sty  $0201                ; 633C
+         sty  VDSLST+1             ; 633C
          jmp  XITVBV               ; 633F
 irq_6342
          pha                       ; 6342
@@ -186,8 +192,10 @@ L634C
          ldx  #$DF                 ; 6369
          ldy  #$62                 ; 636B
          stx  VDSLST               ; 636D
-         sty  $0201                ; 6370
+         sty  VDSLST+1             ; 6370
          jmp  XITVBV               ; 6373
+
+* trainer patch: NOP the two DEC LIVES ($8C4E, $982D) ------
          dta $A9,$EA,$8D,$4E,$8C,$8D,$4F,$8C,$8D,$2D,$98,$8D,$2E,$98,$60 ; 6376
 irq_6385
          bvs  L63F7                ; 6385

@@ -23,6 +23,8 @@ and **why** things are the way they are.
 | 2026-10-29 | `util/levels.py` added; level maps and logo rendered to `img/levels/` (section 15) |
 | 2026-10-29 | Stale block files from the first split removed, repo cleaned (section 16) |
 | 2026-10-29 | `LEVEL.ASM` walked through; level 3 cave-room bug, text pages, logo height (section 17) |
+| 2026-10-29 | Variable block $9349-$93C6 and init table $930A decoded (section 18) |
+| 2026-10-29 | Named variables, group comments and readable init tables generated into the sources (section 19) |
 
 ## 1. From XEX to memory image
 
@@ -432,7 +434,82 @@ directly. `util/levels.py` drew 28 lines (4 lines of page data at the bottom of 
 `logo.png` regenerated; level maps unchanged. Block descriptions updated (`PICTURE.DTA`, `LEVEL.ASM`), sources
 regenerated and verified with MADS. The intro page text was changed by the cracker ("FILE VERSION … CAMOSOFT").
 
+## 18. Variables and init table in `INIT.ASM` (2026-10-29)
+
+Method: decode the bytes and list every instruction in `src/*.ASM` that references each address (scratch
+script), then read the code at the indexed uses ($8CB2, $8CE1).
+
+**$930A-$9348 – init poke table** (21 × `lo, hi, value`, applied by `$92EC`, `cpx #$3F`): `$8D`=01,
+`$8F`=00, player X/Y `$934D/$934E` = B6/70, respawn `$934F/$9350` = 40/70, `$9351-$935B` = 0, energy `$A5`=$60,
+treasures `$A6`=0, level `$935C`=1, lives `$A7`=3, `$9F67`=0.
+
+**$9349-$93C6 – variables and tables** (values in `game.bin` are the trainer-time snapshot):
+
+- `$9349-$934C` target colours PF0-PF3 (level loaders write, fades `$9729/$9744` read)
+- `$934D/$934E` player X/Y; `$934F/$9350` respawn X/Y (saved at screen change `$8F71`, `$8FA7`)
+- `$9351` player sprite frame (`$8CB5` = `$9379,x`); `$9352` walk-cycle index; `$9353` (set at `$8DC0`)
+- `$9354` jump state (0 ground, >0 jumping, `$80` falling, `$8CF5`), `$9355` jump step (max 12, `$8CDD`)
+- `$9356/$9357/$9358` tile probes floor / under / wall (`$948F`); `$9357` bits: 3 hazard, 4 exit, 5 treasure
+- `$9359` club-swing timer: fire sets `$0D` (`$8C9F`), counts to `$10` (`$8CAB`)
+- `$935A` map column of the screen, `$935B` (only reset), `$935C` level number
+- `$935D-$936C` sky gradient for DLIs `$88FA`/`$8945`; `$936D-$9378` status-line gradient (12 lines, `$88D0`)
+- `$937A-$938C` animation table state → frame: `01 02 01 00 04 03 04 05 07 06 07 08 09 09 0A 0A 0B 0C 0D`
+  (the last three are the swing, indices $0D-$0F)
+- `$9395-$93A0` jump arc, signed Y step per jump step (`lda $9395,x` at `$8CE1`, steps 0-11, `cpx #$0C`):
+  `0 -2 -3 -3 -3 -2 -2 -2 -1 -1 0 +1` (rise of 18 lines), then falling at +2 per frame (`$8CFA`).
+  *(Corrected in section 19 – first written as 14 steps from $9396.)* `$93A1-$93A3` are not used.
+- `$93A4-$93AB` screen set-up block for `$7C03` (fonts $D8/$E0, screens $BC/$BE, DLs $8974/$89D8);
+  `$93AC-$93AF` not referenced
+- `$93B0-$93B3` enemy speed/direction (±1, `eor #$FE` on turn); `$93B4-$93B7` animation counters;
+  `$93BB-$93BE` frame offsets
+- `$93BF-$93C2` enemy types (0 walker, negative vertical, `$40` static, `$9027`); `$93C3-$93C6` enemy hit
+  counters (3 at spawn `$91FF`, decremented on hit `$97E4`, removed at 0)
+
+Insight: the player is a caveman with a club – fire starts a swing animation, jumps follow a fixed arc.
+
+## 19. Named variables and group comments in the sources (2026-10-29)
+
+Asked for: define variables properly and comment groups, in the style of `robbo/d1/R1.ASM` (`* group ----`
+comment lines, `NAME EQU …` definitions, comments at the end of the line, `;+01` for multi-byte variables).
+
+Because `src/` is generated, everything is driven by three tables in `util/split.py` (rendered by `Lister` in
+`util/rdis.py`):
+
+- **`VARIABLES`** – `'* group ----'` headers and `(address, size, NAME, comment)`. A variable inside an `.ASM`
+  block is defined **where it lives**: `PLAYER_X         dta $B6     ; 934D player X` (so the name and its
+  storage are one line). Variables elsewhere (zero page, screen memory in binary blocks, text pages) become
+  `NAME equ $addr  ; +01 comment` in `JOINT.ASM`, grouped the same way. Every operand that hits a variable is
+  written as `NAME` or `NAME+n` (e.g. `cmp NEXT_TICK`, `lda LIVES`, `lda PLAYER_X`).
+- **`COMMENTS`** – address → text, written as `* text -----` above routines and data blocks (96 of them, one
+  per routine/data block found in sections 3, 13, 17, 18). `split.py` warns if a comment cannot be placed.
+- **`POKES`** – the two init tables ($929B: 27 entries, $930A: 21) are written as
+  `dta a(PLAYER_X),$B6 ; 9310 player X` instead of raw bytes.
+
+Also: OS vector high bytes are written `VDSLST+1`, `VVBLKD+1` instead of `$0201`, `$0225`.
+
+Naming: upper case with `_` (OS names are upper case too; MADS labels are case-insensitive). Zero page:
+`FRAME`, `FONT_PAGE`, `SPR_LIST`, `COL_BK`, `COL_PF`, `DLI_ROW`, `MAP_PTR`, `COUNTER`, `NEXT_TICK`, `CAVE_FLAG`,
+`ENERGY`, `FOOD`, `LIVES`, `MUSIC_OFF`, `PROT_FLAG`; enemies `ENEMY_X/Y/FLAGS/FRAME` ($7C60-$7C6F); status line
+`BAR_FOOD`, `LIVES_DIGIT`, `BAR_ENERGY`; text pages `DIGIT_DONE`, `DIGIT_NEXT`, `LEVEL_DIGITS`; `CHEAT_KEYS`;
+the $9349 block as in section 18 (`TARGET_COLS`, `PLAYER_X` … `ENEMY_HITS`).
+
+New facts found while naming (evidence):
+
+- `$9353` = **facing direction** (`FACING`): `$F8` when walking left (`$8DC0`), 0 when walking right (`$8DD5`),
+  set together with the sprite-frame patches at `$8C08` / `$8C10`.
+- The "treasures" are **food**: `$A6` is shown as the "JEDZENIE" (food) bar at $A0DF (`$8DF8`: `$A6 / 2`
+  characters, 16 characters = 32 units = the 32 needed); `$A5` energy is the bar on the "ZYCIA" line ($A107).
+  Renamed to `FOOD` in the sources; the docs' "treasures" mean the same thing.
+- Jump arc starts at `$9395` (12 steps), not `$9396` – section 18 corrected.
+
+Verified: regenerated, MADS build and `asm.py` build both match `game.bin` byte for byte (labels and comments
+do not change the bytes). Routine labels are still the generated `sub_XXXX` / `Lxxxx`; naming them is the next
+step (the `COMMENTS` table already says what each one does).
+
 ## Open questions
+
+- Name the routines (`sub_XXXX` → e.g. `MAIN_LOOP`, `DRAW_MAP`) the same way as the variables (a `NAMES`
+  table in `split.py`).
 
 - Commit the original XEX to `bin/` (needs an exception in `.gitignore`)? User's decision.
 - Draw enemy start positions, treasures and cave-room entrances onto the level maps (`LEVELDAT.DTA`).

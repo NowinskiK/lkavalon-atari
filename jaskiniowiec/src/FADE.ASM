@@ -3,6 +3,8 @@
 
          org $96C8
 
+
+* fade out and clear the screens ---------------------------
 sub_96C8
          ldy  #$07                 ; 96C8
 L96CA
@@ -24,88 +26,94 @@ L96E1
          dey                       ; 96E7
          bne  L96E1                ; 96E8
          rts                       ; 96EA
+
+* one fade-out step ----------------------------------------
 sub_96EB
          ldx  #$01                 ; 96EB
-         dec  $87                  ; 96ED
-         lda  $87                  ; 96EF
+         dec  COL_PF               ; 96ED
+         lda  COL_PF               ; 96EF
          and  #$0F                 ; 96F1
          bne  L96F7                ; 96F3
-         stx  $87                  ; 96F5
+         stx  COL_PF               ; 96F5
 L96F7
-         dec  $88                  ; 96F7
-         lda  $88                  ; 96F9
+         dec  COL_PF+1             ; 96F7
+         lda  COL_PF+1             ; 96F9
          and  #$0F                 ; 96FB
          bne  L9701                ; 96FD
-         stx  $88                  ; 96FF
+         stx  COL_PF+1             ; 96FF
 L9701
-         dec  $89                  ; 9701
-         lda  $89                  ; 9703
+         dec  COL_PF+2             ; 9701
+         lda  COL_PF+2             ; 9703
          and  #$0F                 ; 9705
          bne  L970B                ; 9707
-         stx  $89                  ; 9709
+         stx  COL_PF+2             ; 9709
 L970B
-         dec  $8A                  ; 970B
-         lda  $8A                  ; 970D
+         dec  COL_PF+3             ; 970B
+         lda  COL_PF+3             ; 970D
          and  #$0F                 ; 970F
          bne  L9715                ; 9711
-         stx  $8A                  ; 9713
+         stx  COL_PF+3             ; 9713
 L9715
          rts                       ; 9715
          dta $A9,$FF,$8D,$01,$D3,$A9,$00,$8D,$00,$D4,$8D,$0E,$D4,$8D,$2F,$02 ; 9716
          dta $4C,$77,$E4                              ; 9726
+
+* fade in (status line colour fixed) -----------------------
 sub_9729
-         lda  $9349                ; 9729
+         lda  TARGET_COLS          ; 9729
          and  #$F0                 ; 972C
-         sta  $87                  ; 972E
-         lda  $934A                ; 9730
+         sta  COL_PF               ; 972E
+         lda  TARGET_COLS+1        ; 9730
          and  #$F0                 ; 9733
-         sta  $88                  ; 9735
-         lda  $934B                ; 9737
+         sta  COL_PF+1             ; 9735
+         lda  TARGET_COLS+2        ; 9737
          and  #$F0                 ; 973A
-         sta  $89                  ; 973C
+         sta  COL_PF+2             ; 973C
          lda  #$20                 ; 973E
-         sta  $8A                  ; 9740
+         sta  COL_PF+3             ; 9740
          bne  L9760                ; 9742
+
+* fade in to TARGET_COLS -----------------------------------
 sub_9744
-         lda  $9349                ; 9744
+         lda  TARGET_COLS          ; 9744
          and  #$F0                 ; 9747
-         sta  $87                  ; 9749
-         lda  $934A                ; 974B
+         sta  COL_PF               ; 9749
+         lda  TARGET_COLS+1        ; 974B
          and  #$F0                 ; 974E
-         sta  $88                  ; 9750
-         lda  $934B                ; 9752
+         sta  COL_PF+1             ; 9750
+         lda  TARGET_COLS+2        ; 9752
          and  #$F0                 ; 9755
-         sta  $89                  ; 9757
-         lda  $934C                ; 9759
+         sta  COL_PF+2             ; 9757
+         lda  TARGET_COLS+3        ; 9759
          and  #$F0                 ; 975C
-         sta  $8A                  ; 975E
+         sta  COL_PF+3             ; 975E
 L9760
          ldy  #$0F                 ; 9760
 L9762
          jsr  sub_8FB8             ; 9762
-         lda  $87                  ; 9765
-         cmp  $9349                ; 9767
+         lda  COL_PF               ; 9765
+         cmp  TARGET_COLS          ; 9767
          beq  L976E                ; 976A
-         inc  $87                  ; 976C
+         inc  COL_PF               ; 976C
 L976E
-         lda  $88                  ; 976E
-         cmp  $934A                ; 9770
+         lda  COL_PF+1             ; 976E
+         cmp  TARGET_COLS+1        ; 9770
          beq  L9777                ; 9773
-         inc  $88                  ; 9775
+         inc  COL_PF+1             ; 9775
 L9777
-         lda  $89                  ; 9777
-         cmp  $934B                ; 9779
+         lda  COL_PF+2             ; 9777
+         cmp  TARGET_COLS+2        ; 9779
          beq  L9780                ; 977C
-         inc  $89                  ; 977E
+         inc  COL_PF+2             ; 977E
 L9780
-         lda  $8A                  ; 9780
+         lda  COL_PF+3             ; 9780
          and  #$0F                 ; 9782
          sta  $978D                ; 9784
-         lda  $934C                ; 9787
+         lda  TARGET_COLS+3        ; 9787
          and  #$0F                 ; 978A
          cmp  #$00                 ; 978C
          beq  L9792                ; 978E
-         inc  $8A                  ; 9790
+         inc  COL_PF+3             ; 9790
 L9792
          dey                       ; 9792
          bne  L9762                ; 9793

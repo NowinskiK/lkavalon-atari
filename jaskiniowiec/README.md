@@ -24,7 +24,7 @@ then (later) annotate it the same way as Dangerous City's `DC.ASM`.
 | [util/emu.py](util/emu.py) | Minimal 6502 emulator that runs the XEX load sequence (INITAD/RUNAD) and dumps memory at a stop address |
 | [util/resume.py](util/resume.py) | Continues from `mem.bin` at $0480 (snapshot restore) until `RTI`, prints the resume PC, writes `game.bin` |
 | [util/rdis.py](util/rdis.py) | Recursive-descent disassembler (follows JMP/JSR/branches and DLI/VBI vector setups) → MADS-style listing |
-| [util/split.py](util/split.py) | Splits `game.bin` into the blocks of `src/` (block table `BLOCKS` at the top) and writes `main.asm` |
+| [util/split.py](util/split.py) | Splits `game.bin` into the blocks of `src/` and writes `main.asm`. Tables at the top: `BLOCKS` (files), `VARIABLES` (named variables with groups and comments), `COMMENTS` (group comments above routines), `POKES` (init tables) |
 | [util/asm.py](util/asm.py) | Minimal assembler for the MADS subset `split.py` writes – checks the split without MADS |
 | [util/verify.py](util/verify.py) | Compares an assembled segment file with `game.bin` byte for byte |
 | [util/levels.py](util/levels.py) | Renders the 6 level maps and the title logo to PNG ([img/levels/](img/levels/)) |
@@ -207,7 +207,12 @@ From Git Bash the assembler line is `"$MADS" main.asm -o:bin/game.obx`.
 | CHBAS $E0 | Set by the trainer ($6234) – OS ROM font; RAM under the OS at $E000 is empty |
 | $6C00 | Status line font (set by the DLI at $88C4) |
 | $D800 / $E000 | Level font, double-buffered with the screens $BC00 / $BE00 (`$83` = current font page) |
-| $934D / $934E | Player X / Y |
+| $934D / $934E | Player X / Y (respawn position $934F / $9350) |
+| $9351 / $9354 / $9355 | Player sprite frame / jump state / jump step |
+| $9359 | Club-swing timer (fire → $0D … $10) |
+| $930A | Init poke table (21 × address, value), applied by `$92EC` at start and after game over |
+| $937A / $9396 | Animation table (state → frame) / jump arc (Y steps −2 −3 −3 −3 −2 −2 −2 −1 −1 0 +1 +1 +2 +2) |
+| $93BF / $93C3 | Enemy types / hit counters (3 hits) – 4 entries each; full list in NOTES.md section 18 |
 | $9357 | Tiles under the player: bit 3 hazard, bit 4 exit, bit 5 treasure (`$948F`) |
 | $935A / $935C | Map column of the current screen / level number |
 | $A5 / $A6 | Energy (starts $60) / treasures collected (32 needed) |

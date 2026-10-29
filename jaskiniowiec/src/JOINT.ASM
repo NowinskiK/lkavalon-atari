@@ -68,6 +68,36 @@ XITVBV   equ $E462
 WARMSV   equ $E474
 COLDSV   equ $E477
 
+; game variables outside the .ASM blocks (the others are defined where they live)
+
+* zero page - display -----------
+FRAME          equ $0080  ; frame counter; bit 0 selects screen/font/DL buffer ($882C)
+FONT_PAGE      equ $0083  ; CHBASE of the visible level font ($D8 / $E0), set by the DLIs
+SPR_LIST       equ $0084  ; +01 pointer to the sprite list of the drawn buffer ($C400 / $C480)
+COL_BK         equ $0086  ; background colour above the playfield (DLI $8874)
+COL_PF         equ $0087  ; +03 playfield colours PF0-PF3 (DLI $8874); faded towards TARGET_COLS
+DLI_ROW        equ $00A4  ; map row counter of the DLI chain
+
+* zero page - game --------------
+MAP_PTR        equ $008B  ; +01 pointer into the level map ($912F)
+COUNTER        equ $008D  ; loop counter (screen scroll steps, $8F52)
+NEXT_TICK      equ $008E  ; RTCLOK value of the next game frame (main loop runs every 3rd frame)
+CAVE_FLAG      equ $008F  ; non-zero: enter the cave room ($94F7)
+ENERGY         equ $00A5  ; energy, $60 when full; 0 costs a life ($9802)
+FOOD           equ $00A6  ; food collected ("JEDZENIE"), 32 needed to finish a level
+LIVES          equ $00A7  ; lives ("ZYCIA"), 3 at start
+MUSIC_OFF      equ $00A9  ; non-zero: music and sound effects off (OPTION toggles, $8A64)
+PROT_FLAG      equ $00DF  ; copy-protection flag: bit 7 clear destroys $84E9 ($8820)
+
+* status line (screen memory) ---
+BAR_FOOD       equ $A0DF  ; +0F food bar, half a character per unit
+LIVES_DIGIT    equ $A104  ; lives digit
+BAR_ENERGY     equ $A107  ; +17 energy bar, a quarter character per unit
+
+* text screens ------------------
+DIGIT_DONE     equ $7788  ; level digit in "etap N kompletny" (next-level page 1)
+DIGIT_NEXT     equ $7879  ; level digit in "powodzenia w etapie N" (next-level page 2)
+
 ; labels not at an instruction boundary or outside the source blocks
 
 L5968      equ $5968

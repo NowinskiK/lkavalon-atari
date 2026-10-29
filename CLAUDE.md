@@ -71,6 +71,12 @@ Read `jaskiniowiec/README.md` (reference) and `jaskiniowiec/NOTES.md` (process, 
   ```
   The result must be "matches game.bin byte for byte". MADS is the authority; `asm.py` is only a fallback
   where MADS is unavailable.
+- Names and comments also come from `util/split.py`: `VARIABLES` (`'* group ----'` headers and
+  `(address, size, NAME, comment)`), `COMMENTS` (address → `* text ---` above a routine or data block) and
+  `POKES` (init tables written as `dta a(NAME),$vv`). Style follows `robbo/d1/R1.ASM`: upper-case names with `_`,
+  a variable inside an `.ASM` block is defined where it lives (`NAME dta ... ; comment`), others as
+  `NAME equ $addr ; comment` in `JOINT.ASM`; every variable has an end-of-line comment saying what it is.
+  When a new variable or routine is understood, add it to these tables (with evidence in `NOTES.md`) and regenerate.
 - Blocks must start/end on instruction boundaries (`split.py` asserts it); code reached only via data
   (interrupt vectors, poke tables, DLI chains) must be added as an entry point.
 - `split.py` does not delete files: when blocks are renamed, stale files stay in `src/`. Find them (files in

@@ -3,6 +3,8 @@
 
          org $9A00
 
+
+* level loaders: enemies -> $C500, cave rooms -> $C600, map, font, colours (level 1) ---
 sub_9A00
          ldy  #$00                 ; 9A00
 L9A02
@@ -26,6 +28,8 @@ L9A19
          lda  #$00                 ; 9A22
          ldx  #$30                 ; 9A24
          bne  L9A5A                ; 9A26
+
+* level 3 loader (cave-room copy broken, NOTES.md section 17) ---
 sub_9A28
          ldy  #$00                 ; 9A28
 L9A2A
@@ -72,16 +76,20 @@ L9A5A
          jsr  sub_7E1C             ; 9A73
 L9A76
          jmp  L9221                ; 9A76
+
+* colours of the font-A levels -----------------------------
 sub_9A79
          lda  #$B6                 ; 9A79
-         sta  $9349                ; 9A7B
+         sta  TARGET_COLS          ; 9A7B
          lda  #$F4                 ; 9A7E
-         sta  $934A                ; 9A80
+         sta  TARGET_COLS+1        ; 9A80
          lda  #$FA                 ; 9A83
-         sta  $934B                ; 9A85
+         sta  TARGET_COLS+2        ; 9A85
          lda  #$8C                 ; 9A88
-         sta  $934C                ; 9A8A
+         sta  TARGET_COLS+3        ; 9A8A
          rts                       ; 9A8D
+
+* level 5 loader -------------------------------------------
 sub_9A8E
          ldy  #$00                 ; 9A8E
 L9A90
@@ -105,6 +113,8 @@ L9AA7
          lda  #$00                 ; 9AB0
          ldx  #$44                 ; 9AB2
          bne  L9A5A                ; 9AB4
+
+* level 4 loader -------------------------------------------
 sub_9AB6
          ldy  #$00                 ; 9AB6
 L9AB8
@@ -128,6 +138,8 @@ L9ACF
          lda  #$00                 ; 9AD8
          ldx  #$4E                 ; 9ADA
          bne  L9B06                ; 9ADC
+
+* level 6 loader -------------------------------------------
 sub_9ADE
          ldy  #$00                 ; 9ADE
 L9AE0
@@ -159,14 +171,16 @@ L9B06
          sta  $8DF5                ; 9B10
          stx  $8DF6                ; 9B13
          lda  #$76                 ; 9B16
-         sta  $9349                ; 9B18
+         sta  TARGET_COLS          ; 9B18
          lda  #$F4                 ; 9B1B
-         sta  $934A                ; 9B1D
+         sta  TARGET_COLS+1        ; 9B1D
          lda  #$0C                 ; 9B20
-         sta  $934B                ; 9B22
+         sta  TARGET_COLS+2        ; 9B22
          lda  #$7E                 ; 9B25
-         sta  $934C                ; 9B27
+         sta  TARGET_COLS+3        ; 9B27
          jmp  L9239                ; 9B2A
+
+* level 2 loader -------------------------------------------
 sub_9B2D
          ldy  #$00                 ; 9B2D
 L9B2F
@@ -190,75 +204,87 @@ L9B46
          lda  #$00                 ; 9B4F
          ldx  #$62                 ; 9B51
          bne  L9B06                ; 9B53
+
+* text screen: intro ---------------------------------------
 sub_9B55
          jsr  sub_96C8             ; 9B55
          lda  #$B6                 ; 9B58
-         sta  $8D                  ; 9B5A
-         sta  $934D                ; 9B5C
+         sta  COUNTER              ; 9B5A
+         sta  PLAYER_X             ; 9B5C
          lda  #$70                 ; 9B5F
-         sta  $934E                ; 9B61
+         sta  PLAYER_Y             ; 9B61
          jsr  sub_8A4D             ; 9B64
          ldx  #$00                 ; 9B67
          jsr  sub_9215             ; 9B69
          lda  #$00                 ; 9B6C
          jsr  sub_9C5A             ; 9B6E
          rts                       ; 9B71
+
+* text screen: next level ----------------------------------
 sub_9B72
          jsr  sub_96C8             ; 9B72
          lda  #$B6                 ; 9B75
-         sta  $8D                  ; 9B77
-         sta  $934D                ; 9B79
+         sta  COUNTER              ; 9B77
+         sta  PLAYER_X             ; 9B79
          lda  #$70                 ; 9B7C
-         sta  $934E                ; 9B7E
+         sta  PLAYER_Y             ; 9B7E
          jsr  sub_8A4D             ; 9B81
          ldx  #$07                 ; 9B84
          jsr  sub_9215             ; 9B86
          lda  #$01                 ; 9B89
          jsr  sub_9C5A             ; 9B8B
          rts                       ; 9B8E
+
+* text screen: game over -----------------------------------
 sub_9B8F
          jsr  sub_96C8             ; 9B8F
          lda  #$B6                 ; 9B92
-         sta  $8D                  ; 9B94
-         sta  $934D                ; 9B96
+         sta  COUNTER              ; 9B94
+         sta  PLAYER_X             ; 9B96
          lda  #$70                 ; 9B99
-         sta  $934E                ; 9B9B
+         sta  PLAYER_Y             ; 9B9B
          jsr  sub_8A4D             ; 9B9E
          ldx  #$07                 ; 9BA1
          jsr  sub_9215             ; 9BA3
          lda  #$02                 ; 9BA6
-         inc  $935C                ; 9BA8
+         inc  LEVEL                ; 9BA8
          jsr  sub_9C5A             ; 9BAB
          rts                       ; 9BAE
+
+* text screen: victory -------------------------------------
 sub_9BAF
          jsr  sub_96C8             ; 9BAF
          lda  #$B6                 ; 9BB2
-         sta  $8D                  ; 9BB4
-         sta  $934D                ; 9BB6
+         sta  COUNTER              ; 9BB4
+         sta  PLAYER_X             ; 9BB6
          lda  #$70                 ; 9BB9
-         sta  $934E                ; 9BBB
+         sta  PLAYER_Y             ; 9BBB
          jsr  sub_8A4D             ; 9BBE
          lda  $9CED                ; 9BC1
          sta  $9CEB                ; 9BC4
          lda  $9CEE                ; 9BC7
          sta  $9CEC                ; 9BCA
          lda  #$01                 ; 9BCD
-         sta  $935C                ; 9BCF
+         sta  LEVEL                ; 9BCF
          ldx  #$07                 ; 9BD2
          jsr  sub_9215             ; 9BD4
          lda  #$03                 ; 9BD7
          jsr  sub_9C5A             ; 9BD9
          rts                       ; 9BDC
+
+* text screen colours --------------------------------------
 sub_9BDD
          lda  #$16                 ; 9BDD
-         sta  $9349                ; 9BDF
+         sta  TARGET_COLS          ; 9BDF
          lda  #$24                 ; 9BE2
-         sta  $934A                ; 9BE4
+         sta  TARGET_COLS+1        ; 9BE4
          lda  #$FA                 ; 9BE7
-         sta  $934B                ; 9BE9
+         sta  TARGET_COLS+2        ; 9BE9
          lda  #$8C                 ; 9BEC
-         sta  $934C                ; 9BEE
+         sta  TARGET_COLS+3        ; 9BEE
          rts                       ; 9BF1
+
+* draw a 20x10-tile text page ------------------------------
 sub_9BF2
          stx  $C0                  ; 9BF2
          sty  $C1                  ; 9BF4
@@ -295,6 +321,8 @@ L9C11
          dta $AD,$84,$02,$29,$01,$D0,$F9,$AD,$84,$02,$29,$01,$F0,$F9,$60,$4A ; 9C2B
          dta $9C,$02,$00,$4E,$9C,$02,$00,$52,$9C,$01,$00,$54,$9C,$03,$00,$C0 ; 9C3B
          dta $74,$88,$75,$18,$77,$E0,$77,$50,$76,$A8,$78,$70,$79,$38,$7A ; 9C4B
+
+* text screen driver: pages, fade, wait for fire -----------
 sub_9C5A
          asl                       ; 9C5A
          asl                       ; 9C5B
@@ -333,7 +361,7 @@ L9C99
          lda  $13                  ; 9C99
          cmp  #$01                 ; 9C9B
          bne  L9C91                ; 9C9D
-         lda  $935C                ; 9C9F
+         lda  LEVEL                ; 9C9F
          cmp  #$01                 ; 9CA2
          bne  L9CA9                ; 9CA4
          jsr  sub_9CCC             ; 9CA6
@@ -356,6 +384,8 @@ L9CB1
          lda  #$00                 ; 9CC6
          sta  $E5                  ; 9CC8
          beq  L9C7A                ; 9CCA
+
+* switch the status-line text ------------------------------
 sub_9CCC
          lda  #$00                 ; 9CCC
          asl                       ; 9CCE
@@ -371,6 +401,8 @@ sub_9CCC
          sta  $9CCD                ; 9CE7
          rts                       ; 9CEA
          dta $29,$A1,$A1,$A1,$19,$A2,$91,$A2,$09,$A3,$81,$A3,$F9,$A3,$71,$A4 ; 9CEB
+
+* ending scroller (VBI, installed by the ending at $B299) ---
 irq_9CFB
          lda  #$00                 ; 9CFB
          beq  L9D33                ; 9CFD
@@ -431,19 +463,21 @@ L9D61
 L9D69
          stx  $9D3B                ; 9D69
          rts                       ; 9D6C
+
+* level completion: exit + 32 food -> next level, after 6 -> ending ---
 sub_9D6D
-         lda  $9357                ; 9D6D
+         lda  PROBE_TILE           ; 9D6D
          and  #$10                 ; 9D70
          bne  L9D75                ; 9D72
          rts                       ; 9D74
 L9D75
-         lda  $A6                  ; 9D75
+         lda  FOOD                 ; 9D75
          cmp  #$20                 ; 9D77
          beq  L9D7C                ; 9D79
          rts                       ; 9D7B
 L9D7C
-         inc  $935C                ; 9D7C
-         lda  $935C                ; 9D7F
+         inc  LEVEL                ; 9D7C
+         lda  LEVEL                ; 9D7F
          cmp  #$07                 ; 9D82
          bne  L9D89                ; 9D84
          jmp  L9E43                ; 9D86
@@ -451,40 +485,40 @@ L9D89
          jsr  sub_9B72             ; 9D89
          jsr  sub_96C8             ; 9D8C
          lda  #$B6                 ; 9D8F
-         sta  $8D                  ; 9D91
-         sta  $934D                ; 9D93
+         sta  COUNTER              ; 9D91
+         sta  PLAYER_X             ; 9D93
          lda  #$70                 ; 9D96
-         sta  $934E                ; 9D98
+         sta  PLAYER_Y             ; 9D98
          jsr  sub_8A4D             ; 9D9B
          lda  #$40                 ; 9D9E
-         sta  $934F                ; 9DA0
+         sta  RESPAWN_X            ; 9DA0
          lda  #$70                 ; 9DA3
-         sta  $9350                ; 9DA5
+         sta  RESPAWN_Y            ; 9DA5
          lda  #$00                 ; 9DA8
-         sta  $9351                ; 9DAA
-         sta  $9352                ; 9DAD
-         sta  $9353                ; 9DB0
-         sta  $9354                ; 9DB3
-         sta  $9355                ; 9DB6
-         sta  $9356                ; 9DB9
-         sta  $9357                ; 9DBC
-         sta  $9358                ; 9DBF
-         sta  $9359                ; 9DC2
-         sta  $935A                ; 9DC5
-         sta  $935B                ; 9DC8
-         sta  $A6                  ; 9DCB
-         sta  $8F                  ; 9DCD
+         sta  PLAYER_FRAME         ; 9DAA
+         sta  WALK_STEP            ; 9DAD
+         sta  FACING               ; 9DB0
+         sta  JUMP_STATE           ; 9DB3
+         sta  JUMP_STEP            ; 9DB6
+         sta  PROBE_FLOOR          ; 9DB9
+         sta  PROBE_TILE           ; 9DBC
+         sta  PROBE_WALL           ; 9DBF
+         sta  SWING                ; 9DC2
+         sta  SCREEN_COL           ; 9DC5
+         sta  VAR_935B             ; 9DC8
+         sta  FOOD                 ; 9DCB
+         sta  CAVE_FLAG            ; 9DCD
          lda  #$60                 ; 9DCF
-         sta  $A5                  ; 9DD1
-         inc  $A7                  ; 9DD3
+         sta  ENERGY               ; 9DD1
+         inc  LIVES                ; 9DD3
          jsr  sub_8DF8             ; 9DD5
-         ldx  $935C                ; 9DD8
-         lda  $9E49,x              ; 9DDB
-         sta  $7788                ; 9DDE
+         ldx  LEVEL                ; 9DD8
+         lda  LEVEL_DIGITS,x       ; 9DDB
+         sta  DIGIT_DONE           ; 9DDE
          inx                       ; 9DE1
-         lda  $9E49,x              ; 9DE2
-         sta  $7879                ; 9DE5
-         lda  $935C                ; 9DE8
+         lda  LEVEL_DIGITS,x       ; 9DE2
+         sta  DIGIT_NEXT           ; 9DE5
+         lda  LEVEL                ; 9DE8
          cmp  #$02                 ; 9DEB
          bne  L9DF5                ; 9DED
          jsr  sub_9B2D             ; 9DEF
@@ -520,19 +554,20 @@ L9E1D
          jsr  sub_9151             ; 9E30
          jsr  sub_9744             ; 9E33
          lda  #$40                 ; 9E36
-         sta  $934D                ; 9E38
+         sta  PLAYER_X             ; 9E38
          lda  RTCLOK+2             ; 9E3B
          clc                       ; 9E3D
          adc  #$02                 ; 9E3E
-         sta  $8E                  ; 9E40
+         sta  NEXT_TICK            ; 9E40
          rts                       ; 9E42
 L9E43
          jsr  sub_9BAF             ; 9E43
          jmp  LAEF0                ; 9E46
-         dta $00,$74,$77,$7E,$6A,$76,$6B,$7F,$6D,$75,$20,$BF,$8F,$78,$A9,$00 ; 9E49
-         dta $8D,$00,$D4,$8D,$0E,$D4,$A9,$FE,$8D,$01,$D3,$A2,$AE,$A0,$9E,$8E ; 9E59
-         dta $FA,$FF,$8C,$FB,$FF,$A2,$C7,$A0,$9E,$8E,$FC,$FF,$8C,$FD,$FF,$8E ; 9E69
-         dta $00,$02,$8C,$01,$02,$A2,$C8,$A0,$9E,$8E,$FE,$FF,$8C,$FF,$FF,$A2 ; 9E79
-         dta $96,$A0,$9E,$8E,$24,$02,$8C,$25,$02,$58,$20,$A6,$C5 ; 9E89
+LEVEL_DIGITS     dta $00,$74,$77,$7E,$6A,$76,$6B,$7F  ; 9E49 digit tiles: [LEVEL] -> DIGIT_DONE, [LEVEL+1] -> DIGIT_NEXT
+         dta $6D,$75,$20,$BF,$8F,$78,$A9,$00,$8D,$00,$D4,$8D,$0E,$D4,$A9,$FE ; 9E51
+         dta $8D,$01,$D3,$A2,$AE,$A0,$9E,$8E,$FA,$FF,$8C,$FB,$FF,$A2,$C7,$A0 ; 9E61
+         dta $9E,$8E,$FC,$FF,$8C,$FD,$FF,$8E,$00,$02,$8C,$01,$02,$A2,$C8,$A0 ; 9E71
+         dta $9E,$8E,$FE,$FF,$8C,$FF,$FF,$A2,$96,$A0,$9E,$8E,$24,$02,$8C,$25 ; 9E81
+         dta $02,$58,$20,$A6,$C5                      ; 9E91
 irq_9E96
          rts                       ; 9E96

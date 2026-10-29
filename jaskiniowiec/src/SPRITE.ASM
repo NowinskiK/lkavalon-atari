@@ -4,6 +4,8 @@
          org $7C00
 
          dta $4C,$7B,$7C                              ; 7C00
+
+* sprite engine: set up screens, fonts and DLs from a parameter block (X/Y) ---
 sub_7C03
          stx  $C0                  ; 7C03
          sty  $C1                  ; 7C05
@@ -52,12 +54,19 @@ L7C57
          iny                       ; 7C5A
          bne  L7C57                ; 7C5B
          jmp  L882C                ; 7C5D
-         dta $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 7C60
+
+* enemies (4 each) --------------
+ENEMY_X          dta $00,$00,$00,$00                  ; 7C60 enemy X
+ENEMY_Y          dta $00,$00,$00,$00                  ; 7C64 enemy Y (0 = no enemy)
+ENEMY_FLAGS      dta $00,$00,$00,$00                  ; 7C68 enemy flags (bit 7 = mirrored)
+ENEMY_FRAME      dta $00,$00,$00,$00                  ; 7C6C enemy sprite frame
          dta $04,$08,$A0,$A4,$A8,$60,$40,$00,$10,$30,$70 ; 7C70
 L7C7B
          jsr  sub_7C84             ; 7C7B
          jsr  L882C                ; 7C7E
          jmp  L87CC                ; 7C81
+
+* draw all enemies into the hidden buffer ------------------
 sub_7C84
          lda  #$FF                 ; 7C84
          sta  $E0                  ; 7C86
@@ -74,15 +83,15 @@ L7C95
          clc                       ; 7C96
          adc  #$70                 ; 7C97
          tay                       ; 7C99
-         lda  $7C64,x              ; 7C9A
-         sta  ($84),y              ; 7C9D
+         lda  ENEMY_Y,x            ; 7C9A
+         sta  (SPR_LIST),y         ; 7C9D
          beq  L7C8C                ; 7C9F
          sta  $E2                  ; 7CA1
-         lda  $7C60,x              ; 7CA3
+         lda  ENEMY_X,x            ; 7CA3
          sta  $E1                  ; 7CA6
-         lda  $7C68,x              ; 7CA8
+         lda  ENEMY_FLAGS,x        ; 7CA8
          sta  $E3                  ; 7CAB
-         lda  $7C6C,x              ; 7CAD
+         lda  ENEMY_FRAME,x        ; 7CAD
          asl                       ; 7CB0
          tay                       ; 7CB1
          lda  $C800,y              ; 7CB2
@@ -156,11 +165,11 @@ L7CF7
          bcs  L7D54                ; 7D40
          ldy  $E5                  ; 7D42
          lda  #$02                 ; 7D44
-         sta  ($84),y              ; 7D46
+         sta  (SPR_LIST),y         ; 7D46
          iny                       ; 7D48
-         sta  ($84),y              ; 7D49
+         sta  (SPR_LIST),y         ; 7D49
          iny                       ; 7D4B
-         sta  ($84),y              ; 7D4C
+         sta  (SPR_LIST),y         ; 7D4C
          iny                       ; 7D4E
          sty  $E5                  ; 7D4F
          jmp  L7D61                ; 7D51
@@ -198,7 +207,7 @@ L7D8E
          ldy  $E5                  ; 7D8E
          lda  #$02                 ; 7D90
 L7D92
-         sta  ($84),y              ; 7D92
+         sta  (SPR_LIST),y         ; 7D92
          iny                       ; 7D94
          dex                       ; 7D95
          bne  L7D92                ; 7D96
@@ -206,6 +215,8 @@ L7D92
          jmp  L7C8C                ; 7D9A
          dta $8D,$0A,$03,$A5,$D0,$8D,$04,$03,$A5,$D1,$8D,$05,$03,$A9,$40,$8D ; 7D9D
          dta $03,$03,$4C,$59,$E4                      ; 7DAD
+
+* sprite helpers: screen position, background, character allocation ---
 sub_7DB2
          lda  $E1                  ; 7DB2
          ldx  #$FF                 ; 7DB4
@@ -229,7 +240,7 @@ L7DC9
          bpl  L7DD6                ; 7DD2
          lda  #$02                 ; 7DD4
 L7DD6
-         sta  ($84),y              ; 7DD6
+         sta  (SPR_LIST),y         ; 7DD6
          and  #$80                 ; 7DD8
          sta  $7DE3                ; 7DDA
          inc  $E5                  ; 7DDD
@@ -265,13 +276,13 @@ sub_7DF0
          sta  $C3                  ; 7E0A
          ldy  $E0                  ; 7E0C
          lda  $C2                  ; 7E0E
-         sta  ($84),y              ; 7E10
+         sta  (SPR_LIST),y         ; 7E10
          tya                       ; 7E12
          clc                       ; 7E13
          adc  #$04                 ; 7E14
          tay                       ; 7E16
          lda  $C3                  ; 7E17
-         sta  ($84),y              ; 7E19
+         sta  (SPR_LIST),y         ; 7E19
          rts                       ; 7E1B
 sub_7E1C
          ldx  #$00                 ; 7E1C
@@ -455,6 +466,8 @@ sub_7F92
          adc  #$03                 ; 7FDC
          sta  $CF                  ; 7FDE
          rts                       ; 7FE0
+
+* draw a shape: four variants (mirrored / not, two sizes) - $7FE1, $8243, $84E9, $864B ---
 sub_7FE1
          ldy  #$00                 ; 7FE1
          lda  ($C4),y              ; 7FE3
@@ -1366,22 +1379,24 @@ sub_864B
          rts                       ; 87AC
          dta $A9,$00,$85,$D0,$85,$D2,$A9,$05,$85,$D1,$A9,$06,$85,$D3,$A0,$7D ; 87AD
          dta $B1,$D0,$D1,$D2,$D0,$06,$88,$10,$F7,$A9,$FF,$60,$A9,$00,$60 ; 87BD
+
+* copy the sprite characters into the screen ---------------
 L87CC
          ldy  #$03                 ; 87CC
          sty  $E6                  ; 87CE
 L87D0
-         lda  ($84),y              ; 87D0
+         lda  (SPR_LIST),y         ; 87D0
          sta  $C0                  ; 87D2
          tya                       ; 87D4
          clc                       ; 87D5
          adc  #$04                 ; 87D6
          tay                       ; 87D8
-         lda  ($84),y              ; 87D9
+         lda  (SPR_LIST),y         ; 87D9
          sta  $C1                  ; 87DB
          lda  $E6                  ; 87DD
          ora  #$70                 ; 87DF
          tay                       ; 87E1
-         lda  ($84),y              ; 87E2
+         lda  (SPR_LIST),y         ; 87E2
          beq  L8819                ; 87E4
          ldx  $E6                  ; 87E6
          inx                       ; 87E8
@@ -1390,9 +1405,9 @@ L87D0
          asl                       ; 87EB
          asl                       ; 87EC
          clc                       ; 87ED
-         adc  $84                  ; 87EE
+         adc  SPR_LIST             ; 87EE
          sta  $87FF                ; 87F0
-         lda  $85                  ; 87F3
+         lda  SPR_LIST+1           ; 87F3
          adc  #$00                 ; 87F5
          sta  $8800                ; 87F7
          ldx  #$00                 ; 87FA
@@ -1419,6 +1434,8 @@ L8819
          ldy  $E6                  ; 881B
          bpl  L87D0                ; 881D
          rts                       ; 881F
+
+* copy-protection trap: wipes the shape routine at $84E9 ---
 sub_8820
          ldx  #$00                 ; 8820
          lda  $C000,x              ; 8822
@@ -1427,6 +1444,8 @@ L8825
          inx                       ; 8828
          bne  L8825                ; 8829
          rts                       ; 882B
+
+* wait for VBL, swap screen / font / display list buffers ---
 L882C
          lda  RTCLOK+2             ; 882C
 L882E
@@ -1434,7 +1453,7 @@ L882E
          beq  L882E                ; 8830
          ldy  #$00                 ; 8832
          ldx  #$00                 ; 8834
-         lda  $80                  ; 8836
+         lda  FRAME                ; 8836
          lsr                       ; 8838
          bcc  L883F                ; 8839
          ldy  #$00                 ; 883B
@@ -1460,12 +1479,12 @@ L8859
          ldx  #$80                 ; 8861
          ldy  #$C4                 ; 8863
 L8865
-         stx  $84                  ; 8865
-         sty  $85                  ; 8867
+         stx  SPR_LIST             ; 8865
+         sty  SPR_LIST+1           ; 8867
          ldx  #$00                 ; 8869
          bcc  L886F                ; 886B
          ldx  #$00                 ; 886D
 L886F
-         stx  $83                  ; 886F
-         inc  $80                  ; 8871
+         stx  FONT_PAGE            ; 886F
+         inc  FRAME                ; 8871
          rts                       ; 8873

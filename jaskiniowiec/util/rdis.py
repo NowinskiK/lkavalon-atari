@@ -46,25 +46,74 @@ def analyze(mem, entries):
     return code, labels
 
 
-class Lister:
-    """Turns an analysed image into listing lines; remembers which labels it placed and used."""
+VECTORS = (0x0200, 0x0222, 0x0224)   # OS vectors: the high byte is written as NAME+1
 
-    def __init__(s, mem, code, labels):
+
+class Lister:
+    """Turns an analysed image into listing lines; remembers which labels it placed and used.
+
+    variables: list of '* group' strings and (address, size, name, comment) tuples. A variable inside a
+    listed range is written in place as `NAME dta ... ; comment`; operands use NAME / NAME+n.
+    pokes: {address: count} – tables of (address lo, hi, value) entries, written as `dta a(NAME),$vv`.
+    comments: {address: text} – group comment `* text ---` written above that address."""
+
+    def __init__(s, mem, code, labels, variables=(), pokes=None, comments=None):
         s.mem, s.code, s.labels = mem, code, labels
         s.placed = set()   # addresses whose label was written at its own position
         s.used = {}        # address -> name, for every label referenced in an operand
+        s.vars = {}        # address -> (size, name, comment, group header or None)
+        s.var_at = {}      # every byte of a variable -> (start address, offset)
+        s.var_placed = set()
+        group = None
+        for v in variables:
+            if isinstance(v, str):
+                group = v; continue
+            addr, size, name, comment = v
+            s.vars[addr] = (size, name, comment, group); group = None
+            for k in range(size): s.var_at[addr + k] = (addr, k)
+        s.pokes = pokes or {}
+        s.comments = comments or {}
+        s.placed_comments = set()
 
     def nm(s, a, w):
+        if a in s.var_at:
+            st, k = s.var_at[a]
+            return s.vars[st][1] + ('+%d' % k if k else '')
         if a in L: return L[a]
+        if a - 1 in VECTORS: return L[a - 1] + '+1'
         if a in s.labels:
             s.used[a] = s.labels[a]; return s.labels[a]
         return ('$%02X' % a) if w == 1 else ('$%04X' % a)
+
+    def poke_lines(s, a, count):
+        out = []
+        for i in range(count):
+            p = a + i * 3
+            t = s.mem[p] | s.mem[p + 1] << 8
+            note = s.vars[s.var_at[t][0]][2] if t in s.var_at else ''
+            out.append('         %-36s ; %04X %s' % ('dta a(%s),$%02X' % (s.nm(t, 2), s.mem[p + 2]), p, note))
+        return out
 
     def lines(s, lo, hi):
         mem, code, labels = s.mem, s.code, s.labels
         out = []
         a = lo
         while a <= hi:
+            if a in s.comments:
+                s.placed_comments.add(a)
+                text = '* %s ' % s.comments[a]
+                out += ['', text + '-' * max(3, 60 - len(text))]
+            if a in s.pokes and a not in code:
+                out += s.poke_lines(a, s.pokes[a]); a += 3 * s.pokes[a]
+                continue
+            if a in s.vars and a not in code:
+                size, name, comment, group = s.vars[a]
+                if group: out += ['', group]
+                body = 'dta ' + ','.join('$%02X' % b for b in mem[a:a + size])
+                out.append('%-16s %-36s ; %04X %s' % (name, body, a, comment))
+                s.var_placed.add(a); s.placed.add(a)
+                a += size
+                continue
             if a in labels:
                 out.append('%s' % labels[a]); s.placed.add(a)
             if a in code:
@@ -85,7 +134,8 @@ class Lister:
                 a += n
             else:
                 st = a; row = []
-                while a <= hi and a not in code and (a == st or a not in labels) and len(row) < 16:
+                while (a <= hi and a not in code and (a == st or (a not in labels and a not in s.vars
+                       and a not in s.pokes and a not in s.comments)) and len(row) < 16):
                     row.append(mem[a]); a += 1
                 out.append('         dta %-40s ; %04X' % (','.join('$%02X' % b for b in row), st))
         return out

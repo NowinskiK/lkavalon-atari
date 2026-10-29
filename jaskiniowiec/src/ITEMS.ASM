@@ -3,34 +3,36 @@
 
          org $9796
 
+
+* player contact with hazards and enemies ------------------
 sub_9796
-         lda  $9357                ; 9796
+         lda  PROBE_TILE           ; 9796
          and  #$08                 ; 9799
          beq  L97A6                ; 979B
-         lda  $80                  ; 979D
+         lda  FRAME                ; 979D
          and  #$01                 ; 979F
          bne  L97A6                ; 97A1
          jsr  sub_9802             ; 97A3
 L97A6
          ldx  #$03                 ; 97A6
 L97A8
-         lda  $7C60,x              ; 97A8
+         lda  ENEMY_X,x            ; 97A8
          sec                       ; 97AB
          sbc  #$0B                 ; 97AC
-         cmp  $934D                ; 97AE
+         cmp  PLAYER_X             ; 97AE
          bcs  L97D4                ; 97B1
          adc  #$0D                 ; 97B3
-         cmp  $934D                ; 97B5
+         cmp  PLAYER_X             ; 97B5
          bcc  L97D4                ; 97B8
-         lda  $7C64,x              ; 97BA
+         lda  ENEMY_Y,x            ; 97BA
          sec                       ; 97BD
          sbc  #$18                 ; 97BE
-         cmp  $934E                ; 97C0
+         cmp  PLAYER_Y             ; 97C0
          bcs  L97D4                ; 97C3
          adc  #$20                 ; 97C5
-         cmp  $934E                ; 97C7
+         cmp  PLAYER_Y             ; 97C7
          bcc  L97D4                ; 97CA
-         lda  $9359                ; 97CC
+         lda  SWING                ; 97CC
          bne  L97D8                ; 97CF
          jsr  sub_9802             ; 97D1
 L97D4
@@ -38,18 +40,18 @@ L97D4
          bpl  L97A8                ; 97D5
          rts                       ; 97D7
 L97D8
-         lda  $7C6C,x              ; 97D8
+         lda  ENEMY_FRAME,x        ; 97D8
          and  #$10                 ; 97DB
          bne  L97D4                ; 97DD
-         lda  $93C3,x              ; 97DF
+         lda  ENEMY_HITS,x         ; 97DF
          beq  L97EB                ; 97E2
-         dec  $93C3,x              ; 97E4
+         dec  ENEMY_HITS,x         ; 97E4
          dex                       ; 97E7
          bpl  L97A8                ; 97E8
          rts                       ; 97EA
 L97EB
          lda  #$00                 ; 97EB
-         sta  $7C64,x              ; 97ED
+         sta  ENEMY_Y,x            ; 97ED
          stx  $97F7                ; 97F0
          lda  #$00                 ; 97F3
          clc                       ; 97F5
@@ -60,9 +62,11 @@ L97EB
          dex                       ; 97FE
          bpl  L97A8                ; 97FF
          rts                       ; 9801
+
+* lose energy; at 0 lose a life ----------------------------
 sub_9802
          stx  $9813                ; 9802
-         lda  $A9                  ; 9805
+         lda  MUSIC_OFF            ; 9805
          bne  L9812                ; 9807
          lda  #$21                 ; 9809
          ldx  #$0C                 ; 980B
@@ -70,13 +74,13 @@ sub_9802
          jsr  entry_F2E4           ; 980F
 L9812
          ldx  #$00                 ; 9812
-         dec  $A5                  ; 9814
-         lda  $A5                  ; 9816
+         dec  ENERGY               ; 9814
+         lda  ENERGY               ; 9816
          beq  L981B                ; 9818
          rts                       ; 981A
 L981B
          stx  $982C                ; 981B
-         lda  $A9                  ; 981E
+         lda  MUSIC_OFF            ; 981E
          bne  L982B                ; 9820
          lda  #$21                 ; 9822
          ldx  #$18                 ; 9824
@@ -84,11 +88,13 @@ L981B
          jsr  entry_F2E4           ; 9828
 L982B
          ldx  #$00                 ; 982B
-         dec  $A7                  ; 982D
+         dec  LIVES                ; 982D
          lda  #$60                 ; 982F
-         sta  $A5                  ; 9831
+         sta  ENERGY               ; 9831
          rts                       ; 9833
          dta $00,$00,$00                              ; 9834
+
+* draw the two food items of a cave room -------------------
 sub_9837
          lda  $9834                ; 9837
          asl                       ; 983A
@@ -127,6 +133,8 @@ L987A
          lda  #$03                 ; 987E
          sta  $C3                  ; 9880
          rts                       ; 9882
+
+* draw one food item into the screen -----------------------
 sub_9883
          lda  $A4E9,y              ; 9883
          beq  L987A                ; 9886
@@ -250,18 +258,20 @@ L9967
          jmp  L993D                ; 996B
 L996E
          rts                       ; 996E
+
+* is the player on a food item? ----------------------------
 sub_996F
-         lda  $934E                ; 996F
+         lda  PLAYER_Y             ; 996F
          clc                       ; 9972
          adc  #$04                 ; 9973
          tay                       ; 9975
-         lda  $934D                ; 9976
+         lda  PLAYER_X             ; 9976
          clc                       ; 9979
          adc  #$02                 ; 997A
          jsr  sub_912F             ; 997C
          ldy  #$00                 ; 997F
          ldx  $9836                ; 9981
-         lda  $8B                  ; 9984
+         lda  MAP_PTR              ; 9984
          clc                       ; 9986
          adc  #$28                 ; 9987
          cmp  $99B5                ; 9989
@@ -307,14 +317,16 @@ sub_99CD
 sub_99D5
          lda  ($C2),y              ; 99D5
          dta $AB,$7F,$BD,$00,$C3,$A8,$BD,$80,$C3,$AA,$09,$D8,$60 ; 99D7
+
+* pick up food: FOOD + 1 -----------------------------------
 sub_99E4
-         lda  $9357                ; 99E4
+         lda  PROBE_TILE           ; 99E4
          and  #$20                 ; 99E7
          beq  L99FF                ; 99E9
          jsr  sub_996F             ; 99EB
          beq  L99FF                ; 99EE
-         inc  $A6                  ; 99F0
-         lda  $A9                  ; 99F2
+         inc  FOOD                 ; 99F0
+         lda  MUSIC_OFF            ; 99F2
          bne  L99FF                ; 99F4
          lda  #$21                 ; 99F6
          ldx  #$24                 ; 99F8

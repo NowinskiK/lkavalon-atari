@@ -3,6 +3,8 @@
 
          org $F2E1
 
+
+* CMC music player: init (+0), command (+3), play (+6) -----
 entry_F2E1
          jmp  LFA3B                ; F2E1
 entry_F2E4
@@ -665,12 +667,12 @@ LFA4B
          beq  LFA4B                ; FA4D
          lda  VVBLKD               ; FA4F
          sta  $FAA1                ; FA52
-         lda  $0225                ; FA55
+         lda  VVBLKD+1             ; FA55
          sta  $FAA2                ; FA58
          lda  $FA39                ; FA5B
          sta  VVBLKD               ; FA5E
          lda  $FA3A                ; FA61
-         sta  $0225                ; FA64
+         sta  VVBLKD+1             ; FA64
          pla                       ; FA67
          pla                       ; FA68
          beq  LFA6E                ; FA69
@@ -695,7 +697,7 @@ LFA83
          lda  $FAA1                ; FA87
          sta  VVBLKD               ; FA8A
          lda  $FAA2                ; FA8D
-         sta  $0225                ; FA90
+         sta  VVBLKD+1             ; FA90
          lda  #$40                 ; FA93
          jmp  LF344                ; FA95
          dta $20,$9C,$F5,$90,$03,$20,$87,$FA,$4C,$BF,$5F,$A0,$00,$B9,$F4,$BE ; FA98
