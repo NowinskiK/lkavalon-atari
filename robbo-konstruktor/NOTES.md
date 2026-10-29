@@ -901,6 +901,16 @@ Komputerowe", $08DE "Avalon") copied into `nocopyprot.asm` as a segment, unchang
 40 screen codes per line, `ert *<>$08DE` / `ert *<>$0906` stop the build when a line is not 40 characters (tested:
 one character short → "ERROR: User error").
 
+The user then edited the two lines ("©1990 Laboratorium Komputerowe Avalon", "Fixed version: Oct 2026 by CAMOsoft",
+committed in 631ef4d) and sent a screenshot of the fixed version in Altirra – help page 0 with the new panel – saved
+as `img/title-screen.png` (1079 × 698) and shown in README.
+
+A second screenshot, the **editor** (fixed version in Altirra, 1075 × 702): saved as `img/editor.png`, shown in README
+"Palette". It is the reference asked for in step 8 (renders vs. the real screen) and helps step 5.3: the palette on
+the right shows all entries as the running program draws them, including the variants of the placeholder entries
+22-29 (bats, guns, laser, blaster, teleport) – to compare with `img/palette.png`. Note: taken in Altirra, whose
+default palette may differ from XFormer's.
+
 ## Open questions
 
 

@@ -271,6 +271,11 @@ teleportacja – their real codes depend on the switch (entry 21); entries 30-31
 
 ![Palette](img/palette.png)
 
+The editor in Altirra (screenshot by the user, fixed version): board window with the scroll bar, the element
+palette on the right, planet number, credits and the main menu ("test planety" selected), the help hint below.
+
+![The editor](img/editor.png)
+
 Test boards from the erased disk slots: ![Test board 1](img/test-board-1.png) ![Test board 2](img/test-board-2.png)
 
 ## Known issue: the planet clears itself (copy protection)
@@ -299,6 +304,11 @@ faulty copy is illegal) with a note about this version, and makes the title-page
 the OS pointer `KEYDEF` instead of the XL ROM address $FB51 (wrong letters under AltirraOS). VS Code task "run build (protection off)" writes it to
 `bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr` – the fixed version, a disk of its own ("run
 build" keeps `bin/build.atr` for the unchanged build).
+
+![Help page 0 of the fixed version, with the edited credits panel](img/title-screen.png)
+
+The fixed version in Altirra (screenshot by the user): help page 0 and the credits panel, lines 4-5 edited in
+`nocopyprot.asm` ("©1990 Laboratorium Komputerowe Avalon", "Fixed version: Oct 2026 by CAMOsoft").
 
 **Second protection**: "błąd - za dużo robocików!" after the first yes/no question – `PROT_BOOT` ($B47D, in
 `ASK_YESNO_`, runs once) XORs the boot loader in memory ($0501-$05FF) and compares the result with `DFLAGS`; the
