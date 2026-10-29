@@ -11,6 +11,8 @@ and **why** things are the way they are.
 | 2026-10-28 | XEX parsed, loader emulated, snapshot restored → `game.bin`; whole image disassembled into one listing (`jaskiniowiec.asm`, 8,489 lines) |
 | 2026-10-28 | Listing split into blocks like [misja](../misja) / [digi-duck](../digi-duck): `split.py`, `main.asm`, `asm.py`, `verify.py`, `Makefile` |
 | 2026-10-29 | Code analysed (call graph + reading + emulation), blocks regrouped into logical modules, new entry points found |
+| 2026-10-29 | MADS 2.1.5 provided; real MADS build verified byte for byte (section 6) |
+| 2026-10-29 | MADS path moved to the `MADS` environment variable (section 7) |
 
 ## 1. From XEX to memory image
 
@@ -145,11 +147,44 @@ What worked, in order:
   before relying on the sources.
 - File names by address (`Dxxxx`) until the content is understood; rename when it is.
 
+## 6. Verified with real MADS (2026-10-29)
+
+MADS 2.1.5 (build 3, 21 Feb 22) at `x:\ATARI\Tools\Mad-Assembler-2.1.5\mads.exe` (not on PATH).
+
+```
+/x/ATARI/Tools/Mad-Assembler-2.1.5/mads.exe main.asm -o:bin/game.obx
+py -3 verify.py bin/game.obx
+```
+
+Result: no errors or warnings, "6021 lines of source assembled in 3 pass", 56,176 bytes written,
+**matches game.bin byte for byte**. So the syntax `split.py` writes is valid MADS: zero-page choice,
+`opt h-` + `ins` of headered files, global labels, `equ` in `JOINT.ASM` all behave as assumed.
+
+- The MADS file is 70 bytes smaller than `asm.py`'s output: MADS writes the `$FFFF` marker only before the
+  first segment, `asm.py` before every segment. Both are valid; `verify.py` reads either.
+- `Makefile` now has `MADS ?= mads`, so `make MADS=/x/ATARI/Tools/Mad-Assembler-2.1.5/mads.exe test` works
+  where make exists (it is not installed here – run the commands directly).
+- MADS is now the authority for the build; `asm.py` stays as a fallback.
+
+Lesson: the stand-in assembler gave the right answer, but only the real tool can confirm syntax assumptions –
+worth running as soon as it is available, before annotation changes pile up.
+
+## 7. MADS path in an environment variable (2026-10-29)
+
+Decision: no machine-specific paths in the docs or build files. The MADS executable is configured in the
+`MADS` environment variable (full path). The Makefile already has `MADS ?= mads`, so make uses the variable
+when set and falls back to `mads` on `PATH`.
+
+- Set-up instructions with the example value `x:\ATARI\Tools\Mad-Assembler-2.1.5\mads.exe` are in the root
+  README ("MADS location"): check with `$env:MADS` / `echo "$MADS"`, set permanently with
+  `[Environment]::SetEnvironmentVariable('MADS', '<path>', 'User')` (new terminal needed afterwards).
+- Commands: PowerShell `& $env:MADS main.asm -o:bin/game.obx`, Git Bash `"$MADS" main.asm -o:bin/game.obx`.
+- CLAUDE.md: always call `$MADS`; if it is empty, tell the user and point to the README.
+
 ## Open questions
 
 - `D0500.DTA` ($0500-$07FF) and `D2800.DTA` ($2800-$2BFF, $2F00-$2FFF) – unknown.
 - Which levels use font A ($0800) and which font B ($1000)?
 - `CMC.ASM`: `JMP $5968` ($F372) and `JSR $5B73` ($F654) point into the maps – probably player tables taken as code.
 - `$7788` / `$7879` are patched per level from $9E49 (inside the picture) – meaning unknown.
-- Reassemble with real MADS (`make test`).
 - Runnable XEX: needs a loader for the blocks under the OS ROM and the hardware state.

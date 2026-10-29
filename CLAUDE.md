@@ -24,8 +24,11 @@ Sources of LK Avalon (and related) games for 8-bit Atari, assembled with MADS. O
 ## Environment
 
 - Windows; use `py -3` for Python.
-- MADS and GNU make are **not installed** on this machine – don't claim a MADS build was run.
-  Say so and use the folder's own verify tools instead.
+- MADS is configured in the **`MADS` environment variable** (full path to the executable); always call it as
+  `"$MADS"` (Git Bash) / `& $env:MADS` (PowerShell), never by a hard-coded path. If the variable is empty,
+  tell the user and point to "MADS location" in the root `README.md` (example value on this machine:
+  `x:\ATARI\Tools\Mad-Assembler-2.1.5\mads.exe`, MADS 2.1.5).
+- GNU make is **not installed** – run the Makefile commands directly. `md5sum` is available (Git Bash).
 
 ## jaskiniowiec/ (reverse-engineered, not original source)
 
@@ -37,10 +40,11 @@ Read `jaskiniowiec/README.md` (reference) and `jaskiniowiec/NOTES.md` (process, 
 - After every regeneration verify:
   ```
   py -3 split.py game.bin 6214 9EAE 9EC8 9ED6 62DF 9E97 F2E1 F2E4 F2E7 8A8F 8874 88AA 8929 93C7
-  py -3 asm.py main.asm bin/game.obx
+  "$MADS" main.asm -o:bin/game.obx
   py -3 verify.py bin/game.obx
   ```
-  The result must be "matches game.bin byte for byte".
+  The result must be "matches game.bin byte for byte". MADS is the authority; `asm.py` is only a fallback
+  where MADS is unavailable.
 - Blocks must start/end on instruction boundaries (`split.py` asserts it); code reached only via data
   (interrupt vectors, poke tables, DLI chains) must be added as an entry point.
 - `split.py` does not delete files: when blocks are renamed, stale files stay in `src/` – list them for the user

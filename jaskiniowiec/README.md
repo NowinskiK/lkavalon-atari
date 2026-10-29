@@ -97,22 +97,26 @@ $CA00-$FFF9 outside the blocks and the I/O area $D000-$D7FF are zero in `game.bi
 
 ## How to regenerate
 
-Requires Python 3 (`py -3`). Run from this folder (scripts import each other from `.`):
+Requires Python 3 (`py -3`) and the `MADS` environment variable (see "MADS location" in the
+[root README](../README.md)). Run from this folder (scripts import each other from `.`), in PowerShell:
 
-```
+```powershell
 py -3 xex.py "x:\ATARI\GryKamil\Jaskiniowiec (1995)(StanBit)(PL)[h CAMOsoft][t +1 CAMOsoft].xex"
 py -3 emu.py "x:\ATARI\GryKamil\Jaskiniowiec (1995)(StanBit)(PL)[h CAMOsoft][t +1 CAMOsoft].xex" 0480 mem.bin
 py -3 resume.py
 py -3 split.py game.bin 6214 9EAE 9EC8 9ED6 62DF 9E97 F2E1 F2E4 F2E7 8A8F 8874 88AA 8929 93C7
-py -3 asm.py main.asm bin/game.obx
+& $env:MADS main.asm -o:bin/game.obx
 py -3 verify.py bin/game.obx
 ```
+
+From Git Bash the assembler line is `"$MADS" main.asm -o:bin/game.obx`.
 
 1. `xex.py` – lists segments.
 2. `emu.py` – loads all segments, runs INIT/RUN vectors, stops when PC reaches $0480 → `mem.bin`.
 3. `resume.py` – runs the snapshot restore → reports `resume PC=$6200` → `game.bin`.
 4. `split.py` – writes `src/*` and `main.asm`. Arguments after `game.bin` are entry points.
-5. `asm.py` + `verify.py` – reassemble and check the result equals `game.bin` (with MADS: `make test`).
+5. MADS + `verify.py` – reassemble and check the result equals `game.bin` (verified with MADS 2.1.5).
+   Without MADS, `py -3 asm.py main.asm bin/game.obx` builds the same image.
 
 `py -3 rdis.py game.bin 0000-FFFF <entries>` still writes the whole image as one listing (`0000_FFFF.asm`).
 
