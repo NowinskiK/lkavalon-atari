@@ -58,6 +58,7 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Second protection ("za dużo robocików!"): `PROT_BOOT` checksum of the boot loader, lock at $ACB3; patched (section 23) |
 | 2026-10-29 | Help format corrected (bit 7 = end of line), `util/helppage.py`, `HELPTEXT.ASM` one line per dta; new help page 15 in `nocopyprot.asm` (section 24) |
 | 2026-10-29 | Page 15 fixed after a manual edit (bit 7 only on the last character of a line), padded to $1DD0 (section 25) |
+| 2026-10-29 | Saving planet sets failed (error 139): OS-B's `DSKINV` sends `P` as a read – use the XL/XE OS; `mkatr.py` also clears the ATR write-protect flag and keeps saved sets (section 26) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -830,6 +831,41 @@ to $1DD0 is filled with `$00` (`:$1DD1-* dta $00`), the same zeros that follow t
 renders as written, pages 0-14 identical to the original, `main.asm` byte-exact, `bin/build.atr` rewritten.
 
 Lesson: after editing a help page, run `py -3 util/helppage.py bin/nocopyprot.obx 15` – a wrong `*` still assembles.
+
+## 26. "błąd numer 139!" when saving a planet set (2026-10-29)
+
+The user could not save a planet set ("zapisz zestaw → 01") on `bin/build.atr` in Altirra (started by the VS Code
+task "run build (protection off)"; D1 = `build.atr`, write mode R/W, emulation "Fastest possible"): "błąd numer 139!"
+– SIO status $8B, device NAK.
+
+**The program is not at fault.** `DISKIO` uses only `R` ($52, read), `P` ($50, write without verify) and `$22`
+(format, enhanced density – the program expects a 1050 and a 1040-sector disk; slots at sectors 256, 388, 520,
+652, 784). Emulating the save with the program's own `IO_CMD` ('w', slot 1, one planet marked used, `CONSOL` = $07,
+SIO calls logged by a hook in `util/emu.py`): `R 256`, then `P 256-264`, `R 256`, `P 256` – valid sectors on the
+1040-sector image. (Side finding: `IO_CHKSLOT` $935D reads `CONSOL` after the header – SELECT held → refuse, OPTION
+held → accept the disk whatever its header says.)
+
+**The image is.** The ATR header byte 15 is `$01` in the original dump – the write-protect flag of the ATR format
+(Atari800 calls it `writeprotect`) – and `mkatr.py` copied the header, so the emulated drive refused the writes
+whatever the R/W setting *(the NAK rather than 144 is Altirra's choice – inferred, matches the report)*.
+
+**Fix in `util/mkatr.py`**: the copy gets byte 15 = 0 (reported: "write protection removed"); "identical to the
+original" now compares the data, not the header. And because every rebuild started again from the original, saved
+sets would have been lost: an existing copy of the same size is now **updated in place** – only the boot sectors and
+the program file are rewritten (tested: a marker in sector 256 survives a rebuild). Delete `bin/build.atr` to start
+afresh from the original. The original image stays untouched (tracked, read-only by its header).
+
+**Still 139 after that – the real cause: the OS.** The user had last selected the 400/800 **OS-B** in Altirra (for
+the `$F556` test, section 20). The program calls `DSKINV` ($E453), which picks the transfer direction from the
+command letter. XL/XE ROM (`ATARIXL.ROM`, `JMP $C6B3`): `CMP #$50 / BEQ` and `CMP #$57` → `DSTATS` = $80 (write).
+OS-B (`ATARIOSB.ROM`, `JMP $EDF0`): only `CMP #$57` → for `P` ($50) `DSTATS` stays **$40 (read)** – the command frame
+goes out, then the computer waits for data while the drive waits for the sector: error 139. Reading (`R`) works on
+both, so only saving fails. Fix: XL/XE firmware in Altirra (the XL ROM or AltirraOS for XL/XE), cold reset *(to be
+confirmed by the user)*. Another proof that the program is written for the XL/XE OS (section 20). The write-protect
+flag of the ATR header may not have mattered; clearing it and keeping saved sets is still right for a working copy.
+
+Lesson (guide): when an OS call fails only on one machine type, disassemble the call in each OS ROM – OS-B and XL
+differ in details such as `DSKINV` knowing only `W` as a write.
 
 ## Open questions
 

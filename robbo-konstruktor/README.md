@@ -21,7 +21,7 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [util/planets.py](util/planets.py) | loads the saved planet sets by running the program's own loader in the emulator |
 | [util/render.py](util/render.py) | renders the palette and planets the way the editor draws them (XFormer palette) |
 | [util/helppage.py](util/helppage.py) | shows a help page as the program draws it (runs `HLP_PAGE` in the emulator) |
-| [util/mkatr.py](util/mkatr.py) | writes a build into a copy of the original disk (`bin/build.atr`) to boot it in an emulator |
+| [util/mkatr.py](util/mkatr.py) | writes a build into a copy of the original disk (`bin/build.atr`) to boot it in an emulator; the copy is writable (the original is marked write-protected) and keeps planet sets saved on it across rebuilds |
 | [util/split.py](util/split.py) | splits `game.bin` into `src/` and writes `main.asm`; tables `BLOCKS`, `ENTRIES` (+ dispatch tables), `NOFOLLOW`, `VARIABLES`, `COMMENTS`, `NAMES`, `POKES` |
 | `util/xex.py`, `rdis.py`, `asm.py`, `verify.py` | from [../jaskiniowiec/util/](../jaskiniowiec/util/); `rdis.py` here also finds entries written into self-modified jumps and VBIs installed with SETVBV |
 | `main.asm`, `src/` | generated sources (see below) |

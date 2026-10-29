@@ -281,6 +281,8 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
   into a `JMP` (Robbo Konstruktor: `$4C` at `$ACB3` → `JMP WAIT_VBL`), and hide addresses as operands fixed up on
   the first run (`lsr` halves `$0A00` to `$0500`). Compare memory before and after the trigger; look for stores
   into code.
+- An OS call that fails on one machine only: disassemble it in each OS ROM. OS-B's `DSKINV` treats only `W` as a
+  write, the XL/XE OS also `P` – a program using `P` cannot save under OS-B (Robbo Konstruktor: error 139).
 - A jump into the OS ROM at an undocumented address: disassemble it in each candidate ROM (400/800 OS-B, XL/XE) –
   only one has a routine *start* there (check the instruction before it ends a routine); that names the routine and
   tells which OS the game was written for (Robbo Konstruktor's `$F556` = the XL/XE buzzer). AltirraOS keeps only the
