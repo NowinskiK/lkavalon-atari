@@ -269,3 +269,26 @@ teleportacja – their real codes depend on the switch (entry 21); entries 30-31
 ![Palette](img/palette.png)
 
 Test boards from the erased disk slots: ![Test board 1](img/test-board-1.png) ![Test board 2](img/test-board-2.png)
+
+## Known issue: the planet clears itself (copy protection)
+
+Full explanation with listings: [PROTECTION.md](PROTECTION.md).
+
+Reported in the forum thread "Dyskowy Robbo Konstruktor na emulatorze" (atarionline.pl, DiscussionID=3815, 2016-2019):
+the disk version erases the board "after a few minutes", when the brick wall (*murek*) is chosen in the palette; the cause found
+there was the copy protection reacting to the emulator's SIO acceleration. The code in this disk image (NOTES.md
+section 21):
+
+| Address | Name | What it does |
+|---|---|---|
+| $9F4D | `PROT_KEY` | runs once, at the end of the first `PLANETS_FILL`, then patches itself to `RTS`: `PROT_SUM = SERIN XOR DOSINI+1` – the two addresses are disguised as arithmetic on `CUR_ELEM` ($000D, $D20D) |
+| $9F8B | `PROT_SUM` | 0 on the original disk: the last byte on the serial line (`SERIN`) equals `$19`, the high byte of the boot record's init address $19DD (which is not code – it is the key) |
+| $9CF2 | (in `ELEM_MSG_`) | when the name of palette entry 12 "murek" is shown, `lda HDR_BUF+4,x` with X = 12 reads `PROT_SUM`; not 0 → `PLANET_CLR` |
+
+**Workaround in Altirra**: switch off the disk SIO acceleration (System → Acceleration → "D: patch (Disk SIO)" in the
+version used in the thread), so that the serial port is emulated byte by byte; the thread also found that PAL instead
+of NTSC mattered. Whether `SERIN` then ends as `$19` with this ATR (which cannot store the unreadable sector 989 of
+the original) is not checked yet.
+
+Not found in this image: the second error from the thread, "błąd - za dużo robocików!" after using the disk menu
+on a copied disk (the addresses named there, $0C75 and $0513, are the help viewer's variable and the boot loader here).

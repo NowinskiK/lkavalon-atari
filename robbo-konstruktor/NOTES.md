@@ -53,6 +53,7 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Hidden-text scan (`util/findtext.py`): two more texts as strings, `HDR_BUF`, reviewed ranges; 0 candidates (section 18) |
 | 2026-10-29 | Step 6: 17 segment blocks regrouped into 29 modules, fonts named by use (section 19) |
 | 2026-10-29 | `$F556`: OS ROM (no `PORTB` writes); the XL/XE OS buzzer – `BELL` / `OS_BELL`; written for the XL/XE OS (section 20) |
+| 2026-10-29 | Copy protection found from a forum report: `PROT_KEY` / `PROT_SUM` / check in `ELEM_MSG_`; boot init $19DD = the key (section 21) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -691,16 +692,58 @@ imported `split.py` after the clean-up and the commit staged the whole folder. R
 `.gitignore` now has `__pycache__/`. Lesson: clean after the last script run, and look at `git status` before
 staging a folder.
 
+## 21. The copy protection – "the planet clears itself" (2026-10-29)
+
+The user asked to read and file the forum thread "Dyskowy Robbo Konstruktor na emulatorze" (atarionline.pl,
+DiscussionID=3815, 39 posts, 2016-2019; read through a fetch agent). **Reported there**: the disk version clears
+the board when the wall (*murek*) is "hit"; the original disk has an unreadable sector 989 (RNF) that the protection
+checks (miker, voy); switching off Altirra's "D: patch (Disk SIO)" and using PAL fixed it (QTZ); Krótki explained
+that the program uses POKEY `SERIN`, which SIO patches do not update, XORed with `DOSINI`, stored and checked when
+the wall is hit; QTZ located the store at `$9F8B`. A second error, "błąd - za dużo robocików!" after using the disk
+menu on a copy (flag `$0C75`, bytes `$0513` = `30 12 A2` in his unlocked build), was never solved.
+
+**Found in our image** (all three facts confirmed in the code):
+
+- **Store** – the only reference to `$9F8B` in the whole image is `sta $9F8B` at $9F6B, in an unnamed tail of
+  `PLANETS_FILL` ($9F4D-$9F73), now **`PROT_KEY`**: `lda $A804 / bmi skip` (runs while the "R" of "Robbo" is
+  positive), then builds two pointers from `CUR_ELEM` with `sec / rol / asl / asl / sec / rol / asl` and an `eor`
+  that zeroes the high byte: with `CUR_ELEM` = 6 at load they are **$000D** (`DOSINI+1`) and **$D20D** (`SERIN`);
+  `lda ($B0),y / eor ($B2),y / sta $9F8B`; finally `lda #$60 / sta $9F4D` – an `RTS` over its own first byte, so it
+  runs once. `$9F8B` is now **`PROT_SUM`**.
+- **Check** – no instruction reads `$9F8B` by that address. `ELEM_MSG_` ($9CDD, shows the name of palette entry X):
+  if the message number X + $1E is `$2A` – entry 12, **"murek"** – it does `lda HDR_BUF+4,x`; with X = 12 that is
+  $9F7B + 4 + 12 = **$9F8B**; not 0 → `jsr PLANET_CLR`. The name is shown when the editor cursor stands on that
+  palette entry (`ED_MAIN` $AAAC: entry = `CUR_Y` × 3 + `CUR_X` − $11, only when `CUR_X` ≥ $10) – that is the "hit
+  the wall" of the thread; it erases the current planet.
+- **Key** – the boot record's init address **$19DD** (open question since step 2: no code there) is not an init
+  routine: the OS copies it into `DOSINI`, and `DOSINI+1` = **$19** is the value `SERIN` must hold. On the original
+  disk the last serial byte at that moment is $19 *(inferred: the XOR must be 0)*; an SIO patch leaves `SERIN`
+  unchanged, so the planet is erased.
+
+Search method: the address bytes `8B 9F` occur once (the store); immediates `#$9F` / `#$8B` lead elsewhere (a
+message number, a screen offset); the check was found from the effect – the callers of `PLANET_CLR`.
+
+`$0C75` here is the help viewer's variable (set on entry, `bmi` / `bpl` choose which text variant to skip) and
+`$0513` is boot-loader code no one reads – the "za dużo robocików" error of the thread is not explained by this image.
+
+Names: `PROT_KEY`, `PROT_SUM` and the comment at $9CF2 in `util/split.py`; MADS byte-exact. README "Known issue".
+For readers outside the project (asked by the user): [PROTECTION.md](PROTECTION.md) – symptom, root cause, the
+three parts with listings, why emulators trigger it, workaround and a one-byte patch idea (not tested), credits.
+
+Lesson (guide): when a forum or a user reports odd behaviour, search for the addresses they name, and when a value
+is written but never read by its address, look for indexed reads whose base + index reach it.
+
 ## Open questions
 
 
 - Sectors outside the program chain (256, 260-264, 388, 392-396, 520, 524-532, 652, 784, 974, 989): saved boards?
   The singles 256, 388, 520, 652, 784 are 132 sectors apart.
-- Boot record init address $19DD – the program has no code there at boot time; what is it for?
 - Data to classify: `$092E-$09A5` (frame lines of the help screen – which characters), `$B4F9-$B51B` (character
   table in `PALETTE.ASM` – who reads it), `$3155-$31EE` (shape table of `DRAW_ROW`, `NEXT` $31D5),
   `$32B1-$3333` (Robbo `WHAT`), `$3937-$395B` (title page colours), `$391F` (logo bitmap),
   `$4000-$47FF`; help-text preamble `$0C77`: `79 0C 80 01`; tables in `TEXTS.ASM` ($9FA2, $9FAC, $A7F8, $A7FE).
+- "błąd - za dużo robocików!" on copied disks (forum thread, section 21) – reproduce in Altirra; is there a second
+  check (disk menu)? And does `SERIN` end as $19 with this ATR when the SIO patch is off?
 - Palette entry 21 (switch) and the placeholders 22-29: which codes do bats, gun, laser, blaster and teleport use?
 - Robbo's abbreviations to confirm (user): `WHAT` legend "zas" / "wyb" (shot / blown up?), `KIES` (kierunek
   strzału – shot direction?), `SKAC` (skacz – jump?), `WYZA` / `WYOT`, `ZABJ`, `CVBL`.

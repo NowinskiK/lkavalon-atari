@@ -17,6 +17,8 @@ L9CE7
          adc  #$1E                 ; 9CEC
          cmp  #$2A                 ; 9CEE
          bne  L9CFC                ; 9CF0
+
+* copy protection check: X = 12 ("murek") makes HDR_BUF+4,x read PROT_SUM ($9F8B); not 0 -> the planet is cleared ---
          lda  HDR_BUF+4,x          ; 9CF2
          beq  L9CFA                ; 9CF5
          jsr  PLANET_CLR           ; 9CF7
@@ -385,6 +387,9 @@ L9F40
 L9F49
          dec  $B6                  ; 9F49
          bpl  L9F1D                ; 9F4B
+
+* copy protection, run once at the end of the first PLANETS_FILL (then patched to RTS): PROT_SUM = SERIN XOR DOSINI+1, pointers disguised as arithmetic on CUR_ELEM ($000D, $D20D); skipped if $A804 is negative ---
+PROT_KEY
          lda  $A804                ; 9F4D
          bmi  L9F6E                ; 9F50
          lda  CUR_ELEM             ; 9F52
@@ -403,10 +408,10 @@ L9F49
          tay                       ; 9F66
          lda  ($B0),y              ; 9F67
          eor  ($B2),y              ; 9F69
-         sta  $9F8B                ; 9F6B
+         sta  PROT_SUM             ; 9F6B
 L9F6E
          lda  #$60                 ; 9F6E
-         sta  $9F4D                ; 9F70
+         sta  PROT_KEY             ; 9F70
          rts                       ; 9F73
 
 * editor display list $94FE --------------------------------

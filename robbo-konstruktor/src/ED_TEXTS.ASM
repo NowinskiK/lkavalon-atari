@@ -6,10 +6,13 @@
 
 * editor state in the text block ---
 HDR_BUF          dta $1F,$04,$6B,$6F,$6C,$6F,$72,$79  ; 9F7B header of the current planet (bytes 2-6 COLOR0-4, 7 PCOLR3); initial bytes spell "kolory" - not a text
-         dta $00,$00,$00,$08,$0E,$02,$00,$04,$00,$00,$00,$9E,$97,$C9,$97,$8F ; 9F83
-         dta $96,$B5,$99,$26,$96,$3A,$A8,$14,$98,$3E,$9C,$EB,$9B,$26,$96,$06 ; 9F93
-         dta $03,$07,$07,$08,$09,$09,$0A,$0B,$0B,$02,$03,$04,$05,$03,$05,$02 ; 9FA3
-         dta $03,$02,$05,$14,$3C,$64,$8C,$B4          ; 9FB3
+         dta $00,$00,$00,$08,$0E,$02,$00,$04          ; 9F83
+
+* copy protection --------------
+PROT_SUM         dta $00                              ; 9F8B SERIN XOR DOSINI+1 at start-up: 0 on the original disk (SERIN = $19, the boot record init $19DD high byte)
+         dta $00,$00,$9E,$97,$C9,$97,$8F,$96,$B5,$99,$26,$96,$3A,$A8,$14,$98 ; 9F8C
+         dta $3E,$9C,$EB,$9B,$26,$96,$06,$03,$07,$07,$08,$09,$09,$0A,$0B,$0B ; 9F9C
+         dta $02,$03,$04,$05,$03,$05,$02,$03,$02,$05,$14,$3C,$64,$8C,$B4 ; 9FAC
 ;  test planety        strona tytułowa
          dta d' test planety        strona tytu]owa    ' ; 9FBB
 ;  czyść planetę       kolejność planet

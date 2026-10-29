@@ -273,6 +273,10 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
   unfinishable. Compare repeated code patterns (five loaders alike, one different) to spot such damage.
 - Don't trust guessed sizes: the logo was 24 lines, not 28 – the display list told the truth.
 - Words matter: the "treasures" were food (the status-line bar is labelled "JEDZENIE").
+- Copy protections hide their reads: a value written once and never read by its address is read through an
+  indexed access whose base + index reach it (Robbo Konstruktor: `lda HDR_BUF+4,x` with X = 12); pointers can be
+  built by arithmetic so no address appears in the code. Find the check from its effect (who calls the routine
+  that does the damage). User reports and forum threads give the symptoms and often the addresses.
 - A jump into the OS ROM at an undocumented address: disassemble it in each candidate ROM (400/800 OS-B, XL/XE) –
   only one has a routine *start* there (check the instruction before it ends a routine); that names the routine and
   tells which OS the game was written for (Robbo Konstruktor's `$F556` = the XL/XE buzzer). AltirraOS keeps only the
