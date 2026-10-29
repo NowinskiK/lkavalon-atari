@@ -1,4 +1,4 @@
-; TRAINER.ASM - CAMOsoft crack stub and trainer
+; TRAINER.ASM - CAMOsoft crack stub and trainer, over level 2 map rows 0-2
 ; $6200-$646F
 
          org $6200
