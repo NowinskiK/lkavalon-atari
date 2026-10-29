@@ -28,22 +28,23 @@
 ;  Program Robbo Konstruktor został
          dta c'Program Robbo Konstruktor zosta',$8C
 ;  przetestowany w firmie Avalon.
-         dta c'przetestowany w firmie Avalon.'*
+         dta c'przetestowany w firmie Avalon',c'.'*
 ;
          dta $A0
 ;  W tej wersji usunięto
-         dta c'W tej wersji usuni',$05,c'to'*
+         dta c'W tej wersji usuni',$05,c't',c'o'*
 ;  zabezpieczenia objawiające się
          dta c'zabezpieczenia objawiaj',$01,c'ce si',$85
 ;  jak błędy w działaniu programu.
-         dta c'jak b',$0C,$05,c'dy w dzia',$0C,c'aniu programu.'*
+         dta c'jak b',$0C,$05,c'dy w dzia',$0C,c'aniu programu',c'.'*
 ;
          dta $A0
          dta $A0
 ;  Fixed version:
-         dta c'Fixed version:'*
+         dta c'Fixed version',c':'*
 ;  2026 by CAMOsoft
-         dta c'2026 by CAMOsoft'*
+         dta c'2026 by CAMOsof',c't'*
 ;  Kamil Nowinski
          dta c'Kamil Nowinski'
          dta $80,$00               ; end of the last page, as in the original
+:$1DD1-* dta $00                   ; rest of the old text, up to and including $1DD0: zeros, as after the original end

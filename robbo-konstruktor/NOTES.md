@@ -57,6 +57,7 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Patched build without the trap: `nocopyprot.asm`, VS Code task (section 22) |
 | 2026-10-29 | Second protection ("za dużo robocików!"): `PROT_BOOT` checksum of the boot loader, lock at $ACB3; patched (section 23) |
 | 2026-10-29 | Help format corrected (bit 7 = end of line), `util/helppage.py`, `HELPTEXT.ASM` one line per dta; new help page 15 in `nocopyprot.asm` (section 24) |
+| 2026-10-29 | Page 15 fixed after a manual edit (bit 7 only on the last character of a line), padded to $1DD0 (section 25) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -817,6 +818,18 @@ letters → CONTROL codes, last character of each line | $80, empty lines `$A0`,
 as in the original): exactly **250 of 250 bytes** – the page ends at $1DD0 and the help block cannot grow (fixed
 segment layout of the disk file), so there was no byte to spare. `helppage.py bin/nocopyprot.obx 15` shows the text as
 written; pages 0-14 render identically to the original. Disk copy: 176 bytes differ (4 protection bytes + the page).
+
+## 25. Help page 15 – fixing a manual edit (2026-10-29)
+
+The user shortened the new page by hand (the paragraph "Już dawno nie można zamówić niczego wysyłkowo z Avalonu."
+removed) and merged lines such as `c'przetestowany w firmie Avalon',c'.'*` into `c'przetestowany w firmie Avalon.'*`.
+In MADS a `*` after a string sets bit 7 on **every** character of it – for the help viewer each of them ended a line,
+so the page showed one letter per line (`util/helppage.py` showed it; the build had been committed in 014ec50 and
+4fa06a4). Fixed: bit 7 only on the last character of each of those 5 lines; the page is now 195 bytes, so the rest up
+to $1DD0 is filled with `$00` (`:$1DD1-* dta $00`), the same zeros that follow the original end. Checked: page 15
+renders as written, pages 0-14 identical to the original, `main.asm` byte-exact, `bin/build.atr` rewritten.
+
+Lesson: after editing a help page, run `py -3 util/helppage.py bin/nocopyprot.obx 15` – a wrong `*` still assembles.
 
 ## Open questions
 
