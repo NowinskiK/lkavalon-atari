@@ -175,7 +175,7 @@ L2685
          sta  LM                   ; 2685
          ldx  NABO                 ; 2687
          bne  L268F                ; 2689
-         inc  $2502                ; 268B
+         inc  FACET                ; 268B
          rts                       ; 268E
 L268F
          pha                       ; 268F
@@ -203,9 +203,9 @@ L26AA
          asl                       ; 26AB
          tax                       ; 26AC
          lda  KIET,x               ; 26AD
-         sta  $26BA                ; 26B0
+         sta  SJMP+1               ; 26B0
          lda  KIET+1,x             ; 26B3
-         sta  $26BB                ; 26B6
+         sta  SJMP+2               ; 26B6
 
 * JSR to the bullet start for the direction (operand from KIET, Robbo SJMP) ---
 SJMP
@@ -230,7 +230,7 @@ L26DF
          lda  RANDOM               ; 26DF
          and  #$03                 ; 26E2
          tax                       ; 26E4
-         lda  $296B,x              ; 26E5
+         lda  TMVS,x               ; 26E5
          bpl  L26F1                ; 26E8
 L26EA
          lda  LM                   ; 26EA
@@ -303,9 +303,9 @@ MFEX
          adc  #$B6                 ; 2757
          sta  SCRA+1               ; 2759
          lda  SCRA                 ; 275B
-         sta  $2491                ; 275D
+         sta  FADR_L               ; 275D
          lda  SCRA+1               ; 2760
-         sta  $2495                ; 2762
+         sta  FADR_H               ; 2762
          lda  X                    ; 2765
          sta  FX                   ; 2767
          lda  Y                    ; 2769
@@ -498,7 +498,7 @@ L289C
          lda  #$05                 ; 28B6
          jsr  SOUND_               ; 28B8
          jmp  FGET                 ; 28BB
-         dta $09,$0A,$07,$08                          ; 28BE
+TBEZ_GUN         dta $09,$0A,$07,$08                  ; 28BE gun for each direction (Robbo: the bytes before TBEZ, read as TBEZ-4,x)
 
 * test: sliding box ----------------------------------------
 TBEZ
@@ -512,7 +512,7 @@ L28CF
          inx                       ; 28CF
          lsr                       ; 28D0
          bcs  L28CF                ; 28D1
-         lda  $28BE,x              ; 28D3
+         lda  TBEZ_GUN,x           ; 28D3
          jsr  PUT_                 ; 28D6
          lda  #$08                 ; 28D9
          jsr  SOUND_               ; 28DB

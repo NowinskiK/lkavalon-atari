@@ -53,6 +53,7 @@ class Asm:
             t = t.strip()
             if t.startswith('$'): x = int(t[1:], 16)
             elif t.isdigit(): x = int(t)
+            elif t == '*': x = s.pc                     # current address (NAME equ *+1)
             elif t.upper() in s.sym: x = s.sym[t.upper()]
             elif strict: raise ValueError('undefined label %s' % t)
             else: return None

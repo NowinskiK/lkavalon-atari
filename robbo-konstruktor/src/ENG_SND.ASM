@@ -9,34 +9,34 @@ SOUND_
          tax                       ; 3334
          bmi  PSST                 ; 3335
          lda  #$00                 ; 3337
-         sta  $FD                  ; 3339
+         sta  _SCRA+1              ; 3339
          txa                       ; 333B
          asl                       ; 333C
          asl                       ; 333D
          asl                       ; 333E
-         rol  $FD                  ; 333F
+         rol  _SCRA+1              ; 333F
          asl                       ; 3341
-         rol  $FD                  ; 3342
+         rol  _SCRA+1              ; 3342
          asl                       ; 3344
-         rol  $FD                  ; 3345
+         rol  _SCRA+1              ; 3345
          adc  #$C4                 ; 3347
-         sta  $FC                  ; 3349
-         lda  $FD                  ; 334B
+         sta  _SCRA                ; 3349
+         lda  _SCRA+1              ; 334B
          adc  #$33                 ; 334D
-         sta  $FD                  ; 334F
+         sta  _SCRA+1              ; 334F
          cpx  #$03                 ; 3351
          bcc  L3357                ; 3353
          ldx  #$03                 ; 3355
 L3357
          lda  #$10                 ; 3357
-         sta  $F0,x                ; 3359
+         sta  _PNTR,x              ; 3359
          txa                       ; 335B
          asl                       ; 335C
          tax                       ; 335D
-         lda  $FC                  ; 335E
-         sta  $F4,x                ; 3360
-         lda  $FD                  ; 3362
-         sta  $F5,x                ; 3364
+         lda  _SCRA                ; 335E
+         sta  _ADDR,x              ; 3360
+         lda  _SCRA+1              ; 3362
+         sta  _ADDR+1,x            ; 3364
          rts                       ; 3366
 
 * reset the sound: SKCTL = 3, all voices off (Robbo PSST) ---
@@ -48,7 +48,7 @@ PSST
 
 * clear the voice pointers and registers (loop of PSST, Robbo RESE) ---
 RESE
-         sta  $F0,x                ; 3370
+         sta  _PNTR,x              ; 3370
          sta  AUDF1,x              ; 3372
          dex                       ; 3375
          bpl  RESE                 ; 3376
@@ -66,7 +66,7 @@ L3380
 
 * sound VBI: for each of the 4 voices play the effect (SOPL) or silence it (Robbo SO1) ---
 SO1
-         lda  $F0,x                ; 3384
+         lda  _PNTR,x              ; 3384
          beq  SO2                  ; 3386
          jsr  SOPL                 ; 3388
          jmp  SO3                  ; 338B
@@ -88,26 +88,26 @@ SO3
 SOPL
          tya                       ; 339A
          pha                       ; 339B
-         dta $B9,a($00F4)          ; 339C lda ,y
-         sta  $FC                  ; 339F
-         dta $B9,a($00F5)          ; 33A1 lda ,y
-         sta  $FD                  ; 33A4
-         ldy  $F0,x                ; 33A6
+         dta $B9,a(_ADDR)          ; 339C lda ,y
+         sta  _SCRA                ; 339F
+         dta $B9,a(_ADDR+1)        ; 33A1 lda ,y
+         sta  _SCRA+1              ; 33A4
+         ldy  _PNTR,x              ; 33A6
          dey                       ; 33A8
-         sty  $F0,x                ; 33A9
+         sty  _PNTR,x              ; 33A9
          tya                       ; 33AB
          asl                       ; 33AC
          tay                       ; 33AD
-         lda  ($FC),y              ; 33AE
-         sta  $FE                  ; 33B0
+         lda  (_SCRA),y            ; 33AE
+         sta  _HLP                 ; 33B0
          iny                       ; 33B2
-         lda  ($FC),y              ; 33B3
-         sta  $FF                  ; 33B5
+         lda  (_SCRA),y            ; 33B3
+         sta  _HLP+1               ; 33B5
          pla                       ; 33B7
          tay                       ; 33B8
-         lda  $FF                  ; 33B9
+         lda  _HLP+1               ; 33B9
          sta  AUDF1,y              ; 33BB
-         lda  $FE                  ; 33BE
+         lda  _HLP                 ; 33BE
          sta  AUDC1,y              ; 33C0
          rts                       ; 33C3
          dta $00,$00,$00,$00,$00,$00,$00,$00,$81,$22,$81,$22,$82,$22,$83,$22 ; 33C4

@@ -32,17 +32,17 @@ BOOT_INIT
 
 * boot: next byte of the file ------------------------------
 BOOT_GETBYTE
-         ldy  $48                  ; 0534
-         cpy  $47                  ; 0536
+         ldy  BOOT_BPOS            ; 0534
+         cpy  BOOT_BCNT            ; 0536
          bcc  L0543                ; 0538
          jsr  BOOT_NEXTSEC         ; 053A
          bmi  L0525                ; 053D
          ldy  #$00                 ; 053F
          ldx  #$00                 ; 0541
 L0543
-         lda  $0400,y              ; 0543
+         lda  SEC_BUF,y            ; 0543
          iny                       ; 0546
-         sty  $48                  ; 0547
+         sty  BOOT_BPOS            ; 0547
          ldy  #$01                 ; 0549
          rts                       ; 054B
          dta $AD,$EA,$02,$29,$08,$A9,$00,$85,$41,$AA,$9D,$00,$04,$E8,$D0,$FA ; 054C
@@ -60,32 +60,32 @@ L05B0
          lda  #$4B                 ; 05B0
          sta  INITAD               ; 05B2
          lda  #$05                 ; 05B5
-         sta  $02E3                ; 05B7
+         sta  INITAD+1             ; 05B7
          jsr  BOOT_GETBYTE         ; 05BA
-         sta  $43                  ; 05BD
+         sta  BOOT_ADR             ; 05BD
          jsr  BOOT_GETBYTE         ; 05BF
-         sta  $44                  ; 05C2
-         and  $43                  ; 05C4
+         sta  BOOT_ADR+1           ; 05C2
+         and  BOOT_ADR             ; 05C4
          cmp  #$FF                 ; 05C6
          beq  L05B0                ; 05C8
          jsr  BOOT_GETBYTE         ; 05CA
-         sta  $45                  ; 05CD
+         sta  BOOT_END             ; 05CD
          jsr  BOOT_GETBYTE         ; 05CF
-         sta  $46                  ; 05D2
+         sta  BOOT_END+1           ; 05D2
          ldx  #$00                 ; 05D4
          beq  L05DE                ; 05D6
 L05D8
-         inc  $43                  ; 05D8
+         inc  BOOT_ADR             ; 05D8
          bne  L05DE                ; 05DA
-         inc  $44                  ; 05DC
+         inc  BOOT_ADR+1           ; 05DC
 L05DE
          jsr  BOOT_GETBYTE         ; 05DE
-         sta  ($43,x)              ; 05E1
-         lda  $44                  ; 05E3
-         cmp  $46                  ; 05E5
+         sta  (BOOT_ADR,x)         ; 05E1
+         lda  BOOT_ADR+1           ; 05E3
+         cmp  BOOT_END+1           ; 05E5
          bne  L05D8                ; 05E7
-         lda  $43                  ; 05E9
-         cmp  $45                  ; 05EB
+         lda  BOOT_ADR             ; 05E9
+         cmp  BOOT_END             ; 05EB
          bne  L05D8                ; 05ED
          jsr  BOOT_INIT            ; 05EF
          jmp  L05B0                ; 05F2
@@ -118,12 +118,12 @@ L0616
          bmi  L0642                ; 0627
          ldx  DBYTLO               ; 0629
          dex                       ; 062C
-         lda  $0400,x              ; 062D
-         sta  $47                  ; 0630
-         sta  $48                  ; 0632
-         lda  $03FF,x              ; 0634
+         lda  SEC_BUF,x            ; 062D
+         sta  BOOT_BCNT            ; 0630
+         sta  BOOT_BPOS            ; 0632
+         lda  SEC_LINKL,x          ; 0634
          sta  DAUX1                ; 0637
-         lda  $03FE,x              ; 063A
+         lda  SEC_LINKH,x          ; 063A
          and  #$03                 ; 063D
          sta  DAUX2                ; 063F
 L0642

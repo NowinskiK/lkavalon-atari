@@ -266,6 +266,15 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
 - When the matching fails because the related code was changed, compare **dispatch tables** entry by entry with the
   original ones (handler of object code n ↔ original handler n) – Robbo Konstruktor's object table named 27 handlers
   this way; then read the reworked routines side by side with the original source.
+- Self-modified operands: give the patched instruction a label and write the operand as `LABEL+1` / `LABEL+2`
+  (`sta CALL+1`), or define a variable in place with `NAME equ *+1` above the instruction – never a bare address
+  or an `equ $addr` far away. A JSR whose target is patched hides code: read what the patches store
+  (`lda #$D0 / ldx #$0B` → $0BD0) and add those addresses as entry points (Robbo Konstruktor's help scroll).
+- Check what an I/O routine **writes**, not only what it reads: data written to disk can be code that runs elsewhere
+  (Robbo Konstruktor writes its own boot loader for the saved game – it looked like dead bytes).
+- Step 7 inventory: list every bare address operand by kind (OS / zero page / outside the image / data in a block /
+  inside an instruction) and per routine, then name module by module, rebuilding after each batch. Zero-page bytes
+  that every routine uses differently get generic names (`PTR1`, `TMP1`) with the main uses in the comment.
 
 ### 6.3 Data and the crack
 - A crack can damage the game: the trainer was loaded over level 2's map rows, and in the level 3 loader three

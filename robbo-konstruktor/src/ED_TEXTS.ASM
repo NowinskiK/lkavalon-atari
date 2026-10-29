@@ -6,13 +6,19 @@
 
 * editor state in the text block ---
 HDR_BUF          dta $1F,$04,$6B,$6F,$6C,$6F,$72,$79  ; 9F7B header of the current planet (bytes 2-6 COLOR0-4, 7 PCOLR3); initial bytes spell "kolory" - not a text
-         dta $00,$00,$00,$08,$0E,$02,$00,$04          ; 9F83
+
+* editor texts and tables ------
+COLS_DEF         dta $00,$00,$00,$08,$0E,$02,$00,$04  ; 9F83 header of a new planet: wall type, screws, COLOR0-4, PCOLR3
 
 * copy protection --------------
 PROT_SUM         dta $00                              ; 9F8B SERIN XOR DOSINI+1 at start-up: 0 on the original disk (SERIN = $19, the boot record init $19DD high byte)
-         dta $00,$00,$9E,$97,$C9,$97,$8F,$96,$B5,$99,$26,$96,$3A,$A8,$14,$98 ; 9F8C
-         dta $3E,$9C,$EB,$9B,$26,$96,$06,$03,$07,$07,$08,$09,$09,$0A,$0B,$0B ; 9F9C
-         dta $02,$03,$04,$05,$03,$05,$02,$03,$02,$05,$14,$3C,$64,$8C,$B4 ; 9FAC
+COL_REG          dta $00                              ; 9F8C zmiana kolorow: colour chosen, 0-5 = COLOR0-4, PCOLR3
+COL_EDIT         dta $00                              ; 9F8D zmiana kolorow: 0 = choosing the colour, else changing it
+MENU_JUMPS       dta $9E,$97,$C9,$97,$8F,$96,$B5,$99,$26,$96,$3A,$A8,$14,$98,$3E,$9C,$EB,$9B,$26,$96 ; 9F8E the 10 menu functions, basic page then additional page
+DIGITS_T         dta $06,$03,$07,$07,$08,$09,$09,$0A,$0B,$0B ; 9FA2 digits 0-9 of the panel: character of the upper half
+DIGITS_B         dta $02,$03,$04,$05,$03,$05,$02,$03,$02,$05 ; 9FAC digits 0-9 of the panel: character of the lower half
+MENU_ROWS        dta $14,$3C,$64,$8C,$B4              ; 9FB6 offset of each menu row in PANEL_TXT
+MENU_TXT                                              ; 9FBB main menu: rows of 20 + 20 characters (MENU_TXT+130 = "dyskowe")
 ;  test planety        strona tytułowa
          dta d' test planety        strona tytu]owa    ' ; 9FBB
 ;  czyść planetę       kolejność planet
@@ -23,40 +29,46 @@ PROT_SUM         dta $00                              ; 9F8B SERIN XOR DOSINI+1 
          dta d' operacje dyskowe    zapisz Robbo       ' ; A033
 ;  funkcje dodatkowe   funcje podstawowe
          dta d' funkcje dodatkowe   funcje podstawowe  ' ; A05B
+NUM_TXT                                               ; A083 planet number line: the two numbers at +11 and +31
 ;        ·· 00               ·· 00
          dta d'       ',$45,$46,d' 00               ',$47,$48,d' 00        ' ; A083
+TITLE_TXT                                             ; A0AB title column: "Robbo Konstruktor", "(c)1990 by Avalon"
 ;                      Robbo Konstruktor
          dta d'                     Robbo Konstruktor  ' ; A0AB
-;   /1990 by Avalon           planety: ·-z
-         dta d'  /1990 by Avalon           planety: ',$5B,d'-z' ; A0D3
-; ła ·-dobra ·-pusta  K: 01  -------------
-         dta d']a ',$5A,d'-dobra ',$59,d'-pusta  ',d'K:'*,d' 01  -------------' ; A0FB
-; ------------------- R: --  -------------
-         dta d'------------------- ',d'R:'*,d' --  -------------' ; A123
-; ------------------- funkcje:   zawartość
-         dta d'------------------- funkcje:   zawarto{[' ; A14B
-;  dysku:   `` zestaw  menu      ---------
-         dta d' dysku:   `` zestaw  menu      ---------' ; A173
-; -------   `` pusty   wczytaj
-         dta d'-------   `` pusty   wczytaj            ' ; A19B
-;                      zapisz
-         dta d'                     zapisz             ' ; A1C3
-;           ·· zestaw  skasuj     01 02 03
-         dta d'          ',$45,$46,d' zestaw  skasuj     01 02 03' ; A1EB
-;  04 05    ·· pełny  Włoż dyskietkę  na k
-         dta d' 04 05    ',$47,$48,d' pe]ny  W]o| dyskietk\  na k' ; A213
-; tórej chcesz zapisaćgotowe Robbo. Uwaga:
-         dta d't_rej chcesz zapisa[gotowe Robbo. ',d'Uwaga:'* ; A23B
-;  zawartość dyskietkizostanie skasowana p
-         dta d' zawarto{[ dyskietkizostanie skasowana p' ; A263
-; rzed zapisaniem gry! ·· ustaw taśmę w po
-         dta d'rzed zapisaniem gry! ',$45,$46,d' ustaw ta{m\ w po' ; A28B
-; rządanym miejscu ··  ··       i uruchom
-         dta d'rz@danym miejscu ',$49,$4A,d'  ',$47,$48,d'       i uruchom ' ; A2B3
-; magnetofon       ··
-         dta d'magnetofon       ',$4B,$4C,d'                     ' ; A2DB
+;   /1990 by Avalon
+         dta d'  /1990 by Avalon   '                  ; A0D3
+LEGEND_TXT                                            ; A0E7 planet legend, 3 lines
+;         planety: ·-zła ·-dobra ·-pusta
+         dta d'        planety: ',$5B,d'-z]a ',$5A,d'-dobra ',$59,d'-pusta  ' ; A0E7
+; K: 01  --------------------------------
+         dta d'K:'*,d' 01  -------------------------------- ' ; A10F
+; R: --  --------------------------------
+         dta d'R:'*,d' --  -------------------------------- ' ; A137
+DISK_TXT                                              ; A15F disk panel, 5 lines
+; funkcje:   zawartość dysku:   `` zestaw
+         dta d'funkcje:   zawarto{[ dysku:   `` zestaw ' ; A15F
+;  menu      ----------------   `` pusty
+         dta d' menu      ----------------   `` pusty  ' ; A187
+;  wczytaj
+         dta d' wczytaj                                ' ; A1AF
+;  zapisz                       ·· zestaw
+         dta d' zapisz                       ',$45,$46,d' zestaw ' ; A1D7
+;  skasuj     01 02 03 04 05    ·· pełny
+         dta d' skasuj     01 02 03 04 05    ',$47,$48,d' pe]ny  ' ; A1FF
+SAVE_DISK                                             ; A227 hints for "zapisz Robbo", disk
+; Włoż dyskietkę  na której chcesz zapisać
+         dta d'W]o| dyskietk\  na kt_rej chcesz zapisa[' ; A227
+; gotowe Robbo. Uwaga: zawartość dyskietki
+         dta d'gotowe Robbo. ',d'Uwaga:'*,d' zawarto{[ dyskietki' ; A24F
+; zostanie skasowana przed zapisaniem gry!
+         dta d'zostanie skasowana przed zapisaniem gry!' ; A277
+SAVE_TAPE                                             ; A29F hints for "zapisz Robbo", tape
+;  ·· ustaw taśmę w porządanym miejscu ··
+         dta d' ',$45,$46,d' ustaw ta{m\ w porz@danym miejscu ',$49,$4A,d' ' ; A29F
+;  ··       i uruchom magnetofon       ··
+         dta d' ',$47,$48,d'       i uruchom magnetofon       ',$4B,$4C,d' ' ; A2C7
 ; 
-         dta d'                    '                  ; A303
+         dta d'                                        ' ; A2EF
 CUR_MSG          dta $FF                              ; A317 number of the message in the status line
 ; klawisz HELP-instrukcja
          dta c'klawisz HELP-instrukcja',$00 ; A318
@@ -90,6 +102,8 @@ CUR_MSG          dta $FF                              ; A317 number of the messa
          dta c'w',$0C,$0F,$1A,c' dyskietk',$05,c' z Robbo Konstruktorem',$00 ; A4C3
 ; wybierz funkcję i numer zestawu planet
          dta c'wybierz funkcj',$05,c' i numer zestawu planet',$00 ; A4E8
+ASK_WORD         equ *                                ; A50F " wczytac" / " zapisac" / "skasowac" from DEV_WORDS
+ASK_NUM          equ *+18                             ; A521 number of the set, ATASCII
 ;  wczytać zestaw  01?   tak  nie
          dta c' wczyta',$03,c' zestaw  01?   tak  nie',$00 ; A50F
 ; szukanie początku zestawu planet
@@ -98,6 +112,7 @@ CUR_MSG          dta $FF                              ; A317 number of the messa
          dta c'kolejno',$13,$03,c' planet:   ustalona  normalna',$00 ; A550
 ;  wszystkie planety są puste! 
          dta c' wszystkie planety s'*,$81,c' puste! '*,$00 ; A577
+MSG_LIST         equ *                                ; A595 message filled by the code
 ; ?????????????????????????????
          dta c'?????????????????????????????',$00 ; A595
 ;  operacja przerwana! 
@@ -110,6 +125,7 @@ CUR_MSG          dta $FF                              ; A317 number of the messa
          dta c' to nie jest zestaw planet! '*,$00 ; A60B
 ; to jest dyskietka z Robbo Konstruktorem!
          dta c'to jest dyskietka z Robbo Konstruktorem!',$00 ; A628
+ERR_DIGITS       equ *+13                             ; A65E error number - 100, two digits
 ;  błąd numer 100! 
          dta c' b'*,$8C,$81,c'd numer 100! '*,$00 ; A651
 ; wczytywanie
@@ -176,8 +192,11 @@ CUR_MSG          dta $FF                              ; A317 number of the messa
          dta c'teleportacja ' ; A7C9
 CUR_ELEM         dta $06                              ; A7D6 palette entry whose name is shown
          dta $00                                      ; A7D7
+DEV_WORDS                                             ; A7D8 tape / disk words, 8 characters each (DEV_WORDS+24 = " kasetowe")
 ;  wczytać zapisaćskasowaćkasetowe
          dta c' wczyta',$03,c' zapisa',$03,c'skasowa',$03,c'kasetowe' ; A7D8
-         dta $80,$8F,$AD,$FE,$FF,$00,$15,$16,$17,$18,$19,$1A ; A7F8
+ERR_CODES        dta $80,$8F,$AD,$FE,$FF,$00          ; A7F8 tape / disk results with a message of their own; 0 ends
+ERR_MSGS         dta $15,$16,$17,$18,$19,$1A          ; A7FE their messages; the last: "blad numer ..."
+ROBBO_TXT                                             ; A804 "Robbo"
 ; Robbo
          dta c'Robbo' ; A804

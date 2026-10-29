@@ -12,7 +12,7 @@ TELE_IN
          lda  TELE_CODE            ; 28F1
          sta  TELE                 ; 28F4
          jmp  PUT_                 ; 28F6
-         dta $00,$0F,$11,$20                          ; 28F9
+TELP_OFS         dta $00,$0F,$11,$20                  ; 28F9 teleport exit: cell offset for each direction
 
 * teleport $30-$38 (Robbo: "wyj z telepor"): if it is TELE, Robbo comes out next to it ---
 TELP
@@ -32,7 +32,7 @@ L2905
 L2914
          ldx  #$03                 ; 2914
 L2916
-         ldy  $28F9,x              ; 2916
+         ldy  TELP_OFS,x           ; 2916
          lda  (ADDR),y             ; 2919
          cmp  #$20                 ; 291B
          beq  L2923                ; 291D
@@ -61,7 +61,7 @@ L2932
 WYCP
          tya                       ; 293B
          pha                       ; 293C
-         lda  $296B,y              ; 293D
+         lda  TMVS,y               ; 293D
          sta  LM                   ; 2940
          jsr  FD_                  ; 2942
          pla                       ; 2945
@@ -88,14 +88,14 @@ WYSE
          ldx  #$01                 ; 2964
          stx  TELE                 ; 2966
          jmp  PUT_                 ; 2968
-         dta $0D,$0B,$07,$0E,$0E,$07,$0B,$0D,$07,$0E,$0D,$0B,$0B,$0D,$0E,$07 ; 296B
+TMVS             dta $0D,$0B,$07,$0E,$0E,$07,$0B,$0D,$07,$0E,$0D,$0B,$0B,$0D,$0E,$07 ; 296B directions to try when leaving a teleport (Robbo TMVS)
 
 * surprise box: random object (RND) ------------------------
 NIES
          lda  RANDOM               ; 297B
          and  #$1F                 ; 297E
          tax                       ; 2980
-         lda  $29D3,x              ; 2981
+         lda  NSPS,x               ; 2981
          beq  L2989                ; 2984
          jmp  PUT_                 ; 2986
 L2989
@@ -143,8 +143,7 @@ L29BF
          jsr  ASCO                 ; 29CB
          lda  #$0D                 ; 29CE
          jmp  SOUND_               ; 29D0
-         dta $00,$00,$3F,$3F,$21,$21,$21,$21,$3D,$3D,$3D,$24,$24,$24,$24,$24 ; 29D3
-         dta $26,$26,$40,$2B,$2B,$2B,$2B,$2B,$63,$63,$15,$2C,$2E,$2D,$2F,$23 ; 29E3
+NSPS             dta $00,$00,$3F,$3F,$21,$21,$21,$21,$3D,$3D,$3D,$24,$24,$24,$24,$24,$26,$26,$40,$2B,$2B,$2B,$2B,$2B,$63,$63,$15,$2C,$2E,$2D,$2F,$23 ; 29D3 what a surprise turns into (Robbo NSPS)
 
 * sliding box (bezwladna skrzynia) moving left until blocked (Robbo: "bezw skrzynie") ---
 BEZL
@@ -211,20 +210,20 @@ L2A46
 L2A48
          clc                       ; 2A48
          lda  X                    ; 2A49
-         adc  $2A9C,x              ; 2A4B
+         adc  WBPX,x               ; 2A4B
          cmp  #$10                 ; 2A4E
          bcs  L2A88                ; 2A50
          lda  Y                    ; 2A52
-         adc  $2AA5,x              ; 2A54
+         adc  WBPY,x               ; 2A54
          cmp  #$1F                 ; 2A57
          bcs  L2A88                ; 2A59
-         ldy  $2A93,x              ; 2A5B
+         ldy  WBPO,x               ; 2A5B
          lda  (ADDR),y             ; 2A5E
          and  #$7F                 ; 2A60
          tay                       ; 2A62
          cpx  #$04                 ; 2A63
          beq  BOM0                 ; 2A65
-         lda  $32B1,y              ; 2A67
+         lda  WHAT,y               ; 2A67
          and  #$02                 ; 2A6A
          beq  L2A88                ; 2A6C
 
@@ -232,7 +231,7 @@ L2A48
 BOM0
          tya                       ; 2A6E
          pha                       ; 2A6F
-         lda  $2A93,x              ; 2A70
+         lda  WBPO,x               ; 2A70
          tay                       ; 2A73
          pla                       ; 2A74
          cmp  #$40                 ; 2A75
@@ -243,7 +242,7 @@ L2A7D
          clc                       ; 2A7D
          lda  RANDOM               ; 2A7E
          and  #$01                 ; 2A81
-         adc  $2AAE,x              ; 2A83
+         adc  WBPF,x               ; 2A83
 L2A86
          sta  (ADDR),y             ; 2A86
 L2A88
@@ -255,9 +254,10 @@ L2A88
 WYBO
          lda  #$60                 ; 2A8E
          jmp  PUT_                 ; 2A90
-         dta $00,$01,$02,$10,$11,$12,$20,$21,$22,$FF,$00,$01,$FF,$00,$01,$FF ; 2A93
-         dta $00,$01,$FF,$FF,$FF,$00,$00,$00,$01,$01,$01,$61,$62,$61,$62,$63 ; 2AA3
-         dta $62,$61,$62,$61                          ; 2AB3
+WBPO             dta $00,$01,$02,$10,$11,$12,$20,$21,$22 ; 2A93 bomb: offsets of the 3 x 3 cells (Robbo WBPO)
+WBPX             dta $FF,$00,$01,$FF,$00,$01,$FF,$00,$01 ; 2A9C bomb: X step of each cell, for the board edge
+WBPY             dta $FF,$FF,$FF,$00,$00,$00,$01,$01,$01 ; 2AA5 bomb: Y step of each cell, for the board edge
+WBPF             dta $61,$62,$61,$62,$63,$62,$61,$62,$61 ; 2AAE bomb: explosion phase put into each cell (Robbo WBPO+9)
 
 * put an explosion or empty space (Robbo: "put wyb|spc") ---
 PUTW
@@ -732,12 +732,12 @@ L2D67
          sbc  #$2C                 ; 2D6B
          asl                       ; 2D6D
          tax                       ; 2D6E
-         lda  $2D79,x              ; 2D6F
+         lda  RDZP+1,x             ; 2D6F
          pha                       ; 2D72
-         lda  $2D78,x              ; 2D73
+         lda  RDZP,x               ; 2D73
          pha                       ; 2D76
          rts                       ; 2D77
-         dta $46,$2B,$92,$2B,$00,$2B,$6C,$2B          ; 2D78
+RDZP             dta $46,$2B,$92,$2B,$00,$2B,$6C,$2B  ; 2D78 eyes: routines for each direction, minus 1 for RTS (Robbo RDZP)
 
 * moving small gun, left (Robbo: "mov dziala") -------------
 MODL
@@ -1008,7 +1008,7 @@ L2EFC
          tax                       ; 2F01
          lda  LM                   ; 2F02
          pha                       ; 2F04
-         lda  $296B,x              ; 2F05
+         lda  TMVS,x               ; 2F05
          sta  LM                   ; 2F08
          jsr  FD_                  ; 2F0A
          pla                       ; 2F0D
@@ -1032,15 +1032,15 @@ L2F1E
          beq  L2F1D                ; 2F21
          lda  #$0D                 ; 2F23
          jsr  SOUND_               ; 2F25
-         lda  $02C3                ; 2F28
+         lda  PCOLR3               ; 2F28
          pha                       ; 2F2B
          lda  #$0F                 ; 2F2C
-         sta  $02C3                ; 2F2E
+         sta  PCOLR3               ; 2F2E
          jsr  HALT                 ; 2F31
          jsr  HALT                 ; 2F34
          jsr  HALT                 ; 2F37
          pla                       ; 2F3A
-         sta  $02C3                ; 2F3B
+         sta  PCOLR3               ; 2F3B
          lda  #$15                 ; 2F3E
          jmp  PUT_                 ; 2F40
 

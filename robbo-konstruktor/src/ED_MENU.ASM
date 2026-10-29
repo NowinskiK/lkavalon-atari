@@ -22,11 +22,14 @@ ED_DLIST
 HELP_KEY
          jmp  HELP_KEY_            ; 94F5
 DISK_SLOTS       dta $00                              ; 94F8 directory result: used slots, negative = no disk
-         dta $01,$02,$04,$08,$10,$10,$70,$42,$78,$BD,$02,$42,$78,$BD,$02,$02 ; 94F9
-         dta $42,$78,$BD,$02,$02,$42,$78,$BD,$02,$02,$42,$78,$BD,$02,$02,$42 ; 9509
-         dta $78,$BD,$02,$02,$42,$78,$BD,$02,$02,$20,$4F,$50,$BD,$0F,$0F,$42 ; 9519
-         dta $00,$BC,$02,$02,$02,$02,$4F,$00,$BD,$0F,$0F,$0F,$0F,$42,$C8,$BC ; 9529
-         dta $4F,$00,$BD,$0F,$0F,$41,$FE,$94          ; 9539
+
+* menu functions ---------------
+SET_BIT          dta $01,$02,$04,$08,$10              ; 94F9 bit of sets 1-5 in DISK_SLOTS
+         dta $10,$70,$42,$78,$BD,$02,$42,$78,$BD,$02,$02,$42,$78,$BD,$02,$02 ; 94FE
+         dta $42,$78,$BD,$02,$02,$42,$78,$BD,$02,$02,$42,$78,$BD,$02,$02,$42 ; 950E
+         dta $78,$BD,$02,$02,$20,$4F,$50,$BD,$0F,$0F,$42,$00,$BC,$02,$02,$02 ; 951E
+         dta $02,$4F,$00,$BD,$0F,$0F,$0F,$0F,$42,$C8,$BC,$4F,$00,$BD,$0F,$0F ; 952E
+         dta $41,$FE,$94                              ; 953E
 
 * one editor frame: colours, input, run the current command ---
 ED_FRAME_
@@ -39,7 +42,8 @@ L954D
          lda  ED_FLAGS             ; 954D
          bmi  L9570                ; 954F
          jsr  PANEL                ; 9551
-         jsr  $9554                ; 9554
+MENU_CALL
+         jsr  MENU_CALL            ; 9554
          php                       ; 9557
          lda  #$FF                 ; 9558
          cmp  JOY                  ; 955A
@@ -51,16 +55,16 @@ L9562
          rts                       ; 9565
 L9566
          lda  #$82                 ; 9566
-         sta  $9555                ; 9568
+         sta  MENU_CALL+1          ; 9568
          lda  #$95                 ; 956B
-         sta  $9556                ; 956D
+         sta  MENU_CALL+2          ; 956D
 L9570
          rts                       ; 9570
 
 * HELP key: sound off, show the help (page HELP_PAGE) ------
 HELP_KEY_
          lda  #$00                 ; 9571
-         sta  $962E                ; 9573
+         sta  BEEP                 ; 9573
          sta  AUDF1                ; 9576
          sta  AUDC1                ; 9579
          lda  DISK_SLOTS           ; 957C
@@ -73,12 +77,12 @@ MENU
          lda  MENU_POS             ; 9586
          and  #$7F                 ; 9588
          tax                       ; 958A
-         ldy  $9FB6,x              ; 958B
+         ldy  MENU_ROWS,x          ; 958B
          ldx  #$14                 ; 958E
 L9590
-         lda  $BC00,y              ; 9590
+         lda  PANEL_TXT,y          ; 9590
          ora  #$80                 ; 9593
-         sta  $BC00,y              ; 9595
+         sta  PANEL_TXT,y          ; 9595
          iny                       ; 9598
          dex                       ; 9599
          bne  L9590                ; 959A
@@ -92,10 +96,10 @@ L9590
          adc  #$09                 ; 95AB
 L95AD
          tax                       ; 95AD
-         lda  $9F8E,x              ; 95AE
-         sta  $9555                ; 95B1
-         lda  $9F8F,x              ; 95B4
-         sta  $9556                ; 95B7
+         lda  MENU_JUMPS,x         ; 95AE
+         sta  MENU_CALL+1          ; 95B1
+         lda  MENU_JUMPS+1,x       ; 95B4
+         sta  MENU_CALL+2          ; 95B7
          txa                       ; 95BA
          lsr                       ; 95BB
          adc  #$03                 ; 95BC
@@ -110,7 +114,7 @@ L95C3
          rts                       ; 95CE
 L95CF
          jsr  CLICK                ; 95CF
-         jmp  L961D                ; 95D2
+         jmp  MENU_LEAVE           ; 95D2
 
 * main menu: move the selection ----------------------------
 MENU_MOVE
@@ -162,7 +166,7 @@ L9614
 L961B
          clc                       ; 961B
          rts                       ; 961C
-L961D
+MENU_LEAVE
          jsr  PANEL                ; 961D
          lda  #$80                 ; 9620
          sta  ED_FLAGS             ; 9622
@@ -176,28 +180,30 @@ M_PAGE
          sta  MENU_POS             ; 962A
          sec                       ; 962C
          rts                       ; 962D
-         dta $00                                      ; 962E
-L962F
+BEEP             dta $00                              ; 962E error tone: volume, counted down by DISK_WAIT
+
+* show message A with the error tone, then wait for fire (DISK_WAIT runs as the next command) ---
+MSG_WAIT
          jsr  MESSAGE              ; 962F
          lda  #$0A                 ; 9632
-         sta  $962E                ; 9634
+         sta  BEEP                 ; 9634
          lda  #$43                 ; 9637
-         sta  $9555                ; 9639
+         sta  MENU_CALL+1          ; 9639
          lda  #$96                 ; 963C
-         sta  $9556                ; 963E
+         sta  MENU_CALL+2          ; 963E
          clc                       ; 9641
          rts                       ; 9642
 
 * disk operations: wait state ------------------------------
 DISK_WAIT
-         lda  $962E                ; 9643
+         lda  BEEP                 ; 9643
          ora  #$C0                 ; 9646
          sta  AUDC1                ; 9648
          lda  #$55                 ; 964B
          sta  AUDF1                ; 964D
-         lda  $962E                ; 9650
+         lda  BEEP                 ; 9650
          beq  L9658                ; 9653
-         dec  $962E                ; 9655
+         dec  BEEP                 ; 9655
 L9658
          jsr  INPUT_CLR            ; 9658
          beq  L966B                ; 965B
@@ -242,31 +248,31 @@ M_COLORS
          ldy  #$FF                 ; 9696
 L9698
          iny                       ; 9698
-         lda  $BCC8,y              ; 9699
+         lda  STATUS,y             ; 9699
          beq  L9698                ; 969C
          tya                       ; 969E
          pha                       ; 969F
          ldx  #$06                 ; 96A0
 L96A2
-         lda  $BCC8,y              ; 96A2
+         lda  STATUS,y             ; 96A2
          and  #$7F                 ; 96A5
-         sta  $BCC8,y              ; 96A7
+         sta  STATUS,y             ; 96A7
          iny                       ; 96AA
          dex                       ; 96AB
          bne  L96A2                ; 96AC
          clc                       ; 96AE
          pla                       ; 96AF
-         adc  $9F8C                ; 96B0
+         adc  COL_REG              ; 96B0
          tay                       ; 96B3
          lda  FRAMES               ; 96B4
          and  #$02                 ; 96B6
          beq  L96BC                ; 96B8
          lda  #$80                 ; 96BA
 L96BC
-         ora  $BCC8,y              ; 96BC
-         sta  $BCC8,y              ; 96BF
+         ora  STATUS,y             ; 96BC
+         sta  STATUS,y             ; 96BF
 L96C2
-         lda  $9F8D                ; 96C2
+         lda  COL_EDIT             ; 96C2
          bne  L9719                ; 96C5
          lda  #$02                 ; 96C7
          jsr  MESSAGE              ; 96C9
@@ -287,11 +293,11 @@ L96E3
          jsr  INPUT_CLR            ; 96E3
          bne  L96F0                ; 96E6
          jsr  CLICK                ; 96E8
-         inc  $9F8D                ; 96EB
+         inc  COL_EDIT             ; 96EB
          clc                       ; 96EE
          rts                       ; 96EF
 L96F0
-         ldx  $9F8C                ; 96F0
+         ldx  COL_REG              ; 96F0
          lda  JOY                  ; 96F3
          pha                       ; 96F6
          and  #$04                 ; 96F7
@@ -308,9 +314,9 @@ L9700
          bcc  L970C                ; 9708
          ldx  #$00                 ; 970A
 L970C
-         cpx  $9F8C                ; 970C
+         cpx  COL_REG              ; 970C
          beq  L9717                ; 970F
-         stx  $9F8C                ; 9711
+         stx  COL_REG              ; 9711
          jsr  CLICK                ; 9714
 L9717
          clc                       ; 9717
@@ -318,53 +324,53 @@ L9717
 L9719
          lda  #$03                 ; 9719
          jsr  MESSAGE              ; 971B
-         ldx  $9F8C                ; 971E
+         ldx  COL_REG              ; 971E
          lda  HDR_BUF+2,x          ; 9721
          tay                       ; 9724
          pha                       ; 9725
          and  #$0F                 ; 9726
-         sta  $B6                  ; 9728
+         sta  TMP3                 ; 9728
          pla                       ; 972A
          and  #$F0                 ; 972B
-         sta  $B7                  ; 972D
+         sta  TMP4                 ; 972D
          lda  JOY                  ; 972F
          and  #$04                 ; 9732
          bne  L9740                ; 9734
          sec                       ; 9736
-         lda  $B6                  ; 9737
+         lda  TMP3                 ; 9737
          sbc  #$02                 ; 9739
          and  #$0F                 ; 973B
-         ora  $B7                  ; 973D
+         ora  TMP4                 ; 973D
          tay                       ; 973F
 L9740
          lda  JOY                  ; 9740
          and  #$08                 ; 9743
          bne  L9751                ; 9745
          clc                       ; 9747
-         lda  $B6                  ; 9748
+         lda  TMP3                 ; 9748
          adc  #$02                 ; 974A
          and  #$0F                 ; 974C
-         ora  $B7                  ; 974E
+         ora  TMP4                 ; 974E
          tay                       ; 9750
 L9751
          lda  JOY                  ; 9751
          and  #$02                 ; 9754
          bne  L9762                ; 9756
          sec                       ; 9758
-         lda  $B7                  ; 9759
+         lda  TMP4                 ; 9759
          sbc  #$10                 ; 975B
          and  #$F0                 ; 975D
-         ora  $B6                  ; 975F
+         ora  TMP3                 ; 975F
          tay                       ; 9761
 L9762
          lda  JOY                  ; 9762
          and  #$01                 ; 9765
          bne  L9773                ; 9767
          clc                       ; 9769
-         lda  $B7                  ; 976A
+         lda  TMP4                 ; 976A
          adc  #$10                 ; 976C
          and  #$F0                 ; 976E
-         ora  $B6                  ; 9770
+         ora  TMP3                 ; 9770
          tay                       ; 9772
 L9773
          tya                       ; 9773
@@ -377,7 +383,7 @@ L977F
          jsr  INPUT_CLR            ; 9782
          bne  L978D                ; 9785
          jsr  CLICK                ; 9787
-         dec  $9F8D                ; 978A
+         dec  COL_EDIT             ; 978A
 L978D
          jsr  KEY_EVENT            ; 978D
          bcc  L9794                ; 9790
@@ -385,7 +391,7 @@ L978D
          rts                       ; 9793
 L9794
          lda  #$00                 ; 9794
-         sta  $9F8D                ; 9796
+         sta  COL_EDIT             ; 9796
          jsr  CLICK                ; 9799
          sec                       ; 979C
          rts                       ; 979D
@@ -399,7 +405,7 @@ M_TEST
 L97A7
          bpl  L97AE                ; 97A7
          and  #$7F                 ; 97A9
-         jmp  L962F                ; 97AB
+         jmp  MSG_WAIT             ; 97AB
 L97AE
          lda  #$80                 ; 97AE
          sta  TP_TEST              ; 97B0
@@ -433,27 +439,27 @@ PLANET_CLR
          lda  PLANET               ; 97DB
          asl                       ; 97DD
          adc  #$50                 ; 97DE
-         sta  $B3                  ; 97E0
+         sta  PTR2+1               ; 97E0
          adc  #$01                 ; 97E2
-         sta  $B1                  ; 97E4
+         sta  PTR1+1               ; 97E4
          lda  #$00                 ; 97E6
-         sta  $B2                  ; 97E8
-         sta  $B0                  ; 97EA
+         sta  PTR2                 ; 97E8
+         sta  PTR1                 ; 97EA
          ldy  #$00                 ; 97EC
          lda  #$20                 ; 97EE
 L97F0
-         sta  ($B2),y              ; 97F0
+         sta  (PTR2),y             ; 97F0
          cpy  #$F0                 ; 97F2
          bcs  L97F8                ; 97F4
-         sta  ($B0),y              ; 97F6
+         sta  (PTR1),y             ; 97F6
 L97F8
          dey                       ; 97F8
          bne  L97F0                ; 97F9
          ldx  #$07                 ; 97FB
          ldy  #$F7                 ; 97FD
 L97FF
-         lda  $9F83,x              ; 97FF
-         sta  ($B0),y              ; 9802
+         lda  COLS_DEF,x           ; 97FF
+         sta  (PTR1),y             ; 9802
          dey                       ; 9804
          dex                       ; 9805
          bpl  L97FF                ; 9806
@@ -462,27 +468,29 @@ L97FF
          sta  PLANET_STATE,x       ; 980C
          sec                       ; 980F
          rts                       ; 9810
-         dta $00,$00,$00                              ; 9811
+ORD_BLINK        dta $00                              ; 9811 kolejnosc planet: frame counter, bit 2 = blink phase
+ORD_POS          dta $00                              ; 9812 kolejnosc planet: the planet / position under the cursor
+ORD_MARK         dta $00                              ; 9813 kolejnosc planet: the planet picked to be placed
 
 * menu function "kolejność planet" -------------------------
 M_ORDER
          lda  PANEL_ST             ; 9814
          bne  L9836                ; 9816
          lda  PLANET               ; 9818
-         sta  $998A                ; 981A
-         ldx  $9874                ; 981D
+         sta  ORD_PLANET           ; 981A
+         ldx  ORD_COL              ; 981D
          bmi  L9827                ; 9820
-         sta  $9812                ; 9822
+         sta  ORD_POS              ; 9822
          bpl  L9836                ; 9825
 L9827
-         ldx  $9812                ; 9827
-         lda  $39C0,x              ; 982A
+         ldx  ORD_POS              ; 9827
+         lda  ORDER,x              ; 982A
          bmi  L9836                ; 982D
          lda  #$01                 ; 982F
-         sta  $9874                ; 9831
+         sta  ORD_COL              ; 9831
          bne  M_ORDER              ; 9834
 L9836
-         inc  $9811                ; 9836
+         inc  ORD_BLINK            ; 9836
          ldx  #$1F                 ; 9839
 L983B
          lda  #$59                 ; 983B
@@ -494,9 +502,9 @@ L9846
          beq  L984A                ; 9846
          lda  #$5A                 ; 9848
 L984A
-         sta  $A116,x              ; 984A
+         sta  LEGEND_TXT+47,x      ; 984A
          lda  #$00                 ; 984D
-         lda  $39C0,x              ; 984F
+         lda  ORDER,x              ; 984F
          bpl  L9866                ; 9852
          and  #$7F                 ; 9854
          tay                       ; 9856
@@ -510,38 +518,39 @@ L9862
          bne  L986D                ; 9864
 L9866
          lda  #$00                 ; 9866
-         sta  $39C0,x              ; 9868
+         sta  ORDER,x              ; 9868
          lda  #$59                 ; 986B
 L986D
-         sta  $A13E,x              ; 986D
+         sta  LEGEND_TXT+87,x      ; 986D
          dex                       ; 9870
          bpl  L983B                ; 9871
+ORD_COL          equ *+1                              ; 9874 kolejnosc planet: bit 7 = cursor in the planet row, else in the order row
          ldx  #$01                 ; 9873
          bmi  L98E2                ; 9875
-         ldx  $9812                ; 9877
-         lda  $9811                ; 987A
+         ldx  ORD_POS              ; 9877
+         lda  ORD_BLINK            ; 987A
          and  #$04                 ; 987D
          bne  L9884                ; 987F
-         sta  $A116,x              ; 9881
+         sta  LEGEND_TXT+47,x      ; 9881
 L9884
          stx  PLANET               ; 9884
          inx                       ; 9886
          txa                       ; 9887
          jsr  TO_DIGITS            ; 9888
-         sta  $A112                ; 988B
-         stx  $A113                ; 988E
+         sta  LEGEND_TXT+43        ; 988B
+         stx  LEGEND_TXT+44        ; 988E
          lda  PANEL_ST             ; 9891
          beq  L98AB                ; 9893
          ldy  #$7E                 ; 9895
          ldx  #$1F                 ; 9897
 L9899
-         lda  $39C0,x              ; 9899
+         lda  ORDER,x              ; 9899
          eor  #$80                 ; 989C
          bmi  L98A8                ; 989E
          cmp  PLANET               ; 98A0
          bne  L98A8                ; 98A2
          tya                       ; 98A4
-         sta  $BCA7,x              ; 98A5
+         sta  PANEL_TXT+167,x      ; 98A5
 L98A8
          dex                       ; 98A8
          bpl  L9899                ; 98A9
@@ -554,7 +563,7 @@ L98AB
          and  #$02                 ; 98B7
          bne  L98C2                ; 98B9
          sec                       ; 98BB
-         ror  $9874                ; 98BC
+         ror  ORD_COL              ; 98BC
          jsr  CLICK                ; 98BF
 L98C2
          pla                       ; 98C2
@@ -563,39 +572,39 @@ L98C2
          lda  #$01                 ; 98C7
          jsr  DIR_TEST             ; 98C9
          bcs  L98D1                ; 98CC
-         jmp  L9985                ; 98CE
+         jmp  ORD_LEAVE            ; 98CE
 L98D1
          jsr  INPUT_CLR            ; 98D1
          bne  L98DF                ; 98D4
-         lda  $9812                ; 98D6
-         sta  $9813                ; 98D9
+         lda  ORD_POS              ; 98D6
+         sta  ORD_MARK             ; 98D9
          jsr  CLICK                ; 98DC
 L98DF
-         jmp  L9964                ; 98DF
+         jmp  ORD_MOVE             ; 98DF
 L98E2
          lda  PANEL_ST             ; 98E2
          beq  L9902                ; 98E4
-         ldx  $9812                ; 98E6
-         lda  $9811                ; 98E9
+         ldx  ORD_POS              ; 98E6
+         lda  ORD_BLINK            ; 98E9
          and  #$04                 ; 98EC
          bne  L98F3                ; 98EE
-         sta  $A13E,x              ; 98F0
+         sta  LEGEND_TXT+87,x      ; 98F0
 L98F3
-         lda  $39C0,x              ; 98F3
+         lda  ORDER,x              ; 98F3
          eor  #$80                 ; 98F6
          sta  PLANET               ; 98F8
          bmi  L9902                ; 98FA
          tay                       ; 98FC
          lda  #$7F                 ; 98FD
-         sta  $BC2F,y              ; 98FF
+         sta  PANEL_TXT+47,y       ; 98FF
 L9902
          jsr  ORDER_TOGGLE         ; 9902
          ldy  #$00                 ; 9905
          ldx  #$00                 ; 9907
 L9909
-         cpx  $9812                ; 9909
+         cpx  ORD_POS              ; 9909
          bcs  L9917                ; 990C
-         lda  $39C0,x              ; 990E
+         lda  ORDER,x              ; 990E
          bpl  L9914                ; 9911
          iny                       ; 9913
 L9914
@@ -610,8 +619,8 @@ L9917
          lda  #$0D                 ; 9920
          tax                       ; 9922
 L9923
-         sta  $A13A                ; 9923
-         stx  $A13B                ; 9926
+         sta  LEGEND_TXT+83        ; 9923
+         stx  LEGEND_TXT+84        ; 9926
          lda  #$0D                 ; 9929
          jsr  MESSAGE              ; 992B
          lda  JOY                  ; 992E
@@ -619,7 +628,7 @@ L9923
          and  #$01                 ; 9932
          bne  L993E                ; 9934
          lda  #$01                 ; 9936
-         sta  $9874                ; 9938
+         sta  ORD_COL              ; 9938
          jsr  CLICK                ; 993B
 L993E
          pla                       ; 993E
@@ -627,38 +636,39 @@ L993E
          bne  L994A                ; 9941
          lda  #$02                 ; 9943
          jsr  DIR_TEST             ; 9945
-         bcc  L9985                ; 9948
+         bcc  ORD_LEAVE            ; 9948
 L994A
          jsr  INPUT_CLR            ; 994A
-         bne  L9964                ; 994D
-         lda  $9813                ; 994F
+         bne  ORD_MOVE             ; 994D
+         lda  ORD_MARK             ; 994F
          eor  #$80                 ; 9952
-         ldx  $9812                ; 9954
-         cmp  $39C0,x              ; 9957
+         ldx  ORD_POS              ; 9954
+         cmp  ORDER,x              ; 9957
          bne  L995E                ; 995A
          lda  #$00                 ; 995C
 L995E
-         sta  $39C0,x              ; 995E
+         sta  ORDER,x              ; 995E
          jsr  CLICK                ; 9961
-L9964
+ORD_MOVE
          lda  #$01                 ; 9964
          sta  PANEL_ST             ; 9966
-         ldx  $9812                ; 9968
+         ldx  ORD_POS              ; 9968
          jsr  PLANET_STEP          ; 996B
-         cpx  $9812                ; 996E
+         cpx  ORD_POS              ; 996E
          beq  L997E                ; 9971
-         stx  $9812                ; 9973
+         stx  ORD_POS              ; 9973
          lda  #$00                 ; 9976
-         sta  $9811                ; 9978
+         sta  ORD_BLINK            ; 9978
          jsr  CLICK                ; 997B
 L997E
          jsr  KEY_EVENT            ; 997E
-         bcc  L9985                ; 9981
+         bcc  ORD_LEAVE            ; 9981
          clc                       ; 9983
          rts                       ; 9984
-L9985
+ORD_LEAVE
          lda  #$00                 ; 9985
          sta  PANEL_ST             ; 9987
+ORD_PLANET       equ *+1                              ; 998A PLANET on entry
          lda  #$00                 ; 9989
          bit  PLANET               ; 998B
          bpl  L9991                ; 998D
@@ -667,21 +677,22 @@ L9991
          jsr  CLICK                ; 9991
          sec                       ; 9994
          rts                       ; 9995
-         dta $00,$59,$5A,$5B,$41,$42,$43,$44          ; 9996
+TOG_FROM         dta $00,$59,$5A,$5B                  ; 9996 ORDER_TOGGLE: marks of the legend ($59 empty, $5A good, $5B bad)
+TOG_TO           dta $41,$42,$43,$44                  ; 999A the same marks highlighted
 
 * planet order: cycle the mark of a planet -----------------
 ORDER_TOGGLE
-         ldx  $9813                ; 999E
-         lda  $A116,x              ; 99A1
+         ldx  ORD_MARK             ; 999E
+         lda  LEGEND_TXT+47,x      ; 99A1
          ldy  #$03                 ; 99A4
 L99A6
-         cmp  $9996,y              ; 99A6
+         cmp  TOG_FROM,y           ; 99A6
          beq  L99AE                ; 99A9
          dey                       ; 99AB
          bpl  L99A6                ; 99AC
 L99AE
-         lda  $999A,y              ; 99AE
-         sta  $A116,x              ; 99B1
+         lda  TOG_TO,y             ; 99AE
+         sta  LEGEND_TXT+47,x      ; 99B1
          rts                       ; 99B4
 
 * menu function "operacje dyskowe / kasetowe" --------------
@@ -707,13 +718,14 @@ L99CC
 L99D4
          txa                       ; 99D4
          ldx  #$01                 ; 99D5
-         jmp  L9BF2                ; 99D7
-         dta $00,$00                                  ; 99DA
+         jmp  SG_SET               ; 99D7
+DSK_FUNC         dta $00                              ; 99DA disk sub-menu: function (0 menu, 1 load, 2 save, 3 erase)
+DSK_SET          dta $00                              ; 99DB disk sub-menu: set 0-4
 L99DC
          lda  PANEL_ST             ; 99DC
          beq  L9A10                ; 99DE
          lda  #$00                 ; 99E0
-         ldx  $99DA                ; 99E2
+         ldx  DSK_FUNC             ; 99E2
 L99E5
          clc                       ; 99E5
          adc  #$28                 ; 99E6
@@ -722,77 +734,78 @@ L99E5
          tay                       ; 99EB
          ldx  #$09                 ; 99EC
 L99EE
-         lda  $BC00,y              ; 99EE
+         lda  PANEL_TXT,y          ; 99EE
          ora  #$80                 ; 99F1
-         sta  $BC00,y              ; 99F3
+         sta  PANEL_TXT,y          ; 99F3
          iny                       ; 99F6
          dex                       ; 99F7
          bne  L99EE                ; 99F8
-         lda  $99DB                ; 99FA
+         lda  DSK_SET              ; 99FA
          asl                       ; 99FD
-         adc  $99DB                ; 99FE
+         adc  DSK_SET              ; 99FE
          tay                       ; 9A01
          ldx  #$02                 ; 9A02
 L9A04
-         lda  $BCAC,y              ; 9A04
+         lda  PANEL_TXT+172,y      ; 9A04
          ora  #$80                 ; 9A07
-         sta  $BCAC,y              ; 9A09
+         sta  PANEL_TXT+172,y      ; 9A09
          iny                       ; 9A0C
          dex                       ; 9A0D
          bne  L9A04                ; 9A0E
 L9A10
          ldx  #$04                 ; 9A10
 L9A12
-         stx  $B6                  ; 9A12
+         stx  TMP3                 ; 9A12
          txa                       ; 9A14
          tay                       ; 9A15
          asl                       ; 9A16
-         adc  $B6                  ; 9A17
+         adc  TMP3                 ; 9A17
          adc  #$5C                 ; 9A19
          tax                       ; 9A1B
          lda  DISK_SLOTS           ; 9A1C
-         and  $94F9,y              ; 9A1F
+         and  SET_BIT,y            ; 9A1F
          bne  L9A34                ; 9A22
          lda  #$60                 ; 9A24
-         sta  $A15F,x              ; 9A26
-         sta  $A160,x              ; 9A29
-         sta  $A187,x              ; 9A2C
-         sta  $A188,x              ; 9A2F
+         sta  DISK_TXT,x           ; 9A26
+         sta  DISK_TXT+1,x         ; 9A29
+         sta  DISK_TXT+40,x        ; 9A2C
+         sta  DISK_TXT+41,x        ; 9A2F
          bne  L9A48                ; 9A32
 L9A34
          lda  #$45                 ; 9A34
-         sta  $A15F,x              ; 9A36
+         sta  DISK_TXT,x           ; 9A36
          lda  #$46                 ; 9A39
-         sta  $A160,x              ; 9A3B
+         sta  DISK_TXT+1,x         ; 9A3B
          lda  #$47                 ; 9A3E
-         sta  $A187,x              ; 9A40
+         sta  DISK_TXT+40,x        ; 9A40
          lda  #$48                 ; 9A43
-         sta  $A188,x              ; 9A45
+         sta  DISK_TXT+41,x        ; 9A45
 L9A48
-         ldx  $B6                  ; 9A48
+         ldx  TMP3                 ; 9A48
          dex                       ; 9A4A
          bpl  L9A12                ; 9A4B
+DSK_WAIT         equ *+1                              ; 9A4E disk sub-menu: 0 = choose, else show the result and wait
          lda  #$00                 ; 9A4D
-         beq  L9A61                ; 9A4F
+         beq  DSK_GO               ; 9A4F
          jsr  DISK_WAIT            ; 9A51
          bcs  L9A57                ; 9A54
          rts                       ; 9A56
 L9A57
          lda  #$02                 ; 9A57
          sta  PANEL_ST             ; 9A59
-         dec  $9A4E                ; 9A5B
+         dec  DSK_WAIT             ; 9A5B
          jmp  DISK_RESETC          ; 9A5E
-L9A61
+DSK_GO
          jmp  DISK_MENU            ; 9A61
 
 * disk operations: sub-menu (table $9AFA) ------------------
 DISK_MENU
          lda  #$02                 ; 9A64
          sta  PANEL_ST             ; 9A66
-         sta  $9ABA                ; 9A68
+         sta  DSK_SAME             ; 9A68
          lda  #$0F                 ; 9A6B
          jsr  MESSAGE              ; 9A6D
-         ldx  $99DA                ; 9A70
+         ldx  DSK_FUNC             ; 9A70
          lda  JOY                  ; 9A73
          pha                       ; 9A76
          and  #$01                 ; 9A77
@@ -806,14 +819,14 @@ L9A7C
 L9A82
          txa                       ; 9A82
          and  #$03                 ; 9A83
-         cmp  $99DA                ; 9A85
-         sta  $99DA                ; 9A88
+         cmp  DSK_FUNC             ; 9A85
+         sta  DSK_FUNC             ; 9A88
          beq  L9A95                ; 9A8B
          lda  #$00                 ; 9A8D
-         sta  $9ABA                ; 9A8F
+         sta  DSK_SAME             ; 9A8F
          jsr  CLICK                ; 9A92
 L9A95
-         ldx  $99DB                ; 9A95
+         ldx  DSK_SET              ; 9A95
          lda  JOY                  ; 9A98
          pha                       ; 9A9B
          and  #$04                 ; 9A9C
@@ -830,9 +843,10 @@ L9AA5
          bcc  L9AB1                ; 9AAD
          ldx  #$00                 ; 9AAF
 L9AB1
-         cpx  $99DB                ; 9AB1
-         stx  $99DB                ; 9AB4
+         cpx  DSK_SET              ; 9AB1
+         stx  DSK_SET              ; 9AB4
          beq  L9AC0                ; 9AB7
+DSK_SAME         equ *+1                              ; 9ABA disk sub-menu: 0 after the function changed
          lda  #$B9                 ; 9AB9
          beq  L9AC0                ; 9ABB
          jsr  CLICK                ; 9ABD
@@ -844,13 +858,13 @@ L9AC0
          clc                       ; 9ACA
          rts                       ; 9ACB
 L9ACC
-         lda  $99DA                ; 9ACC
+         lda  DSK_FUNC             ; 9ACC
          tay                       ; 9ACF
          beq  L9AE3                ; 9AD0
          cmp  #$02                 ; 9AD2
          beq  L9AE3                ; 9AD4
-         ldx  $99DB                ; 9AD6
-         lda  $94F9,x              ; 9AD9
+         ldx  DSK_SET              ; 9AD6
+         lda  SET_BIT,x            ; 9AD9
          and  DISK_SLOTS           ; 9ADC
          bne  L9AE3                ; 9ADF
          clc                       ; 9AE1
@@ -859,17 +873,17 @@ L9AE3
          tya                       ; 9AE3
          asl                       ; 9AE4
          tax                       ; 9AE5
-         lda  $9AFA,x              ; 9AE6
-         sta  $9A62                ; 9AE9
-         lda  $9AFB,x              ; 9AEC
-         sta  $9A63                ; 9AEF
+         lda  DSK_JUMPS,x          ; 9AE6
+         sta  DSK_GO+1             ; 9AE9
+         lda  DSK_JUMPS+1,x        ; 9AEC
+         sta  DSK_GO+2             ; 9AEF
          txa                       ; 9AF2
          beq  L9AF8                ; 9AF3
          jsr  CLICK                ; 9AF5
 L9AF8
          clc                       ; 9AF8
          rts                       ; 9AF9
-         dta $02,$9B,$1A,$9B,$23,$9B,$2C,$9B          ; 9AFA
+DSK_JUMPS        dta $02,$9B,$1A,$9B,$23,$9B,$2C,$9B  ; 9AFA disk sub-menu: DISK_BACK, DISK_LOAD, DISK_SAVE, DISK_ERASE
 
 * disk sub-menu: back to the menu --------------------------
 DISK_BACK
@@ -886,9 +900,9 @@ DISK_RESETC
 * disk sub-menu: reset the dispatch to DISK_MENU -----------
 DISK_RESET
          lda  #$64                 ; 9B0E
-         sta  $9A62                ; 9B10
+         sta  DSK_GO+1             ; 9B10
          lda  #$9A                 ; 9B13
-         sta  $9A63                ; 9B15
+         sta  DSK_GO+2             ; 9B15
          clc                       ; 9B18
          rts                       ; 9B19
 
@@ -912,7 +926,7 @@ DISK_ERASE
          jsr  ASK_SET              ; 9B2E
          lda  #$65                 ; 9B31
 L9B33
-         ldx  $99DB                ; 9B33
+         ldx  DSK_SET              ; 9B33
          inx                       ; 9B36
          jsr  IO_DO                ; 9B37
          php                       ; 9B3A
@@ -925,8 +939,8 @@ L9B43
          jsr  IO_ERRMSG            ; 9B43
          jsr  MESSAGE              ; 9B46
          lda  #$0A                 ; 9B49
-         sta  $962E                ; 9B4B
-         inc  $9A4E                ; 9B4E
+         sta  BEEP                 ; 9B4B
+         inc  DSK_WAIT             ; 9B4E
          clc                       ; 9B51
          rts                       ; 9B52
 
@@ -936,23 +950,23 @@ IO_ERRMSG
          ldx  #$FF                 ; 9B54
 L9B56
          inx                       ; 9B56
-         ldy  $A7F8,x              ; 9B57
+         ldy  ERR_CODES,x          ; 9B57
          beq  L9B61                ; 9B5A
-         cmp  $A7F8,x              ; 9B5C
+         cmp  ERR_CODES,x          ; 9B5C
          bne  L9B56                ; 9B5F
 L9B61
          tay                       ; 9B61
-         lda  $A7FE,x              ; 9B62
+         lda  ERR_MSGS,x           ; 9B62
          pha                       ; 9B65
          tya                       ; 9B66
          jsr  TO_DIGITS            ; 9B67
          clc                       ; 9B6A
          adc  #$A0                 ; 9B6B
-         sta  $A65E                ; 9B6D
+         sta  ERR_DIGITS           ; 9B6D
          clc                       ; 9B70
          txa                       ; 9B71
          adc  #$A0                 ; 9B72
-         sta  $A65F                ; 9B74
+         sta  ERR_DIGITS+1         ; 9B74
          pla                       ; 9B77
          rts                       ; 9B78
 
@@ -967,7 +981,7 @@ IO_DO
          pla                       ; 9B84
          tax                       ; 9B85
          pla                       ; 9B86
-         sta  $9BB0                ; 9B87
+         sta  LAST_CMD             ; 9B87
          jsr  IO_CMD               ; 9B8A
          ldx  DISK_SLOTS           ; 9B8D
          bmi  L9B95                ; 9B90
@@ -977,7 +991,7 @@ L9B95
          stx  IRQEN                ; 9B97
          tya                       ; 9B9A
          pha                       ; 9B9B
-         lda  $9003                ; 9B9C
+         lda  IO_LOADED            ; 9B9C
          beq  L9BAD                ; 9B9F
          tya                       ; 9BA1
          bpl  L9BAA                ; 9BA2
@@ -989,12 +1003,12 @@ L9BAD
          pla                       ; 9BAD
          tay                       ; 9BAE
          rts                       ; 9BAF
-         dta $00                                      ; 9BB0
+LAST_CMD         dta $00                              ; 9BB0 letter of the last tape / disk command
 
 * message for the last tape/disk operation -----------------
 IO_MSG_
          ldx  #$1B                 ; 9BB1
-         lda  $9BB0                ; 9BB3
+         lda  LAST_CMD             ; 9BB3
          cmp  #$72                 ; 9BB6
          beq  L9BBB                ; 9BB8
          inx                       ; 9BBA
@@ -1006,15 +1020,15 @@ L9BBB
 ASK_SET
          ldy  #$07                 ; 9BBF
 L9BC1
-         lda  $A7D8,x              ; 9BC1
-         sta  $A50F,y              ; 9BC4
+         lda  DEV_WORDS,x          ; 9BC1
+         sta  ASK_WORD,y           ; 9BC4
          dex                       ; 9BC7
          dey                       ; 9BC8
          bpl  L9BC1                ; 9BC9
          clc                       ; 9BCB
-         lda  $99DB                ; 9BCC
+         lda  DSK_SET              ; 9BCC
          adc  #$31                 ; 9BCF
-         sta  $A521                ; 9BD1
+         sta  ASK_NUM              ; 9BD1
          lda  #$10                 ; 9BD4
          jsr  MESSAGE              ; 9BD6
          jsr  ASK_YESNO            ; 9BD9
@@ -1036,16 +1050,19 @@ M_SAVEGAME
          jsr  ALL_EMPTY            ; 9BEB
          lda  #$77                 ; 9BEE
          ldx  #$00                 ; 9BF0
-L9BF2
+
+* run SAVEGAME_GO as the next command, with A = command letter, X = slot ---
+SG_SET
          ldy  #$06                 ; 9BF2
-         sty  $9555                ; 9BF4
+         sty  MENU_CALL+1          ; 9BF4
          ldy  #$9C                 ; 9BF7
-         sty  $9556                ; 9BF9
-         sta  $9C04                ; 9BFC
-         stx  $9C05                ; 9BFF
+         sty  MENU_CALL+2          ; 9BF9
+         sta  SG_CMD               ; 9BFC
+         stx  SG_SLOT              ; 9BFF
          clc                       ; 9C02
          rts                       ; 9C03
-         dta $00,$00                                  ; 9C04
+SG_CMD           dta $00                              ; 9C04 command letter for SAVEGAME_GO ("w" zapisz Robbo, tape: "r" / "w")
+SG_SLOT          dta $00                              ; 9C05 slot for SAVEGAME_GO
 
 * zapisz Robbo: save the game ------------------------------
 SAVEGAME_GO
@@ -1070,22 +1087,22 @@ L9C24
          sec                       ; 9C29
          rts                       ; 9C2A
 L9C2B
-         ldx  $9C05                ; 9C2B
-         lda  $9C04                ; 9C2E
+         ldx  SG_SLOT              ; 9C2B
+         lda  SG_CMD               ; 9C2E
          jsr  IO_DO                ; 9C31
          bmi  L9C38                ; 9C34
          sec                       ; 9C36
          rts                       ; 9C37
 L9C38
          jsr  IO_ERRMSG            ; 9C38
-         jmp  L962F                ; 9C3B
+         jmp  MSG_WAIT             ; 9C3B
 
 * menu function "test Robbo": test the whole game ----------
 M_TESTALL
          jsr  ALL_EMPTY            ; 9C3E
          lda  #$80                 ; 9C41
          sta  TP_TEST              ; 9C43
-         sta  $11                  ; 9C46
+         sta  BRKKEY               ; 9C46
          jmp  TP_START             ; 9C48
 
 * all planets empty? -> message "wszystkie planety są puste!" ---
@@ -1101,12 +1118,12 @@ L9C4F
          pla                       ; 9C58
          pla                       ; 9C59
          lda  #$13                 ; 9C5A
-         jmp  L962F                ; 9C5C
+         jmp  MSG_WAIT             ; 9C5C
 L9C5F
          ldx  #$1F                 ; 9C5F
          lda  #$00                 ; 9C61
 L9C63
-         ora  $39C0,x              ; 9C63
+         ora  ORDER,x              ; 9C63
          dex                       ; 9C66
          bpl  L9C63                ; 9C67
          tax                       ; 9C69
@@ -1131,15 +1148,15 @@ L9C82
          bne  L9CC6                ; 9C84
          ldx  #$00                 ; 9C86
 L9C88
-         lda  $39C0,x              ; 9C88
-         sta  $39E0,x              ; 9C8B
+         lda  ORDER,x              ; 9C88
+         sta  PLAY_ORDER,x         ; 9C8B
          bpl  L9C9D                ; 9C8E
          and  #$7F                 ; 9C90
          tay                       ; 9C92
          lda  PLANET_STATE,y       ; 9C93
          bmi  L9CA3                ; 9C96
          bne  L9C9D                ; 9C98
-         sta  $39E0,x              ; 9C9A
+         sta  PLAY_ORDER,x         ; 9C9A
 L9C9D
          inx                       ; 9C9D
          cpx  #$20                 ; 9C9E
@@ -1155,17 +1172,17 @@ L9CA3
          ldy  #$FF                 ; 9CAF
 L9CB1
          iny                       ; 9CB1
-         lda  ($B2),y              ; 9CB2
-         sta  $A595,y              ; 9CB4
+         lda  (PTR2),y             ; 9CB2
+         sta  MSG_LIST,y           ; 9CB4
          bne  L9CB1                ; 9CB7
          tya                       ; 9CB9
 L9CBA
          iny                       ; 9CBA
-         sta  ($B2),y              ; 9CBB
+         sta  (PTR2),y             ; 9CBB
          cpy  #$1E                 ; 9CBD
          bcc  L9CBA                ; 9CBF
          lda  #$14                 ; 9CC1
-         jmp  L962F                ; 9CC3
+         jmp  MSG_WAIT             ; 9CC3
 L9CC6
          ldx  #$00                 ; 9CC6
 L9CC8
@@ -1177,7 +1194,7 @@ L9CC8
          tya                       ; 9CD1
          ora  #$80                 ; 9CD2
 L9CD4
-         sta  $39E0,x              ; 9CD4
+         sta  PLAY_ORDER,x         ; 9CD4
          inx                       ; 9CD7
          cpx  #$20                 ; 9CD8
          bcc  L9CC8                ; 9CDA

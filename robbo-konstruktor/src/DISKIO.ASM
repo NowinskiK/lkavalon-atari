@@ -4,15 +4,17 @@
          org $9000
 
 
-* tape/disk: command letter in A (r, w, e, d - table $902B), dispatch via $902F ---
+* tape/disk: command letter in A (r, w, e, d - IO_LETTERS), X = slot; dispatch via IO_JUMPS ---
 IO_CMD
          jmp  L9004                ; 9000
-         dta $00                                      ; 9003
+
+* tape / disk ------------------
+IO_LOADED        dta $00                              ; 9003 $FF after a set was read (IO_READ), 0 at each command
 L9004
-         stx  $9430                ; 9004
+         stx  IO_SLOT              ; 9004
          ldx  #$03                 ; 9007
 L9009
-         cmp  $902B,x              ; 9009
+         cmp  IO_LETTERS,x         ; 9009
          beq  L9011                ; 900C
          dex                       ; 900E
          bpl  L9009                ; 900F
@@ -20,61 +22,66 @@ L9011
          txa                       ; 9011
          asl                       ; 9012
          tax                       ; 9013
-         lda  $902F,x              ; 9014
-         sta  $9029                ; 9017
-         lda  $9030,x              ; 901A
-         sta  $902A                ; 901D
+         lda  IO_JUMPS,x           ; 9014
+         sta  IO_GO+1              ; 9017
+         lda  IO_JUMPS+1,x         ; 901A
+         sta  IO_GO+2              ; 901D
          lda  #$80                 ; 9020
-         sta  $11                  ; 9022
+         sta  BRKKEY               ; 9022
          asl                       ; 9024
-         sta  $9003                ; 9025
-         jmp  $9028                ; 9028
-         dta $72,$77,$65,$64,$02,$91,$BF,$91,$9C,$90,$5A,$90,$04,$00,$00,$01 ; 902B
-         dta $84,$01,$08,$02,$8C,$02,$10,$03          ; 903B
+         sta  IO_LOADED            ; 9025
+IO_GO
+         jmp  IO_GO                ; 9028
+IO_LETTERS       dta $72,$77,$65,$64                  ; 902B command letters: r(ead) w(rite) e(rase) d(irectory)
+IO_JUMPS         dta $02,$91,$BF,$91,$9C,$90,$5A,$90  ; 902F IO_READ, IO_WRITE, IO_ERASE, IO_DIR
+SLOT_SEC         dta $04,$00,$00,$01,$84,$01,$08,$02,$8C,$02,$10,$03 ; 9037 header sector of slots 0-5: 4, 256, 388, 520, 652, 784
+SIG_USED                                              ; 9043 slot header of a used slot
 ;  RKdata 
          dta c' RKdata '* ; 9043
+SIG_FREE                                              ; 904B slot header of an erased slot
 ;  unused 
-         dta c' unused ',$00 ; 904B
-         dta $00,$01,$02,$04,$08,$10                  ; 9054
+         dta c' unused ' ; 904B
+IO_USED          dta $00                              ; 9053 bit mask of the used slots (IO_DIR), returned in A
+SLOT_BIT         dta $00,$01,$02,$04,$08,$10          ; 9054 bit of slots 1-5 in IO_USED
 
 * directory: read the 5 slot headers, bit mask of used slots ---
 IO_DIR
          lda  #$00                 ; 905A
-         sta  $B8                  ; 905C
+         sta  IO_PTR               ; 905C
          ldx  #$05                 ; 905E
-         stx  $9430                ; 9060
+         stx  IO_SLOT              ; 9060
 L9063
          jsr  IO_SLOTSEC           ; 9063
          jsr  IO_RDSEC             ; 9066
          bmi  L9080                ; 9069
          clc                       ; 906B
-         lda  $9431                ; 906C
+         lda  IO_BUF               ; 906C
          bpl  L9072                ; 906F
          sec                       ; 9071
 L9072
-         rol  $B8                  ; 9072
-         dec  $9430                ; 9074
+         rol  IO_PTR               ; 9072
+         dec  IO_SLOT              ; 9074
          bne  L9063                ; 9077
-         lda  $B8                  ; 9079
-         sta  $9053                ; 907B
+         lda  IO_PTR               ; 9079
+         sta  IO_USED              ; 907B
          ldy  #$01                 ; 907E
 L9080
          php                       ; 9080
-         lda  $9053                ; 9081
+         lda  IO_USED              ; 9081
          plp                       ; 9084
          rts                       ; 9085
 
-* header sector of slot $9430 -> DAUX (table $9037: sectors 4, 256, 388, 520, 652, 784) ---
+* header sector of slot IO_SLOT -> DAUX (SLOT_SEC: sectors 4, 256, 388, 520, 652, 784) ---
 IO_SLOTSEC
-         lda  $9430                ; 9086
+         lda  IO_SLOT              ; 9086
          asl                       ; 9089
          tax                       ; 908A
-         lda  $9037,x              ; 908B
+         lda  SLOT_SEC,x           ; 908B
          sta  DAUX1                ; 908E
-         lda  $9038,x              ; 9091
+         lda  SLOT_SEC+1,x         ; 9091
          sta  DAUX2                ; 9094
          lda  #$08                 ; 9097
-         sta  $BF                  ; 9099
+         sta  IO_POS               ; 9099
          rts                       ; 909B
 
 * erase a slot: header " unused " --------------------------
@@ -94,21 +101,21 @@ L90A8
 L90B6
          ldx  #$07                 ; 90B6
 L90B8
-         lda  $904B,x              ; 90B8
-         sta  $9431,x              ; 90BB
+         lda  SIG_FREE,x           ; 90B8
+         sta  IO_BUF,x             ; 90BB
          dex                       ; 90BE
          bpl  L90B8                ; 90BF
          jsr  IO_WRSEC             ; 90C1
          bmi  L90D6                ; 90C4
-         ldx  $9430                ; 90C6
-         lda  $9054,x              ; 90C9
+         ldx  IO_SLOT              ; 90C6
+         lda  SLOT_BIT,x           ; 90C9
          eor  #$FF                 ; 90CC
-         and  $9053                ; 90CE
-         sta  $9053                ; 90D1
+         and  IO_USED              ; 90CE
+         sta  IO_USED              ; 90D1
          ldy  #$01                 ; 90D4
 L90D6
          php                       ; 90D6
-         lda  $9053                ; 90D7
+         lda  IO_USED              ; 90D7
          plp                       ; 90DA
          rts                       ; 90DB
 
@@ -119,16 +126,16 @@ IO_MARK
          bmi  L90D6                ; 90E2
          ldx  #$07                 ; 90E4
 L90E6
-         lda  $9043,x              ; 90E6
-         sta  $9431,x              ; 90E9
+         lda  SIG_USED,x           ; 90E6
+         sta  IO_BUF,x             ; 90E9
          dex                       ; 90EC
          bpl  L90E6                ; 90ED
          jsr  IO_WRSEC             ; 90EF
          bmi  L90D6                ; 90F2
-         ldx  $9430                ; 90F4
-         lda  $9054,x              ; 90F7
-         ora  $9053                ; 90FA
-         sta  $9053                ; 90FD
+         ldx  IO_SLOT              ; 90F4
+         lda  SLOT_BIT,x           ; 90F7
+         ora  IO_USED              ; 90FA
+         sta  IO_USED              ; 90FD
          bne  L90D6                ; 9100
 
 * read a planet set from a slot ----------------------------
@@ -148,7 +155,7 @@ L910E
 L911C
          jsr  IO_MSG               ; 911C
          lda  #$FF                 ; 911F
-         sta  $9003                ; 9121
+         sta  IO_LOADED            ; 9121
          inc  DAUX1                ; 9124
          bne  L912C                ; 9127
          inc  DAUX2                ; 9129
@@ -156,7 +163,7 @@ L912C
          jsr  IO_LOADSET           ; 912C
 L912F
          php                       ; 912F
-         lda  $9053                ; 9130
+         lda  IO_USED              ; 9130
          plp                       ; 9133
          rts                       ; 9134
 
@@ -164,19 +171,20 @@ L912F
 IO_LOADSET
          ldy  #$00                 ; 9135
 L9137
-         sty  $9140                ; 9137
+         sty  LS_IDX+1             ; 9137
          jsr  IO_GETBYTE           ; 913A
          bmi  L912F                ; 913D
+LS_IDX
          ldy  #$3F                 ; 913F
-         dta $99,a($00B8)          ; 9141 sta ,y
+         dta $99,a(IO_PTR)         ; 9141 sta ,y
          iny                       ; 9144
          cpy  #$04                 ; 9145
          bcc  L9137                ; 9147
          jsr  IO_CHECK             ; 9149
          bcc  L915A                ; 914C
          ldy  #$8F                 ; 914E
-         lda  $B8                  ; 9150
-         ora  $B9                  ; 9152
+         lda  IO_PTR               ; 9150
+         ora  IO_PTR+1             ; 9152
          bne  L9158                ; 9154
          ldy  #$01                 ; 9156
 L9158
@@ -186,18 +194,18 @@ L915A
          jsr  IO_GETBYTE           ; 915A
          bmi  L912F                ; 915D
          ldy  #$00                 ; 915F
-         sta  ($B8),y              ; 9161
-         lda  $B9                  ; 9163
-         cmp  $BB                  ; 9165
+         sta  (IO_PTR),y           ; 9161
+         lda  IO_PTR+1             ; 9163
+         cmp  IO_END+1             ; 9165
          bne  L9171                ; 9167
-         lda  $B8                  ; 9169
-         cmp  $BA                  ; 916B
+         lda  IO_PTR               ; 9169
+         cmp  IO_END               ; 916B
          bne  L9171                ; 916D
          beq  IO_LOADSET           ; 916F
 L9171
-         inc  $B8                  ; 9171
+         inc  IO_PTR               ; 9171
          bne  L9177                ; 9173
-         inc  $B9                  ; 9175
+         inc  IO_PTR+1             ; 9175
 L9177
          jmp  L915A                ; 9177
 
@@ -205,25 +213,25 @@ L9177
 IO_CHECK
          ldx  #$08                 ; 917A
 L917C
-         lda  $B8                  ; 917C
-         cmp  $91B3,x              ; 917E
-         lda  $B9                  ; 9181
-         sbc  $91B4,x              ; 9183
+         lda  IO_PTR               ; 917C
+         cmp  IO_RANGES,x          ; 917E
+         lda  IO_PTR+1             ; 9181
+         sbc  IO_RANGES+1,x        ; 9183
          bcc  L91AB                ; 9186
-         lda  $B8                  ; 9188
-         cmp  $91B5,x              ; 918A
-         lda  $B9                  ; 918D
-         sbc  $91B6,x              ; 918F
+         lda  IO_PTR               ; 9188
+         cmp  IO_RANGES+2,x        ; 918A
+         lda  IO_PTR+1             ; 918D
+         sbc  IO_RANGES+3,x        ; 918F
          bcs  L91AB                ; 9192
-         lda  $BA                  ; 9194
-         cmp  $91B5,x              ; 9196
-         lda  $BB                  ; 9199
-         sbc  $91B6,x              ; 919B
+         lda  IO_END               ; 9194
+         cmp  IO_RANGES+2,x        ; 9196
+         lda  IO_END+1             ; 9199
+         sbc  IO_RANGES+3,x        ; 919B
          bcs  L91AB                ; 919E
-         lda  $B8                  ; 91A0
-         cmp  $BA                  ; 91A2
-         lda  $B9                  ; 91A4
-         sbc  $BB                  ; 91A6
+         lda  IO_PTR               ; 91A0
+         cmp  IO_END               ; 91A2
+         lda  IO_PTR+1             ; 91A4
+         sbc  IO_END+1             ; 91A6
          bcs  L91AB                ; 91A8
          rts                       ; 91AA
 L91AB
@@ -234,26 +242,26 @@ L91AB
          bpl  L917C                ; 91AF
          sec                       ; 91B1
          rts                       ; 91B2
-         dta $A0,$39,$E0,$39,$00,$3A,$00,$3C,$00,$50,$00,$90 ; 91B3
+IO_RANGES        dta $A0,$39,$E0,$39,$00,$3A,$00,$3C,$00,$50,$00,$90 ; 91B3 segments a set may load (IO_CHECK): $39A0-$39E0, $3A00-$3C00, $5000-$9000
 
-* write a planet set to a slot -----------------------------
+* write a planet set to a slot; slot 0: the stand-alone game ("zapisz Robbo") ---
 IO_WRITE
-         lda  $9430                ; 91BF
+         lda  IO_SLOT              ; 91BF
          bne  L91EC                ; 91C2
          lda  #$01                 ; 91C4
-         sta  $9430                ; 91C6
+         sta  IO_SLOT              ; 91C6
          jsr  IO_CHKSLOT           ; 91C9
          bmi  L91D6                ; 91CC
          bcs  L91D6                ; 91CE
-         lda  $9053                ; 91D0
+         lda  IO_USED              ; 91D0
          ldy  #$FF                 ; 91D3
          rts                       ; 91D5
 L91D6
          jsr  IO_MSG               ; 91D6
-         dec  $9430                ; 91D9
+         dec  IO_SLOT              ; 91D9
          jsr  IO_SLOTSEC           ; 91DC
          lda  DAUX1                ; 91DF
-         sta  $93B0                ; 91E2
+         sta  GB_SECTOR            ; 91E2
          jsr  IO_SAVEGAME          ; 91E5
          bmi  L9201                ; 91E8
          bpl  L91F3                ; 91EA
@@ -269,59 +277,59 @@ L91F3
          jsr  IO_MARK              ; 91FE
 L9201
          php                       ; 9201
-         lda  $9053                ; 9202
+         lda  IO_USED              ; 9202
          plp                       ; 9205
          rts                       ; 9206
 
-* save the planets: $5000 + n * $200, $1F7 bytes each, those used in $39A0 ---
+* save the segments of LIST_SET (slot 0: LIST_GAME), then the used planets: $5000 + n * $200, $1F8 bytes each ---
 IO_SAVESET
          ldx  #$EB                 ; 9207
          ldy  #$92                 ; 9209
-         lda  $9430                ; 920B
+         lda  IO_SLOT              ; 920B
          beq  L9214                ; 920E
          ldx  #$E1                 ; 9210
          ldy  #$92                 ; 9212
 L9214
-         stx  $9224                ; 9214
-         sty  $9225                ; 9217
+         stx  SS_LIST+1            ; 9214
+         sty  SS_LIST+2            ; 9217
          ldx  #$00                 ; 921A
-         stx  $9220                ; 921C
-L921F
+         stx  SS_POS+1             ; 921C
+SS_POS
          ldx  #$1F                 ; 921F
          ldy  #$00                 ; 9221
-L9223
-         lda  L9223,x              ; 9223
-         dta $99,a($00B8)          ; 9226 sta ,y
+SS_LIST
+         lda  SS_LIST,x            ; 9223
+         dta $99,a(IO_PTR)         ; 9226 sta ,y
          inx                       ; 9229
          iny                       ; 922A
          cpy  #$04                 ; 922B
-         bcc  L9223                ; 922D
-         stx  $9220                ; 922F
-         lda  $B8                  ; 9232
-         ora  $B9                  ; 9234
+         bcc  SS_LIST              ; 922D
+         stx  SS_POS+1             ; 922F
+         lda  IO_PTR               ; 9232
+         ora  IO_PTR+1             ; 9234
          beq  L923F                ; 9236
          jsr  IO_PUTRANGE          ; 9238
          bmi  L9201                ; 923B
-         bpl  L921F                ; 923D
+         bpl  SS_POS               ; 923D
 L923F
          ldx  #$1F                 ; 923F
 L9241
-         stx  $9261                ; 9241
+         stx  SS_PLANET+1          ; 9241
          lda  PLANET_STATE,x       ; 9244
-         beq  L9260                ; 9247
+         beq  SS_PLANET            ; 9247
          txa                       ; 9249
          asl                       ; 924A
          adc  #$50                 ; 924B
-         sta  $B9                  ; 924D
+         sta  IO_PTR+1             ; 924D
          ora  #$01                 ; 924F
-         sta  $BB                  ; 9251
+         sta  IO_END+1             ; 9251
          lda  #$00                 ; 9253
-         sta  $B8                  ; 9255
+         sta  IO_PTR               ; 9255
          lda  #$F7                 ; 9257
-         sta  $BA                  ; 9259
+         sta  IO_END               ; 9259
          jsr  IO_PUTRANGE          ; 925B
          bmi  L9201                ; 925E
-L9260
+SS_PLANET
          ldx  #$60                 ; 9260
          dex                       ; 9262
          bpl  L9241                ; 9263
@@ -337,39 +345,41 @@ L9260
 IO_PUTRANGE
          ldy  #$00                 ; 9276
 L9278
-         sty  $9287                ; 9278
-         dta $B9,a($00B8)          ; 927B lda ,y
+         sty  PR_IDX+1             ; 9278
+         dta $B9,a(IO_PTR)         ; 927B lda ,y
          jsr  IO_PUTBYTE           ; 927E
-         bpl  L9286                ; 9281
+         bpl  PR_IDX               ; 9281
          jmp  L9201                ; 9283
-L9286
+PR_IDX
          ldy  #$86                 ; 9286
          iny                       ; 9288
          cpy  #$04                 ; 9289
          bcc  L9278                ; 928B
-L928D
+
+* write the bytes IO_PTR ... IO_END (without the segment header) ---
+IO_PUTDATA
          ldy  #$00                 ; 928D
-         lda  ($B8),y              ; 928F
+         lda  (IO_PTR),y           ; 928F
          jsr  IO_PUTBYTE           ; 9291
          bpl  L9299                ; 9294
          jmp  L9201                ; 9296
 L9299
-         lda  $B9                  ; 9299
-         cmp  $BB                  ; 929B
+         lda  IO_PTR+1             ; 9299
+         cmp  IO_END+1             ; 929B
          bne  L92A8                ; 929D
-         lda  $B8                  ; 929F
-         cmp  $BA                  ; 92A1
+         lda  IO_PTR               ; 929F
+         cmp  IO_END               ; 92A1
          bne  L92A8                ; 92A3
          ldy  #$01                 ; 92A5
          rts                       ; 92A7
 L92A8
-         inc  $B8                  ; 92A8
+         inc  IO_PTR               ; 92A8
          bne  L92AE                ; 92AA
-         inc  $B9                  ; 92AC
+         inc  IO_PTR+1             ; 92AC
 L92AE
-         jmp  L928D                ; 92AE
+         jmp  IO_PUTDATA           ; 92AE
 
-* save a stand-alone Robbo game: format the disk, write the game ---
+* stand-alone game: format the disk, write its boot loader GB_HDR ... $942F to sectors 1-3 ---
 IO_SAVEGAME
          jsr  IO_FORMAT            ; 92B1
          bmi  L92DB                ; 92B4
@@ -378,30 +388,30 @@ IO_SAVEGAME
          dex                       ; 92BB
          stx  DAUX2                ; 92BC
          lda  #$00                 ; 92BF
-         sta  $BF                  ; 92C1
+         sta  IO_POS               ; 92C1
          lda  #$A9                 ; 92C3
-         sta  $B8                  ; 92C5
+         sta  IO_PTR               ; 92C5
          lda  #$93                 ; 92C7
-         sta  $B9                  ; 92C9
+         sta  IO_PTR+1             ; 92C9
          lda  #$2F                 ; 92CB
-         sta  $BA                  ; 92CD
+         sta  IO_END               ; 92CD
          lda  #$94                 ; 92CF
-         sta  $BB                  ; 92D1
-         jsr  L928D                ; 92D3
+         sta  IO_END+1             ; 92D1
+         jsr  IO_PUTDATA           ; 92D3
          bmi  L92DB                ; 92D6
          jsr  IO_WRSEC             ; 92D8
 L92DB
          php                       ; 92DB
-         lda  $9053                ; 92DC
+         lda  IO_USED              ; 92DC
          plp                       ; 92DF
          rts                       ; 92E0
-         dta $A0,$39,$DF,$39,$00,$3A,$FF,$3B,$00,$00,$00,$1E,$FF,$3F,$00,$48 ; 92E1
-         dta $FF,$4F,$00,$00                          ; 92F1
+LIST_SET         dta $A0,$39,$DF,$39,$00,$3A,$FF,$3B,$00,$00 ; 92E1 segments of a planet set: planet tables $39A0-$39DF, title texts $3A00-$3BFF; 0 ends
+LIST_GAME        dta $00,$1E,$FF,$3F,$00,$48,$FF,$4F,$00,$00 ; 92EB segments of the stand-alone game: engine $1E00-$3FFF, fonts $4800-$4FFF; 0 ends
 
-* read one byte through the sector buffer $9431 ------------
+* read one byte through the sector buffer IO_BUF -----------
 IO_GETBYTE
          clc                       ; 92F5
-         ldy  $BF                  ; 92F6
+         ldy  IO_POS               ; 92F6
          bpl  L930C                ; 92F8
          jsr  IO_RDSEC             ; 92FA
          bpl  L9300                ; 92FD
@@ -412,42 +422,42 @@ L9300
          inc  DAUX2                ; 9305
 L9308
          ldy  #$00                 ; 9308
-         sty  $BF                  ; 930A
+         sty  IO_POS               ; 930A
 L930C
-         lda  $9431,y              ; 930C
-         inc  $BF                  ; 930F
+         lda  IO_BUF,y             ; 930C
+         inc  IO_POS               ; 930F
          ldy  #$01                 ; 9311
          rts                       ; 9313
 
-* write one byte through the sector buffer $9431 -----------
+* write one byte through the sector buffer IO_BUF ----------
 IO_PUTBYTE
          clc                       ; 9314
-         ldy  $BF                  ; 9315
+         ldy  IO_POS               ; 9315
          bpl  L9330                ; 9317
-         sta  $932B                ; 9319
+         sta  PB_BYTE+1            ; 9319
          jsr  IO_WRSEC             ; 931C
          bpl  L9322                ; 931F
          rts                       ; 9321
 L9322
          inc  DAUX1                ; 9322
-         bne  L932A                ; 9325
+         bne  PB_BYTE              ; 9325
          inc  DAUX2                ; 9327
-L932A
+PB_BYTE
          lda  #$2A                 ; 932A
          ldy  #$00                 ; 932C
-         sty  $BF                  ; 932E
+         sty  IO_POS               ; 932E
 L9330
-         sta  $9431,y              ; 9330
-         inc  $BF                  ; 9333
+         sta  IO_BUF,y             ; 9330
+         inc  IO_POS               ; 9333
          ldy  #$01                 ; 9335
          rts                       ; 9337
 
-* read a sector into $9431 (SIO R) -------------------------
+* read a sector into IO_BUF (SIO R) ------------------------
 IO_RDSEC
          lda  #$52                 ; 9338
          bne  L933E                ; 933A
 
-* write a sector from $9431 (SIO P) ------------------------
+* write a sector from IO_BUF (SIO P) -----------------------
 IO_WRSEC
          lda  #$50                 ; 933C
 L933E
@@ -483,10 +493,10 @@ L9368
 L936E
          ldy  #$07                 ; 936E
 L9370
-         lda  $9431,y              ; 9370
-         cmp  $9043,y              ; 9373
+         lda  IO_BUF,y             ; 9370
+         cmp  SIG_USED,y           ; 9373
          beq  L9381                ; 9376
-         cmp  $904B,y              ; 9378
+         cmp  SIG_FREE,y           ; 9378
          beq  L9381                ; 937B
          ldy  #$01                 ; 937D
          sec                       ; 937F
@@ -513,12 +523,83 @@ IO_FORMAT
          lda  #$94                 ; 93A1
          sta  DBUFHI               ; 93A3
          jmp  SIOV                 ; 93A6
-         dta $00,$03,$A9,$93,$C0,$35,$A9,$AF,$8D,$0A,$03,$A9,$80,$85,$BF,$20 ; 93A9
-         dta $FD,$93,$A9,$08,$85,$BF,$A0,$00,$8C,$CA,$93,$20,$FD,$93,$30,$12 ; 93B9
-         dta $A0,$C9,$99,$B8,$00,$C8,$C0,$04,$90,$EE,$A5,$B8,$05,$B9,$D0,$04 ; 93C9
-         dta $18,$60,$38,$60,$20,$FD,$93,$30,$F9,$A0,$00,$91,$B8,$A5,$B9,$C5 ; 93D9
-         dta $BB,$D0,$08,$A5,$B8,$C5,$BA,$D0,$02,$F0,$CB,$E6,$B8,$D0,$02,$E6 ; 93E9
-         dta $B9,$4C,$DD,$93,$18,$A4,$BF,$10,$26,$A9,$52,$8D,$02,$03,$A9,$01 ; 93F9
-         dta $8D,$01,$03,$A9,$31,$8D,$04,$03,$A9,$94,$8D,$05,$03,$20,$53,$E4 ; 9409
-         dta $10,$01,$60,$EE,$0A,$03,$D0,$03,$EE,$0B,$03,$A0,$00,$84,$BF,$B9 ; 9419
-         dta $31,$94,$E6,$BF,$A0,$01,$60,$00          ; 9429
+GB_HDR           dta $00,$03,$A9,$93,$C0,$35          ; 93A9 boot record of the saved game: flags, 3 sectors, load $93A9, init TP_START
+
+* boot of the saved stand-alone game (OS: load address + 6): segments from sector GB_SECTOR, after the 8-byte slot header; RTS at start 0, then the OS runs TP_START ---
+GB_BOOT
+GB_SECTOR        equ *+1                              ; 93B0 first data sector (IO_WRITE: the header sector of slot 0)
+         lda  #$AF                 ; 93AF
+         sta  DAUX1                ; 93B1
+         lda  #$80                 ; 93B4
+         sta  IO_POS               ; 93B6
+         jsr  GB_GETBYTE           ; 93B8
+         lda  #$08                 ; 93BB
+         sta  IO_POS               ; 93BD
+L93BF
+         ldy  #$00                 ; 93BF
+L93C1
+         sty  GB_IDX+1             ; 93C1
+         jsr  GB_GETBYTE           ; 93C4
+         bmi  L93DB                ; 93C7
+GB_IDX
+         ldy  #$C9                 ; 93C9
+         dta $99,a(IO_PTR)         ; 93CB sta ,y
+         iny                       ; 93CE
+         cpy  #$04                 ; 93CF
+         bcc  L93C1                ; 93D1
+         lda  IO_PTR               ; 93D3
+         ora  IO_PTR+1             ; 93D5
+         bne  L93DD                ; 93D7
+         clc                       ; 93D9
+         rts                       ; 93DA
+L93DB
+         sec                       ; 93DB
+         rts                       ; 93DC
+L93DD
+         jsr  GB_GETBYTE           ; 93DD
+         bmi  L93DB                ; 93E0
+         ldy  #$00                 ; 93E2
+         sta  (IO_PTR),y           ; 93E4
+         lda  IO_PTR+1             ; 93E6
+         cmp  IO_END+1             ; 93E8
+         bne  L93F4                ; 93EA
+         lda  IO_PTR               ; 93EC
+         cmp  IO_END               ; 93EE
+         bne  L93F4                ; 93F0
+         beq  L93BF                ; 93F2
+L93F4
+         inc  IO_PTR               ; 93F4
+         bne  L93FA                ; 93F6
+         inc  IO_PTR+1             ; 93F8
+L93FA
+         jmp  L93DD                ; 93FA
+
+* boot of the saved game: next byte of the data sectors (own copy of IO_GETBYTE, DSKINV) ---
+GB_GETBYTE
+         clc                       ; 93FD
+         ldy  IO_POS               ; 93FE
+         bpl  L9428                ; 9400
+         lda  #$52                 ; 9402
+         sta  DCOMND               ; 9404
+         lda  #$01                 ; 9407
+         sta  DUNIT                ; 9409
+         lda  #$31                 ; 940C
+         sta  DBUFLO               ; 940E
+         lda  #$94                 ; 9411
+         sta  DBUFHI               ; 9413
+         jsr  DSKINV               ; 9416
+         bpl  L941C                ; 9419
+         rts                       ; 941B
+L941C
+         inc  DAUX1                ; 941C
+         bne  L9424                ; 941F
+         inc  DAUX2                ; 9421
+L9424
+         ldy  #$00                 ; 9424
+         sty  IO_POS               ; 9426
+L9428
+         lda  IO_BUF,y             ; 9428
+         inc  IO_POS               ; 942B
+         ldy  #$01                 ; 942D
+         rts                       ; 942F
+IO_SLOT          dta $00                              ; 9430 slot (X of IO_CMD): 1-5 planet sets, 0 = the stand-alone game

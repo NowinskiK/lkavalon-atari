@@ -9,10 +9,10 @@ TITLE_ED_
          lda  #$1D                 ; B189
          jsr  MESSAGE              ; B18B
          jsr  ED_DLIST             ; B18E
-         lda  $B187                ; B191
-         sta  $B4                  ; B194
-         lda  $B188                ; B196
-         sta  $B5                  ; B199
+         lda  TX_PAGESAV           ; B191
+         sta  TMP1                 ; B194
+         lda  TX_POSSAV            ; B196
+         sta  TMP2                 ; B199
 LB19B
          jsr  TX_DRAW              ; B19B
          ldx  #$00                 ; B19E
@@ -20,34 +20,36 @@ LB19B
          jsr  SET_DLIST            ; B1A2
          lda  #$40                 ; B1A5
          sta  IRQEN                ; B1A7
-         jsr  LB1C3                ; B1AA
+         jsr  TX_KEY               ; B1AA
          bcc  LB19B                ; B1AD
          lda  #$00                 ; B1AF
          sta  IRQEN                ; B1B1
-         lda  $B5                  ; B1B4
-         sta  $B188                ; B1B6
-         lda  $B4                  ; B1B9
-         sta  $B187                ; B1BB
+         lda  TMP2                 ; B1B4
+         sta  TX_POSSAV            ; B1B6
+         lda  TMP1                 ; B1B9
+         sta  TX_PAGESAV           ; B1BB
          jsr  ED_DLIST             ; B1BE
          sec                       ; B1C1
          rts                       ; B1C2
-LB1C3
+
+* title editor: one key; the cursor is the character in inverse; carry set = leave ---
+TX_KEY
          lda  #$00                 ; B1C3
-         sta  $B2                  ; B1C5
+         sta  PTR2                 ; B1C5
          lda  #$3A                 ; B1C7
-         sta  $B3                  ; B1C9
+         sta  PTR2+1               ; B1C9
          jsr  TX_SETBIT            ; B1CB
-         lda  $B5                  ; B1CE
-         sta  $B2                  ; B1D0
+         lda  TMP2                 ; B1CE
+         sta  PTR2                 ; B1D0
          ldy  #$00                 ; B1D2
-         lda  ($B2),y              ; B1D4
+         lda  (PTR2),y             ; B1D4
          ora  #$80                 ; B1D6
-         sta  ($B2),y              ; B1D8
+         sta  (PTR2),y             ; B1D8
          jsr  TX_DRAW              ; B1DA
          ldy  #$00                 ; B1DD
-         lda  ($B2),y              ; B1DF
+         lda  (PTR2),y             ; B1DF
          and  #$7F                 ; B1E1
-         sta  ($B2),y              ; B1E3
+         sta  (PTR2),y             ; B1E3
          jsr  GETKEY               ; B1E5
          bcs  LB1F3                ; B1E8
          cmp  #$11                 ; B1EA
@@ -60,7 +62,7 @@ LB1F3
          jsr  INPUT_CLR            ; B1F6
          bne  LB206                ; B1F9
          lda  TRIG0                ; B1FB
-         and  $D011                ; B1FE
+         and  TRIG1                ; B1FE
          and  CONSOL               ; B201
          beq  LB20B                ; B204
 LB206
@@ -73,116 +75,118 @@ LB20B
 LB210
          ldx  CH                   ; B210
          cpx  #$FF                 ; B213
-         beq  LB1C3                ; B215
+         beq  TX_KEY               ; B215
          lda  #$FF                 ; B217
          sta  CH                   ; B219
-         lda  $FB51,x              ; B21C
-         sta  $B244                ; B21F
-         lda  $B244                ; B222
+         lda  OS_KEYTAB,x          ; B21C
+         sta  TX_CHAR              ; B21F
+         lda  TX_CHAR              ; B222
          ldx  #$00                 ; B225
 LB227
-         cmp  $B330,x              ; B227
+         cmp  TX_KEYS,x            ; B227
          bne  LB23B                ; B22A
-         lda  $B331,x              ; B22C
-         sta  $B239                ; B22F
-         lda  $B332,x              ; B232
-         sta  $B23A                ; B235
-         jmp  $B238                ; B238
+         lda  TX_KEYS+1,x          ; B22C
+         sta  TX_GO+1              ; B22F
+         lda  TX_KEYS+2,x          ; B232
+         sta  TX_GO+2              ; B235
+TX_GO
+         jmp  TX_GO                ; B238
 LB23B
          inx                       ; B23B
          inx                       ; B23C
          inx                       ; B23D
-         ldy  $B330,x              ; B23E
+         ldy  TX_KEYS,x            ; B23E
          bne  LB227                ; B241
+TX_CHAR          equ *+1                              ; B244 ATASCII of the key pressed
          lda  #$00                 ; B243
          jsr  TX_ALLOWED           ; B245
          bcc  LB24D                ; B248
-         jmp  LB1C3                ; B24A
+         jmp  TX_KEY               ; B24A
 LB24D
          jsr  ATA2SCR              ; B24D
          ldy  #$00                 ; B250
-         sta  ($B2),y              ; B252
+         sta  (PTR2),y             ; B252
 
 * text input: cursor right ---------------------------------
 TX_RIGHT
-         inc  $B5                  ; B254
+         inc  TMP2                 ; B254
          jmp  LB275                ; B256
 
 * text input: cursor left ----------------------------------
 TX_LEFT
-         dec  $B5                  ; B259
+         dec  TMP2                 ; B259
          jmp  LB275                ; B25B
 
 * text input: cursor up ------------------------------------
 TX_UP
          sec                       ; B25E
-         lda  $B5                  ; B25F
+         lda  TMP2                 ; B25F
          sbc  #$20                 ; B261
-         sta  $B5                  ; B263
+         sta  TMP2                 ; B263
          bcs  LB275                ; B265
          bcc  LB272                ; B267
 
 * text input: cursor down ----------------------------------
 TX_DOWN
          clc                       ; B269
-         lda  $B5                  ; B26A
+         lda  TMP2                 ; B26A
          adc  #$20                 ; B26C
-         sta  $B5                  ; B26E
+         sta  TMP2                 ; B26E
          bcc  LB275                ; B270
 LB272
          jsr  TX_FLIP              ; B272
 LB275
          jsr  CLICK                ; B275
-         jmp  LB1C3                ; B278
+         jmp  TX_KEY               ; B278
 
 * text input: backspace ------------------------------------
 TX_BACKSP
-         lda  $B5                  ; B27B
+         lda  TMP2                 ; B27B
          bne  LB282                ; B27D
-         jmp  LB1C3                ; B27F
+         jmp  TX_KEY               ; B27F
 LB282
-         dec  $B5                  ; B282
-         lda  $B5                  ; B284
-         sta  $B2                  ; B286
+         dec  TMP2                 ; B282
+         lda  TMP2                 ; B284
+         sta  PTR2                 ; B286
          ldy  #$00                 ; B288
          tya                       ; B28A
-         sta  ($B2),y              ; B28B
+         sta  (PTR2),y             ; B28B
          jmp  LB275                ; B28D
 
 * text input: insert character -----------------------------
 TX_INSERT
          lda  #$00                 ; B290
-         sta  $B2                  ; B292
-         dec  $B5                  ; B294
-         ldy  $B5                  ; B296
+         sta  PTR2                 ; B292
+         dec  TMP2                 ; B294
+         ldy  TMP2                 ; B296
          cpy  #$FE                 ; B298
          beq  LB2A9                ; B29A
          ldy  #$FE                 ; B29C
 LB29E
-         lda  ($B2),y              ; B29E
+         lda  (PTR2),y             ; B29E
          iny                       ; B2A0
-         sta  ($B2),y              ; B2A1
+         sta  (PTR2),y             ; B2A1
          dey                       ; B2A3
          dey                       ; B2A4
-         cpy  $B5                  ; B2A5
+         cpy  TMP2                 ; B2A5
          bne  LB29E                ; B2A7
 LB2A9
          iny                       ; B2A9
          lda  #$00                 ; B2AA
-         sta  ($B2),y              ; B2AC
-         inc  $B5                  ; B2AE
+         sta  (PTR2),y             ; B2AC
+         inc  TMP2                 ; B2AE
          jmp  LB275                ; B2B0
 
 * text input: delete character -----------------------------
 TX_DELETE
          lda  #$00                 ; B2B3
-         sta  $B2                  ; B2B5
-         ldy  $B5                  ; B2B7
+         sta  PTR2                 ; B2B5
+         ldy  TMP2                 ; B2B7
          iny                       ; B2B9
 LB2BA
-         lda  ($B2),y              ; B2BA
+         lda  (PTR2),y             ; B2BA
          dey                       ; B2BC
-         sta  ($B2),y              ; B2BD
+         sta  (PTR2),y             ; B2BD
          iny                       ; B2BF
          beq  LB2C5                ; B2C0
          iny                       ; B2C2
@@ -190,16 +194,16 @@ LB2BA
 LB2C5
          dey                       ; B2C5
          lda  #$00                 ; B2C6
-         sta  ($B2),y              ; B2C8
+         sta  (PTR2),y             ; B2C8
          jmp  LB275                ; B2CA
 
 * text input: return ---------------------------------------
 TX_RETURN
          clc                       ; B2CD
-         lda  $B5                  ; B2CE
+         lda  TMP2                 ; B2CE
          adc  #$20                 ; B2D0
          and  #$E0                 ; B2D2
-         sta  $B5                  ; B2D4
+         sta  TMP2                 ; B2D4
          bcc  LB2DB                ; B2D6
          jsr  TX_FLIP              ; B2D8
 LB2DB
@@ -208,37 +212,37 @@ LB2DB
 * text input: clear ----------------------------------------
 TX_CLEAR
          ldy  #$00                 ; B2DE
-         sty  $B2                  ; B2E0
-         sty  $B5                  ; B2E2
+         sty  PTR2                 ; B2E0
+         sty  TMP2                 ; B2E2
          tya                       ; B2E4
 LB2E5
-         sta  ($B2),y              ; B2E5
+         sta  (PTR2),y             ; B2E5
          dey                       ; B2E7
          bne  LB2E5                ; B2E8
          jmp  LB275                ; B2EA
 
 * text input: flip bit 0 of $B4 ----------------------------
 TX_FLIP
-         lda  $B4                  ; B2ED
+         lda  TMP1                 ; B2ED
          eor  #$01                 ; B2EF
-         sta  $B4                  ; B2F1
+         sta  TMP1                 ; B2F1
          rts                       ; B2F3
 
-* text input: set bit 0 of $B3 from $B4 --------------------
+* text input: page TMP1 into bit 0 of PTR2+1 ($3A00 / $3B00) ---
 TX_SETBIT
-         lda  $B3                  ; B2F4
+         lda  PTR2+1               ; B2F4
          and  #$FE                 ; B2F6
-         ora  $B4                  ; B2F8
-         sta  $B3                  ; B2FA
+         ora  TMP1                 ; B2F8
+         sta  PTR2+1               ; B2FA
          rts                       ; B2FC
 
 * text input: is the character allowed ---------------------
 TX_ALLOWED
          ldx  #$00                 ; B2FD
 LB2FF
-         ldy  $B4F9,x              ; B2FF
+         ldy  CHR_FROM,x           ; B2FF
          bmi  LB30C                ; B302
-         cmp  $B4F9,x              ; B304
+         cmp  CHR_FROM,x           ; B304
          beq  LB32C                ; B307
          inx                       ; B309
          bpl  LB2FF                ; B30A
@@ -265,17 +269,16 @@ LB32C
 LB32E
          sec                       ; B32E
          rts                       ; B32F
-         dta $1E,$59,$B2,$1F,$54,$B2,$1C,$5E,$B2,$1D,$69,$B2,$7E,$7B,$B2,$FE ; B330
-         dta $B3,$B2,$FF,$90,$B2,$7D,$DE,$B2,$9B,$CD,$B2,$00 ; B340
+TX_KEYS          dta $1E,$59,$B2,$1F,$54,$B2,$1C,$5E,$B2,$1D,$69,$B2,$7E,$7B,$B2,$FE,$B3,$B2,$FF,$90,$B2,$7D,$DE,$B2,$9B,$CD,$B2,$00 ; B330 keys of the title editor: ATASCII, handler address; 0 ends
 
 * text input: draw the text window -------------------------
 TX_DRAW
          ldy  #$27                 ; B34C
 LB34E
-         lda  $A957,y              ; B34E
-         sta  $B600,y              ; B351
-         lda  $A97F,y              ; B354
-         sta  $B800,y              ; B357
+         lda  TX_HEAD_A,y          ; B34E
+         sta  SCREEN,y             ; B351
+         lda  TX_HEAD_B,y          ; B354
+         sta  SCREEN_B,y           ; B357
          dey                       ; B35A
          bpl  LB34E                ; B35B
          lda  #$60                 ; B35D
@@ -283,57 +286,57 @@ LB35F
          cmp  VCOUNT               ; B35F
          bne  LB35F                ; B362
          lda  #$00                 ; B364
-         sta  $B6                  ; B366
+         sta  TMP3                 ; B366
          lda  #$3A                 ; B368
-         sta  $B7                  ; B36A
+         sta  TMP4                 ; B36A
          lda  #$28                 ; B36C
-         sta  $B0                  ; B36E
+         sta  PTR1                 ; B36E
          lda  #$B6                 ; B370
-         sta  $B1                  ; B372
+         sta  PTR1+1               ; B372
          ldx  #$02                 ; B374
 LB376
          lda  #$00                 ; B376
          ldy  #$27                 ; B378
 LB37A
-         sta  ($B0),y              ; B37A
+         sta  (PTR1),y             ; B37A
          dey                       ; B37C
          cpy  #$24                 ; B37D
          bcs  LB37A                ; B37F
          ldy  #$03                 ; B381
 LB383
-         sta  ($B0),y              ; B383
+         sta  (PTR1),y             ; B383
          dey                       ; B385
          bpl  LB383                ; B386
          clc                       ; B388
-         lda  $B0                  ; B389
+         lda  PTR1                 ; B389
          adc  #$04                 ; B38B
-         sta  $B0                  ; B38D
+         sta  PTR1                 ; B38D
          bcc  LB393                ; B38F
-         inc  $B1                  ; B391
+         inc  PTR1+1               ; B391
 LB393
          ldy  #$1F                 ; B393
 LB395
-         lda  ($B6),y              ; B395
-         sta  ($B0),y              ; B397
+         lda  (TMP3),y             ; B395
+         sta  (PTR1),y             ; B397
          dey                       ; B399
          bpl  LB395                ; B39A
          clc                       ; B39C
-         lda  $B0                  ; B39D
+         lda  PTR1                 ; B39D
          adc  #$24                 ; B39F
-         sta  $B0                  ; B3A1
+         sta  PTR1                 ; B3A1
          bcc  LB3A7                ; B3A3
-         inc  $B1                  ; B3A5
+         inc  PTR1+1               ; B3A5
 LB3A7
          clc                       ; B3A7
-         lda  $B6                  ; B3A8
+         lda  TMP3                 ; B3A8
          adc  #$20                 ; B3AA
-         sta  $B6                  ; B3AC
+         sta  TMP3                 ; B3AC
          bcc  LB376                ; B3AE
-         inc  $B7                  ; B3B0
+         inc  TMP4                 ; B3B0
          lda  #$28                 ; B3B2
-         sta  $B0                  ; B3B4
+         sta  PTR1                 ; B3B4
          lda  #$B8                 ; B3B6
-         sta  $B1                  ; B3B8
+         sta  PTR1+1               ; B3B8
          dex                       ; B3BA
          bne  LB376                ; B3BB
          rts                       ; B3BD

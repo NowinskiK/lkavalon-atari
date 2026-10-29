@@ -3,7 +3,11 @@
 
          org $0C6D
 
-         dta $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$79,$0C,$80,$01 ; 0C6D
+HLP_SAVE         dta $00,$00,$00,$00,$00,$00,$00,$00  ; 0C6D PTR1 ... TMP4 saved while the help is shown
+HLP_TAPE         dta $00                              ; 0C75 DISK_SLOTS on entry: negative = no disk, the text shows the tape variants
+HLP_INV          dta $00                              ; 0C76 inverse mask of the characters ($14 in the text toggles it)
+HLP_TOP          dta $79,$0C                          ; 0C77 address of the text of the page shown
+         dta $80,$01                                  ; 0C79
 ; Mamy zaszczyt przedstawić pierwszy
          dta c'Mamy zaszczyt przedstawi',$03,c' pierwsz',c'y'* ; 0C7B
 ; szeroko dostępny program użytkowy

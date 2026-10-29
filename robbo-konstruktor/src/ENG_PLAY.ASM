@@ -10,19 +10,22 @@ ENGINE_INIT
 
 * play a planet: A = data page ($50 + 2n), X = number shown, Y = lives, carry = demo; own VBI, returns to the editor ---
 ENGINE_PLAY
-         stx  $1E0B                ; 1E03
+         stx  PLAY_NUM             ; 1E03
          tsx                       ; 1E06
-         stx  $3331                ; 1E07
+         stx  PLAY_SP              ; 1E07
+PLAY_NUM         equ *+1                              ; 1E0B X on entry (number shown), kept over TSX
          ldx  #$0A                 ; 1E0A
          jmp  ENGINE_PLAY_         ; 1E0C
-         dta $70,$70,$F0,$64,$00,$B6,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24 ; 1E0F
-         dta $24,$24,$24,$24,$24,$24,$24,$24,$A4,$04,$50,$42,$3E,$1E,$02,$01 ; 1E1F
-         dta $2F,$1E,$42,$8E,$1E,$01,$35,$1E,$80,$42,$B6,$1E,$41,$0F,$1E,$00 ; 1E2F
-         dta $00,$00,$00,$00,$00,$00,$00,$00,$00,$4D,$4E,$00,$00,$00,$00,$49 ; 1E3F
-         dta $4A,$00,$00,$00,$00,$55,$56,$00,$00,$00,$00,$51,$52,$00,$00,$00 ; 1E4F
-         dta $00,$45,$46,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 1E5F
-         dta $00,$4F,$50,$00,$00,$00,$00,$4B,$4C,$00,$00,$00,$00,$57,$58,$00 ; 1E6F
-         dta $00,$00,$00,$53,$54,$00,$00,$00,$00,$47,$48,$00,$00,$00,$00 ; 1E7F
+         dta $70,$70,$F0,$64                          ; 1E0F
+DLSA             dta $00,$B6                          ; 1E13 display list: address of the board window, moved by the scroll (Robbo DLSA)
+         dta $24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24 ; 1E15
+         dta $24,$24,$A4,$04,$50,$42,$3E,$1E,$02,$01  ; 1E25
+DL_BREAK         dta $2F,$1E                          ; 1E2F display list: JMP over or to the line "BREAK: powrot do Robbo Konstruktora"
+         dta $42,$8E,$1E,$01                          ; 1E31
+DL_DEMO          dta $35,$1E                          ; 1E35 display list: JMP over or to the line of the demo
+         dta $80,$42,$B6,$1E,$41,$0F,$1E              ; 1E37
+INFO_TOP         dta $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$4D,$4E,$00,$00,$00,$00,$49,$4A,$00,$00,$00,$00,$55,$56,$00,$00,$00,$00,$51,$52,$00,$00,$00,$00,$45,$46,$00,$00,$00,$00 ; 1E3E info line, upper half of the 2 x 2 digits (Robbo DSPB)
+INFO_BOT         dta $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$4F,$50,$00,$00,$00,$00,$4B,$4C,$00,$00,$00,$00,$57,$58,$00,$00,$00,$00,$53,$54,$00,$00,$00,$00,$47,$48,$00,$00,$00,$00 ; 1E66 info line, lower half
 ;   BREAK:  powrót do Robbo Konstruktora
          dta d'  BREAK:  powr_t do Robbo Konstruktora  ' ; 1E8E
 ; Wciśnięcie strzału przerywa demonstrację
@@ -31,12 +34,12 @@ ENGINE_PLAY
 * DLI 1 (Robbo DLI1): players to the planet colour PCOLR3, chains to DLI2 ---
 DLI1
          pha                       ; 1EDE
-         lda  $02C3                ; 1EDF
+         lda  PCOLR3               ; 1EDF
          sta  WSYNC                ; 1EE2
          sta  COLPM0               ; 1EE5
-         sta  $D013                ; 1EE8
-         sta  $D014                ; 1EEB
-         sta  $D015                ; 1EEE
+         sta  COLPM1               ; 1EE8
+         sta  COLPM2               ; 1EEB
+         sta  COLPM3               ; 1EEE
          lda  #$FD                 ; 1EF1
          sta  VDSLST               ; 1EF3
          lda  #$1E                 ; 1EF6
@@ -56,9 +59,9 @@ L1F01
          sta  DMACTL               ; 1F08
          lda  COLOR4               ; 1F0B
          sta  COLPM0               ; 1F0E
-         sta  $D013                ; 1F11
-         sta  $D014                ; 1F14
-         sta  $D015                ; 1F17
+         sta  COLPM1               ; 1F11
+         sta  COLPM2               ; 1F14
+         sta  COLPM3               ; 1F17
          sta  COLPF2               ; 1F1A
          clc                       ; 1F1D
          adc  #$0A                 ; 1F1E
@@ -92,7 +95,7 @@ ENGINE_INIT_
          sta  SDMCTL               ; 1F4B
          sta  DMACTL               ; 1F4E
          sta  VSF                  ; 1F51
-         sta  $D405                ; 1F53
+         sta  VSCROL               ; 1F53
          sta  SCOR                 ; 1F56
          sta  SCOR+1               ; 1F58
          sta  SCOR+2               ; 1F5A
@@ -102,15 +105,15 @@ ENGINE_INIT_
          sta  RUCH                 ; 1F62
          lda  #$FF                 ; 1F64
          sta  LSTE                 ; 1F66
-         sta  $11                  ; 1F68
+         sta  BRKKEY               ; 1F68
          lda  #$00                 ; 1F6A
-         sta  $1E13                ; 1F6C
+         sta  DLSA                 ; 1F6C
          sta  FADR                 ; 1F6F
-         sta  $2491                ; 1F71
+         sta  FADR_L               ; 1F71
          lda  #$B6                 ; 1F74
-         sta  $1E14                ; 1F76
+         sta  DLSA+1               ; 1F76
          sta  FADR+1               ; 1F79
-         sta  $2495                ; 1F7B
+         sta  FADR_H               ; 1F7B
          lda  #$00                 ; 1F7E
          sta  ADDR                 ; 1F80
          lda  #$BE                 ; 1F82
@@ -118,9 +121,9 @@ ENGINE_INIT_
          ldx  #$00                 ; 1F86
 L1F88
          lda  ADDR                 ; 1F88
-         sta  $23FD,x              ; 1F8A
+         sta  TSTTAB,x             ; 1F8A
          lda  ADDR+1               ; 1F8D
-         sta  $241D,x              ; 1F8F
+         sta  TSTTAB+32,x          ; 1F8F
          clc                       ; 1F92
          lda  ADDR                 ; 1F93
          adc  #$10                 ; 1F95
@@ -156,16 +159,16 @@ ENGINE_PLAY_
          lda  #$80                 ; 1FD0
 L1FD2
          sta  DEMO                 ; 1FD2
-         sty  $207D                ; 1FD4
+         sty  PLAY_TRY             ; 1FD4
          cpy  #$FF                 ; 1FD7
          bne  L1FDC                ; 1FD9
          iny                       ; 1FDB
 L1FDC
          sty  LIVS                 ; 1FDC
          lda  VVBLKD               ; 1FDE
-         sta  $3332                ; 1FE1
+         sta  OLD_VBI              ; 1FE1
          lda  VVBLKD+1             ; 1FE4
-         sta  $3333                ; 1FE7
+         sta  OLD_VBI+1            ; 1FE7
          ldy  #$54                 ; 1FEA
          ldx  #$2F                 ; 1FEC
          lda  #$07                 ; 1FEE
@@ -173,8 +176,8 @@ L1FDC
          lda  #$13                 ; 1FF3
          ldy  #$00                 ; 1FF5
 L1FF7
-         sta  $BE00,y              ; 1FF7
-         sta  $BF00,y              ; 1FFA
+         sta  BOARD,y              ; 1FF7
+         sta  BOARD+256,y          ; 1FFA
          dey                       ; 1FFD
          bne  L1FF7                ; 1FFE
          jsr  CHNMON               ; 2000
@@ -184,7 +187,7 @@ L2003
          lda  #$00                 ; 2009
          sta  ESC_KEY              ; 200B
 L200E
-         lsr  $4D                  ; 200E
+         lsr  ATRACT               ; 200E
          lda  #$00                 ; 2010
          sta  FAC                  ; 2012
          jsr  CHNGCV               ; 2014
@@ -192,7 +195,7 @@ L200E
          beq  L2057                ; 2019
          lda  FIRE                 ; 201B
          beq  L2027                ; 201E
-         lda  $021F                ; 2020
+         lda  CDTMV4+1             ; 2020
          bne  L205C                ; 2023
          beq  L2062                ; 2025
 L2027
@@ -201,7 +204,7 @@ L2027
 
 * leave the game (BREAK or the end): Y = $99, back to the caller of ENGINE_PLAY ---
 PLAY_ABORT
-         ldx  $3331                ; 202C
+         ldx  PLAY_SP              ; 202C
          txs                       ; 202F
          ldy  #$99                 ; 2030
          ldx  PNUM                 ; 2032
@@ -212,8 +215,8 @@ PLAY_EXIT
          pha                       ; 2035
          tya                       ; 2036
          pha                       ; 2037
-         ldy  $3332                ; 2038
-         ldx  $3333                ; 203B
+         ldy  OLD_VBI              ; 2038
+         ldx  OLD_VBI+1            ; 203B
          lda  #$07                 ; 203E
          jsr  SETVBV               ; 2040
          lda  #$FF                 ; 2043
@@ -239,7 +242,7 @@ L205C
 L2062
          lda  #$00                 ; 2062
          sta  RUCH                 ; 2064
-         sta  $021F                ; 2066
+         sta  CDTMV4+1             ; 2066
          jsr  WHIL                 ; 2069
 L206C
          jsr  WYBC                 ; 206C
@@ -251,6 +254,7 @@ L206C
          sbc  #$01                 ; 2077
          sta  LIVS                 ; 2079
          cld                       ; 207B
+PLAY_TRY         equ *+1                              ; 207D Y on entry: $FF = one try (game over after the first life)
          ldx  #$00                 ; 207C
          inx                       ; 207E
          beq  L2083                ; 207F
@@ -332,15 +336,15 @@ L20F4
 * run the board for $30 frames (Robbo WHIL) ----------------
 WHIL
          lda  #$30                 ; 20FC
-         sta  $021E                ; 20FE
+         sta  CDTMV4               ; 20FE
 L2101
          jsr  CHNGCV               ; 2101
-         lda  $021E                ; 2104
+         lda  CDTMV4               ; 2104
          bne  L2101                ; 2107
          rts                       ; 2109
 CNTR             dta $00                              ; 210A animation counter (Robbo CNTR)
 
-* one turn of the board (Robbo: "chng cave"): call the behaviour of each cell from table $31EF, next animation phase ---
+* one turn of the board (Robbo: "chng cave"): call the behaviour of each cell from PROC, next animation phase ---
 CHNGCV
          inc  CNTR                 ; 210B
          jsr  TFAC                 ; 210E
@@ -355,9 +359,9 @@ L2119
          lda  X1                   ; 211D
          sta  X                    ; 211F
          ldy  Y                    ; 2121
-         ora  $23FD,y              ; 2123
+         ora  TSTTAB,y             ; 2123
          sta  ADDR                 ; 2126
-         lda  $241D,y              ; 2128
+         lda  TSTTAB+32,y          ; 2128
          sta  ADDR+1               ; 212B
          ldy  #$00                 ; 212D
          lda  (ADDR),y             ; 212F
@@ -367,12 +371,13 @@ L2119
          cpy  #$61                 ; 2135
          bcs  L2175                ; 2137
          tay                       ; 2139
-         lda  $31EF,y              ; 213A
-         ldx  $31F0,y              ; 213D
+         lda  PROC,y               ; 213A
+         ldx  PROC+1,y             ; 213D
          beq  L214B                ; 2140
-         sta  $2149                ; 2142
-         stx  $214A                ; 2145
-         jsr  $2148                ; 2148
+         sta  CALL+1               ; 2142
+         stx  CALL+2               ; 2145
+CALL
+         jsr  CALL                 ; 2148
 L214B
          inc  X1                   ; 214B
          lda  X1                   ; 214D
@@ -411,7 +416,7 @@ L2189
          sec                       ; 2189
          sbc  #$61                 ; 218A
          tax                       ; 218C
-         lda  $31D5,x              ; 218D
+         lda  NEXT,x               ; 218D
          ldy  #$00                 ; 2190
          sta  (ADDR),y             ; 2192
          cmp  #$2A                 ; 2194
@@ -420,12 +425,12 @@ L2189
          sta  MOVE_DIR             ; 219A
          bmi  L214B                ; 219D
 
-* start a planet (Robbo PLA1): info-line texts by mode, header to $BFF0, screws, colours, players, TELE / KEYS / NABO ---
+* start a planet (Robbo PLA1): info-line texts by mode, header to BOARD_HDR, screws, colours, players, TELE / KEYS / NABO ---
 PLA1
          lda  DEMO                 ; 219F
          beq  L21A8                ; 21A1
          lda  #$05                 ; 21A3
-         sta  $021F                ; 21A5
+         sta  CDTMV4+1             ; 21A5
 L21A8
          ldx  #$34                 ; 21A8
          ldy  #$1E                 ; 21AA
@@ -434,8 +439,8 @@ L21A8
          ldx  #$31                 ; 21B1
          ldy  #$1E                 ; 21B3
 L21B5
-         stx  $1E2F                ; 21B5
-         sty  $1E30                ; 21B8
+         stx  DL_BREAK             ; 21B5
+         sty  DL_BREAK+1           ; 21B8
          ldx  #$3B                 ; 21BB
          ldy  #$1E                 ; 21BD
          lda  DEMO                 ; 21BF
@@ -443,8 +448,8 @@ L21B5
          ldx  #$37                 ; 21C3
          ldy  #$1E                 ; 21C5
 L21C7
-         stx  $1E35                ; 21C7
-         sty  $1E36                ; 21CA
+         stx  DL_DEMO              ; 21C7
+         sty  DL_DEMO+1            ; 21CA
          ldx  CNUM                 ; 21CD
          inx                       ; 21CF
          stx  SCRA+1               ; 21D0
@@ -453,12 +458,12 @@ L21C7
          ldy  #$F0                 ; 21D6
 L21D8
          lda  (SCRA),y             ; 21D8
-         sta  $BF00,y              ; 21DA
+         sta  BOARD+256,y          ; 21DA
          iny                       ; 21DD
          bne  L21D8                ; 21DE
-         lda  $BFF0                ; 21E0
-         sta  $2248                ; 21E3
-         lda  $BFF1                ; 21E6
+         lda  BOARD_HDR            ; 21E0
+         sta  ENTCV+1              ; 21E3
+         lda  BOARD_HDR+1          ; 21E6
          sta  ZEBR                 ; 21E9
          lda  #$04                 ; 21EB
          sta  GPRIOR               ; 21ED
@@ -468,15 +473,15 @@ L21D8
          sta  DMACTL               ; 21F8
          ldx  #$04                 ; 21FB
 L21FD
-         lda  $BFF2,x              ; 21FD
+         lda  BOARD_HDR+2,x        ; 21FD
          sta  COLOR0,x             ; 2200
          sta  COLPF0,x             ; 2203
          lda  COLOR4               ; 2206
          sta  COLPM0,x             ; 2209
          dex                       ; 220C
          bpl  L21FD                ; 220D
-         lda  $BFF7                ; 220F
-         sta  $02C3                ; 2212
+         lda  BOARD_HDR+7          ; 220F
+         sta  PCOLR3               ; 2212
          lda  #$FF                 ; 2215
          ldx  #$08                 ; 2217
 L2219
@@ -500,7 +505,7 @@ L2219
          lda  #$0D                 ; 223E
          sta  LM                   ; 2240
          rts                       ; 2242
-         dta $2C,$2D,$2E,$2F                          ; 2243
+WALL_CHR         dta $2C,$2D,$2E,$2F                  ; 2243 wall characters drawn for the 4 wall cells
 
 * enter a planet (Robbo: "wejscie"): wall shapes into the font by the header, draw the board column by column ---
 ENTCV
@@ -523,9 +528,9 @@ L225A
          ldy  #$0F                 ; 225F
 L2261
          lda  (CHAD),y             ; 2261
-         sta  $3C00,y              ; 2263
+         sta  FONT,y               ; 2263
          lda  (SCRA),y             ; 2266
-         sta  $3D00,y              ; 2268
+         sta  FONT+256,y           ; 2268
          dey                       ; 226B
          bpl  L2261                ; 226C
          lda  #$0F                 ; 226E
@@ -552,7 +557,7 @@ L2286
          lda  RANDOM               ; 228E
          and  #$03                 ; 2291
          tax                       ; 2293
-         lda  $2243,x              ; 2294
+         lda  WALL_CHR,x           ; 2294
 L2297
          cmp  #$2A                 ; 2297
          bne  L22A0                ; 2299

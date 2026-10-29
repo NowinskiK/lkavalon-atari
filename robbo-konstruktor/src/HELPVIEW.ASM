@@ -25,62 +25,69 @@ HELP
          dta d'     /1990 Laboratorium Komputerowe     ' ; 08B6
 ;                  Avalon
          dta d'                 Avalon                 ' ; 08DE
-;    ··: zmiana strony,    strzał: menu
-         dta d'   ',$5E,$5F,d': zmiana strony,    strza]: menu   ' ; 0906
+; 
+         dta d'   '                                   ; 0906
+
+* help viewer ------------------
+HLP_ARROWS       dta $5E,$5F                          ; 0909 arrows <- -> in the key hint line: 0 = no previous / next page
+; : zmiana strony,    strzał: menu
+         dta d': zmiana strony,    strza]: menu   '   ; 090B
 
 * frame lines around the help page (frame characters of the font) ---
          dta $00,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D ; 092E
          dta $1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D,$1D ; 093E
-         dta $1D,$1D,$1D,$1D,$1D,$1D,$1D,$00,$1B,$00,$00,$00,$00,$00,$00,$00 ; 094E
-         dta $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 095E
-         dta $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$1C ; 096E
+         dta $1D,$1D,$1D,$1D,$1D,$1D,$1D,$00          ; 094E
+HLP_LINEBUF      dta $1B,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$1C ; 0956 frame line under the help page, also the line buffer of the scroll
          dta $00,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E ; 097E
          dta $1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E ; 098E
          dta $1E,$1E,$1E,$1E,$1E,$1E,$1E,$00          ; 099E
+
+* help: save PTR1 ... TMP4, find page HELP_PAGE, show it; the stick turns pages, fire leaves ---
 HELP_
-         sta  $0C75                ; 09A6
+         sta  HLP_TAPE             ; 09A6
          ldx  #$07                 ; 09A9
 L09AB
-         lda  $B0,x                ; 09AB
-         sta  $0C6D,x              ; 09AD
+         lda  PTR1,x               ; 09AB
+         sta  HLP_SAVE,x           ; 09AD
          dex                       ; 09B0
          bpl  L09AB                ; 09B1
+HLP_FIRST        equ *+1                              ; 09B4 first call (start-up page): no click; ASL clears it
          lda  #$80                 ; 09B3
          bne  L09BD                ; 09B5
          jsr  CLICK                ; 09B7
          jsr  ED_DLIST             ; 09BA
 L09BD
-         asl  $09B4                ; 09BD
+         asl  HLP_FIRST            ; 09BD
          lda  #$79                 ; 09C0
-         sta  $B2                  ; 09C2
+         sta  PTR2                 ; 09C2
          lda  #$0C                 ; 09C4
-         sta  $B3                  ; 09C6
+         sta  PTR2+1               ; 09C6
          ldy  #$00                 ; 09C8
 L09CA
-         lda  ($B2),y              ; 09CA
+         lda  (PTR2),y             ; 09CA
          and  #$7F                 ; 09CC
          beq  L09D7                ; 09CE
          iny                       ; 09D0
          bne  L09CA                ; 09D1
-         inc  $B3                  ; 09D3
+         inc  PTR2+1               ; 09D3
          bne  L09CA                ; 09D5
 L09D7
          clc                       ; 09D7
          tya                       ; 09D8
-         adc  $B2                  ; 09D9
-         sta  $B2                  ; 09DB
+         adc  PTR2                 ; 09D9
+         sta  PTR2                 ; 09DB
          bcc  L09E1                ; 09DD
-         inc  $B3                  ; 09DF
+         inc  PTR2+1               ; 09DF
 L09E1
          ldy  #$01                 ; 09E1
-         lda  ($B2),y              ; 09E3
+         lda  (PTR2),y             ; 09E3
          beq  L09F5                ; 09E5
          cmp  HELP_PAGE            ; 09E7
          bne  L09CA                ; 09E9
-         lda  $B2                  ; 09EB
-         sta  $0C77                ; 09ED
-         lda  $B3                  ; 09F0
-         sta  $0C78                ; 09F2
+         lda  PTR2                 ; 09EB
+         sta  HLP_TOP              ; 09ED
+         lda  PTR2+1               ; 09F0
+         sta  HLP_TOP+1            ; 09F2
 L09F5
          jsr  HLP_PAGE             ; 09F5
          jsr  HLP_COPY             ; 09F8
@@ -113,25 +120,25 @@ L0A2E
          jsr  ED_DLIST             ; 0A31
          ldx  #$07                 ; 0A34
 L0A36
-         lda  $0C6D,x              ; 0A36
-         sta  $B0,x                ; 0A39
+         lda  HLP_SAVE,x           ; 0A36
+         sta  PTR1,x               ; 0A39
          dex                       ; 0A3B
          bpl  L0A36                ; 0A3C
          rts                       ; 0A3E
 
-* help: draw one page (16 lines) from the text pointer $0C77 ---
+* help: draw one page (16 lines) from the text pointer HLP_TOP ---
 HLP_PAGE
          ldx  #$5E                 ; 0A3F
-         stx  $0909                ; 0A41
+         stx  HLP_ARROWS           ; 0A41
          inx                       ; 0A44
-         stx  $090A                ; 0A45
+         stx  HLP_ARROWS+1         ; 0A45
          jsr  HLP_PTRTXT           ; 0A48
          ldx  #$00                 ; 0A4B
-         stx  $0C76                ; 0A4D
-         lda  ($B2,x)              ; 0A50
+         stx  HLP_INV              ; 0A4D
+         lda  (PTR2,x)             ; 0A50
          cmp  #$80                 ; 0A52
          bne  L0A59                ; 0A54
-         stx  $0909                ; 0A56
+         stx  HLP_ARROWS           ; 0A56
 L0A59
          jsr  HLP_INCTXT           ; 0A59
          jsr  HLP_INCTXT           ; 0A5C
@@ -146,10 +153,10 @@ L0A61
          dex                       ; 0A6B
          bne  L0A61                ; 0A6C
          ldx  #$00                 ; 0A6E
-         lda  ($B2,x)              ; 0A70
+         lda  (PTR2,x)             ; 0A70
          cmp  #$80                 ; 0A72
          bne  L0A79                ; 0A74
-         stx  $090A                ; 0A76
+         stx  HLP_ARROWS+1         ; 0A76
 L0A79
          rts                       ; 0A79
 
@@ -157,19 +164,19 @@ L0A79
 HLP_LINE
          ldy  #$27                 ; 0A7A
          lda  #$1C                 ; 0A7C
-         sta  ($B0),y              ; 0A7E
+         sta  (PTR1),y             ; 0A7E
          dey                       ; 0A80
          lda  #$00                 ; 0A81
 L0A83
-         sta  ($B0),y              ; 0A83
+         sta  (PTR1),y             ; 0A83
          dey                       ; 0A85
          bne  L0A83                ; 0A86
          lda  #$1B                 ; 0A88
-         sta  ($B0),y              ; 0A8A
+         sta  (PTR1),y             ; 0A8A
          ldy  #$02                 ; 0A8C
          ldx  #$00                 ; 0A8E
 L0A90
-         lda  ($B2,x)              ; 0A90
+         lda  (PTR2,x)             ; 0A90
          beq  L0ABF                ; 0A92
          bpl  L0AD3                ; 0A94
          cmp  #$B1                 ; 0A96
@@ -183,14 +190,14 @@ L0A9E
          beq  L0ABF                ; 0AA4
          cmp  #$14                 ; 0AA6
          bne  L0AB4                ; 0AA8
-         lda  $0C76                ; 0AAA
+         lda  HLP_INV              ; 0AAA
          eor  #$80                 ; 0AAD
-         sta  $0C76                ; 0AAF
+         sta  HLP_INV              ; 0AAF
          bcs  L0ABC                ; 0AB2
 L0AB4
          jsr  ATA2SCR              ; 0AB4
-         ora  $0C76                ; 0AB7
-         sta  ($B0),y              ; 0ABA
+         ora  HLP_INV              ; 0AB7
+         sta  (PTR1),y             ; 0ABA
 L0ABC
          jmp  HLP_INCTXT           ; 0ABC
 L0ABF
@@ -201,8 +208,8 @@ L0AC0
          tax                       ; 0AC3
          lda  #$00                 ; 0AC4
 L0AC6
-         ora  $0C76                ; 0AC6
-         sta  ($B0),y              ; 0AC9
+         ora  HLP_INV              ; 0AC6
+         sta  (PTR1),y             ; 0AC9
          iny                       ; 0ACB
          dex                       ; 0ACC
          bpl  L0AC6                ; 0ACD
@@ -218,30 +225,30 @@ L0AD3
          cmp  #$14                 ; 0ADF
          beq  L0B0B                ; 0AE1
          jsr  ATA2SCR              ; 0AE3
-         ora  $0C76                ; 0AE6
-         sta  ($B0),y              ; 0AE9
+         ora  HLP_INV              ; 0AE6
+         sta  (PTR1),y             ; 0AE9
          iny                       ; 0AEB
 L0AEC
          jsr  HLP_INCTXT           ; 0AEC
          jmp  L0A90                ; 0AEF
 L0AF2
-         lda  $0C75                ; 0AF2
+         lda  HLP_TAPE             ; 0AF2
          bmi  L0AEC                ; 0AF5
          lda  #$2F                 ; 0AF7
 L0AF9
          jsr  HLP_INCTXT           ; 0AF9
-         cmp  ($B2,x)              ; 0AFC
+         cmp  (PTR2,x)             ; 0AFC
          bne  L0AF9                ; 0AFE
          beq  L0AEC                ; 0B00
 L0B02
-         lda  $0C75                ; 0B02
+         lda  HLP_TAPE             ; 0B02
          bpl  L0AEC                ; 0B05
          lda  #$29                 ; 0B07
          bne  L0AF9                ; 0B09
 L0B0B
-         lda  $0C76                ; 0B0B
+         lda  HLP_INV              ; 0B0B
          eor  #$80                 ; 0B0E
-         sta  $0C76                ; 0B10
+         sta  HLP_INV              ; 0B10
          jmp  L0AEC                ; 0B13
 
 * help: copy the help screen buffer ------------------------
@@ -250,44 +257,44 @@ HLP_COPY
          jsr  HLP_WAIT             ; 0B19
          ldy  #$00                 ; 0B1C
 L0B1E
-         lda  ($B2),y              ; 0B1E
-         sta  ($B0),y              ; 0B20
+         lda  (PTR2),y             ; 0B1E
+         sta  (PTR1),y             ; 0B20
          iny                       ; 0B22
          bne  L0B1E                ; 0B23
-         inc  $B1                  ; 0B25
-         inc  $B3                  ; 0B27
+         inc  PTR1+1               ; 0B25
+         inc  PTR2+1               ; 0B27
 L0B29
-         lda  ($B2),y              ; 0B29
-         sta  ($B0),y              ; 0B2B
+         lda  (PTR2),y             ; 0B29
+         sta  (PTR1),y             ; 0B2B
          iny                       ; 0B2D
          bne  L0B29                ; 0B2E
-         inc  $B1                  ; 0B30
-         inc  $B3                  ; 0B32
+         inc  PTR1+1               ; 0B30
+         inc  PTR2+1               ; 0B32
 L0B34
-         lda  ($B2),y              ; 0B34
-         sta  ($B0),y              ; 0B36
+         lda  (PTR2),y             ; 0B34
+         sta  (PTR1),y             ; 0B36
          iny                       ; 0B38
          bpl  L0B34                ; 0B39
          rts                       ; 0B3B
 
-* help: previous page (only if not at the start, marker $0909) ---
+* help: previous page (only if not at the start: left arrow in HLP_ARROWS) ---
 HLP_PREV
-         lda  $0909                ; 0B3C
+         lda  HLP_ARROWS           ; 0B3C
          bne  L0B42                ; 0B3F
          rts                       ; 0B41
 L0B42
          jsr  CLICK                ; 0B42
          jsr  HLP_PTRTXT           ; 0B45
 L0B48
-         dec  $B3                  ; 0B48
+         dec  PTR2+1               ; 0B48
          ldy  #$FF                 ; 0B4A
 L0B4C
-         lda  ($B2),y              ; 0B4C
+         lda  (PTR2),y             ; 0B4C
          and  #$7F                 ; 0B4E
          beq  L0B5B                ; 0B50
          dey                       ; 0B52
          bne  L0B4C                ; 0B53
-         lda  ($B2),y              ; 0B55
+         lda  (PTR2),y             ; 0B55
          and  #$7F                 ; 0B57
          bne  L0B48                ; 0B59
 L0B5B
@@ -295,9 +302,9 @@ L0B5B
          ldx  #$0B                 ; 0B5D
          jmp  L0B81                ; 0B5F
 
-* help: next page (only if more text, marker $090A) --------
+* help: next page (only if more text: right arrow in HLP_ARROWS+1) ---
 HLP_NEXT
-         lda  $090A                ; 0B62
+         lda  HLP_ARROWS+1         ; 0B62
          bne  L0B68                ; 0B65
          rts                       ; 0B67
 L0B68
@@ -305,31 +312,31 @@ L0B68
          jsr  HLP_PTRTXT           ; 0B6B
          ldy  #$01                 ; 0B6E
 L0B70
-         lda  ($B2),y              ; 0B70
+         lda  (PTR2),y             ; 0B70
          and  #$7F                 ; 0B72
          beq  L0B7D                ; 0B74
          iny                       ; 0B76
          bne  L0B70                ; 0B77
-         inc  $B3                  ; 0B79
+         inc  PTR2+1               ; 0B79
          bne  L0B70                ; 0B7B
 L0B7D
          lda  #$F7                 ; 0B7D
          ldx  #$0B                 ; 0B7F
 L0B81
-         sta  $0BB2                ; 0B81
-         stx  $0BB3                ; 0B84
+         sta  HLP_STEP             ; 0B81
+         stx  HLP_STEP+1           ; 0B84
          clc                       ; 0B87
          tya                       ; 0B88
-         adc  $B2                  ; 0B89
-         sta  $0C77                ; 0B8B
+         adc  PTR2                 ; 0B89
+         sta  HLP_TOP              ; 0B8B
          lda  #$00                 ; 0B8E
-         adc  $B3                  ; 0B90
-         sta  $0C78                ; 0B92
+         adc  PTR2+1               ; 0B90
+         sta  HLP_TOP+1            ; 0B92
          jsr  HLP_PAGE             ; 0B95
          lda  #$26                 ; 0B98
-         sta  $B6                  ; 0B9A
+         sta  TMP3                 ; 0B9A
          lda  #$01                 ; 0B9C
-         sta  $B7                  ; 0B9E
+         sta  TMP4                 ; 0B9E
 L0BA0
          jsr  HLP_PTRSCR           ; 0BA0
          lda  #$60                 ; 0BA3
@@ -344,6 +351,7 @@ L0BAF
 
 * help: scroll animation -----------------------------------
 HLP_SCROLL
+HLP_STEP         equ *+1                              ; 0BB2 line step of the scroll: HLP_STEP_R (previous page) / HLP_STEP_L (next page)
          jsr  HLP_SCROLL           ; 0BB1
          jsr  HLP_NEXTLN           ; 0BB4
          jsr  HLP_NEXTSRC          ; 0BB7
@@ -351,47 +359,94 @@ HLP_SCROLL
          tax                       ; 0BBB
          dex                       ; 0BBC
          bne  L0BAF                ; 0BBD
-         inc  $B7                  ; 0BBF
-         dec  $B6                  ; 0BC1
+         inc  TMP4                 ; 0BBF
+         dec  TMP3                 ; 0BC1
          bne  L0BA0                ; 0BC3
 
-* help: clear the line buffer $0956 ------------------------
+* help: clear the line buffer HLP_LINEBUF ------------------
 HLP_CLRBUF
          ldy  #$26                 ; 0BC5
          lda  #$00                 ; 0BC7
 L0BC9
-         sta  $0956,y              ; 0BC9
+         sta  HLP_LINEBUF,y        ; 0BC9
          dey                       ; 0BCC
          bne  L0BC9                ; 0BCD
          rts                       ; 0BCF
-         dta $A5,$B2,$8D,$DF,$0B,$A5,$B3,$8D,$E0,$0B,$A2,$01,$A4,$B6,$BD,$DE ; 0BD0
-         dta $0B,$91,$B0,$E8,$C8,$C0,$27,$90,$F5,$A9,$1C,$A4,$B6,$C0,$02,$90 ; 0BE0
-         dta $05,$91,$B0,$99,$56,$09,$60,$A0,$26,$C4,$B7,$F0,$09,$88,$B1,$B0 ; 0BF0
-         dta $C8,$91,$B0,$88,$10,$F3,$B1,$B2,$91,$B0,$88,$D0,$F9,$A9,$1C,$A4 ; 0C00
-         dta $B7,$C8,$C0,$27,$B0,$05,$91,$B0,$99,$56,$09,$60 ; 0C10
+
+* help scroll step back: the new page slides in from the right over the old one, from column TMP3 ---
+HLP_STEP_R
+         lda  PTR2                 ; 0BD0
+         sta  HLP_SRC              ; 0BD2
+         lda  PTR2+1               ; 0BD5
+         sta  HLP_SRC+1            ; 0BD7
+         ldx  #$01                 ; 0BDA
+         ldy  TMP3                 ; 0BDC
+L0BDE
+HLP_SRC          equ *+1                              ; 0BDF source line of HLP_STEP_R
+         lda  L0BDE,x              ; 0BDE
+         sta  (PTR1),y             ; 0BE1
+         inx                       ; 0BE3
+         iny                       ; 0BE4
+         cpy  #$27                 ; 0BE5
+         bcc  L0BDE                ; 0BE7
+         lda  #$1C                 ; 0BE9
+         ldy  TMP3                 ; 0BEB
+         cpy  #$02                 ; 0BED
+         bcc  L0BF6                ; 0BEF
+         sta  (PTR1),y             ; 0BF1
+         sta  HLP_LINEBUF,y        ; 0BF3
+L0BF6
+         rts                       ; 0BF6
+
+* help scroll step forward: the old page moves right, the new one shows from the left up to column TMP4 ---
+HLP_STEP_L
+         ldy  #$26                 ; 0BF7
+L0BF9
+         cpy  TMP4                 ; 0BF9
+         beq  L0C06                ; 0BFB
+         dey                       ; 0BFD
+         lda  (PTR1),y             ; 0BFE
+         iny                       ; 0C00
+         sta  (PTR1),y             ; 0C01
+         dey                       ; 0C03
+         bpl  L0BF9                ; 0C04
+L0C06
+         lda  (PTR2),y             ; 0C06
+         sta  (PTR1),y             ; 0C08
+         dey                       ; 0C0A
+         bne  L0C06                ; 0C0B
+         lda  #$1C                 ; 0C0D
+         ldy  TMP4                 ; 0C0F
+         iny                       ; 0C11
+         cpy  #$27                 ; 0C12
+         bcs  L0C1B                ; 0C14
+         sta  (PTR1),y             ; 0C16
+         sta  HLP_LINEBUF,y        ; 0C18
+L0C1B
+         rts                       ; 0C1B
 
 * help: pointers to the screen buffers ---------------------
 HLP_PTRSCR
          lda  #$80                 ; 0C1C
-         sta  $B2                  ; 0C1E
+         sta  PTR2                 ; 0C1E
          lda  #$B8                 ; 0C20
-         sta  $B3                  ; 0C22
+         sta  PTR2+1               ; 0C22
          lda  #$00                 ; 0C24
-         sta  $B0                  ; 0C26
+         sta  PTR1                 ; 0C26
          lda  #$B6                 ; 0C28
-         sta  $B1                  ; 0C2A
+         sta  PTR1+1               ; 0C2A
          rts                       ; 0C2C
 
 * help: pointers to the screen and the text position -------
 HLP_PTRTXT
          lda  #$80                 ; 0C2D
-         sta  $B0                  ; 0C2F
+         sta  PTR1                 ; 0C2F
          lda  #$B8                 ; 0C31
-         sta  $B1                  ; 0C33
-         lda  $0C77                ; 0C35
-         sta  $B2                  ; 0C38
-         lda  $0C78                ; 0C3A
-         sta  $B3                  ; 0C3D
+         sta  PTR1+1               ; 0C33
+         lda  HLP_TOP              ; 0C35
+         sta  PTR2                 ; 0C38
+         lda  HLP_TOP+1            ; 0C3A
+         sta  PTR2+1               ; 0C3D
          rts                       ; 0C3F
 
 * help: wait for the next frame ----------------------------
@@ -404,21 +459,28 @@ L0C42
 
 * help: advance the text pointer ---------------------------
 HLP_INCTXT
-         inc  $B2                  ; 0C47
+         inc  PTR2                 ; 0C47
          bne  L0C4D                ; 0C49
-         inc  $B3                  ; 0C4B
+         inc  PTR2+1               ; 0C4B
 L0C4D
          rts                       ; 0C4D
-         dta $E6,$B0,$D0,$02,$E6,$B1,$60              ; 0C4E
+
+* help: advance the screen pointer - not called ------------
+HLP_INCSCR
+         inc  PTR1                 ; 0C4E
+         bne  L0C54                ; 0C50
+         inc  PTR1+1               ; 0C52
+L0C54
+         rts                       ; 0C54
 
 * help: next screen line (+40) -----------------------------
 HLP_NEXTLN
          clc                       ; 0C55
          lda  #$28                 ; 0C56
-         adc  $B0                  ; 0C58
-         sta  $B0                  ; 0C5A
+         adc  PTR1                 ; 0C58
+         sta  PTR1                 ; 0C5A
          bcc  L0C60                ; 0C5C
-         inc  $B1                  ; 0C5E
+         inc  PTR1+1               ; 0C5E
 L0C60
          rts                       ; 0C60
 
@@ -426,9 +488,9 @@ L0C60
 HLP_NEXTSRC
          clc                       ; 0C61
          lda  #$28                 ; 0C62
-         adc  $B2                  ; 0C64
-         sta  $B2                  ; 0C66
+         adc  PTR2                 ; 0C64
+         sta  PTR2                 ; 0C66
          bcc  L0C6C                ; 0C68
-         inc  $B3                  ; 0C6A
+         inc  PTR2+1               ; 0C6A
 L0C6C
          rts                       ; 0C6C

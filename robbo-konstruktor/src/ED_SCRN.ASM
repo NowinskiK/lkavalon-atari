@@ -8,7 +8,7 @@
 ED_SETUP
          lda  #$00                 ; AF3E
          bne  LAF5C                ; AF40
-         inc  $AF3F                ; AF42
+         inc  ED_SETUP+1           ; AF42
          sta  ED_FLAGS             ; AF45
          ldx  #$D0                 ; AF47
 LAF49
@@ -26,7 +26,7 @@ LAF5C
          lda  #$00                 ; AF5C
          sta  SDMCTL               ; AF5E
          sta  DMACTL               ; AF61
-         sta  $00                  ; AF64
+         sta  DLI_ROW              ; AF64
          jsr  WAIT_VBL             ; AF66
          lda  #$FF                 ; AF69
          ldx  #$10                 ; AF6B
@@ -40,21 +40,22 @@ LAF6D
 LAF7A
          lda  #$00                 ; AF7A
          sta  AUDF1,x              ; AF7C
+ED_ONCE          equ *+1                              ; AF80 ED_SETUP: 0 = first call (clear the zero page), then 3
          lda  #$00                 ; AF7F
          beq  LAF85                ; AF81
-         lda  ($B2),y              ; AF83
+         lda  (PTR2),y             ; AF83
 LAF85
-         sta  $02C0,x              ; AF85
+         sta  PCOLR0,x             ; AF85
          sta  COLPM0,x             ; AF88
          dex                       ; AF8B
          bpl  LAF7A                ; AF8C
          lda  #$03                 ; AF8E
          sta  SKCTL                ; AF90
-         sta  $AF80                ; AF93
+         sta  ED_ONCE              ; AF93
          lda  #$14                 ; AF96
-         sta  $02D9                ; AF98
+         sta  KRPDEL               ; AF98
          lda  #$03                 ; AF9B
-         sta  $02DA                ; AF9D
+         sta  KEYREP               ; AF9D
          lda  #$5F                 ; AFA0
          sta  VDSLST               ; AFA2
          lda  #$B0                 ; AFA5
@@ -66,40 +67,43 @@ LAF85
          ldx  #$00                 ; AFB4
 LAFB6
          lda  #$00                 ; AFB6
-         sta  $BD00,x              ; AFB8
+         sta  GR_BLANK,x           ; AFB8
          cpx  #$28                 ; AFBB
          bcs  LAFC4                ; AFBD
          lda  #$55                 ; AFBF
-         sta  $BD50,x              ; AFC1
+         sta  GR_LINE,x            ; AFC1
 LAFC4
          dex                       ; AFC4
          bne  LAFB6                ; AFC5
-         stx  $BD00                ; AFC7
+         stx  GR_BLANK             ; AFC7
          lda  #$55                 ; AFCA
-         sta  $BD50                ; AFCC
+         sta  GR_LINE              ; AFCC
          jsr  ED_INIT              ; AFCF
          lda  #$B6                 ; AFD2
          sta  SCR_PAGE             ; AFD4
          ldx  #$02                 ; AFD6
 LAFD8
-         lda  $B5BC,x              ; AFD8
+         lda  PM_HPOS,x            ; AFD8
          sta  HPOSP0,x             ; AFDB
          dex                       ; AFDE
          bpl  LAFD8                ; AFDF
          inx                       ; AFE1
-         stx  $D009                ; AFE2
+         stx  SIZEP1               ; AFE2
          lda  #$FE                 ; AFE5
-         sta  $D00E                ; AFE7
+         sta  GRAFP1               ; AFE7
          lda  #$04                 ; AFEA
          sta  GPRIOR               ; AFEC
          lda  #$00                 ; AFEF
          sta  IRQEN                ; AFF1
          jsr  INPUT_CLR            ; AFF4
+
+* first call only: help page 1 (the title page of the manual); then RTS is written over the LDA ---
+ED_FIRSTHELP
          lda  #$01                 ; AFF7
          sta  HELP_PAGE            ; AFF9
          jsr  HELP_KEY             ; AFFB
          lda  #$60                 ; AFFE
-         sta  $AFF7                ; B000
+         sta  ED_FIRSTHELP         ; B000
 
 * wait for the next frame ----------------------------------
 WAIT_VBL
@@ -125,22 +129,22 @@ LB018
          bne  LB016                ; B01C
          stx  AUDC1                ; B01E
          rts                       ; B021
-         dta $00                                      ; B022
+KEY_LAST         dta $00                              ; B022 last key code seen by KEY_EVENT_
 
 * key event ------------------------------------------------
 KEY_EVENT_
          jsr  GETKEY               ; B023
          bcc  LB02D                ; B026
 LB028
-         sta  $B022                ; B028
+         sta  KEY_LAST             ; B028
          sec                       ; B02B
          rts                       ; B02C
 LB02D
          cmp  #$1C                 ; B02D
          bne  LB028                ; B02F
-         cmp  $B022                ; B031
+         cmp  KEY_LAST             ; B031
          beq  LB028                ; B034
-         sta  $B022                ; B036
+         sta  KEY_LAST             ; B036
          clc                       ; B039
          rts                       ; B03A
 
@@ -168,7 +172,7 @@ LB057
          tax                       ; B05D
          rts                       ; B05E
 
-* editor DLI -----------------------------------------------
+* editor DLI: board rows alternate the fonts $4000 / $4400 (DLI_ROW), panel colours and font $4C00 below ---
 ED_DLI
          cld                       ; B05F
          pha                       ; B060
@@ -176,37 +180,37 @@ ED_DLI
          cmp  #$0C                 ; B064
          bcs  LB085                ; B066
          lda  #$00                 ; B068
-         sta  $00                  ; B06A
-         lda  $00                  ; B06C
+         sta  DLI_ROW              ; B06A
+         lda  DLI_ROW              ; B06C
          lsr                       ; B06E
          lda  #$40                 ; B06F
          bcc  LB075                ; B071
          adc  #$03                 ; B073
 LB075
          sta  CHBASE               ; B075
-         inc  $00                  ; B078
-         lda  $02C3                ; B07A
+         inc  DLI_ROW              ; B078
+         lda  PCOLR3               ; B07A
          sta  WSYNC                ; B07D
          sta  COLBK                ; B080
          pla                       ; B083
          rti                       ; B084
 LB085
-         lda  $00                  ; B085
+         lda  DLI_ROW              ; B085
          lsr                       ; B087
          lda  #$40                 ; B088
          bcc  LB08E                ; B08A
          adc  #$03                 ; B08C
 LB08E
          sta  CHBASE               ; B08E
-         inc  $00                  ; B091
-         lda  $00                  ; B093
+         inc  DLI_ROW              ; B091
+         lda  DLI_ROW              ; B093
          cmp  #$15                 ; B095
          bcc  LB0BA                ; B097
          lda  COLOR4               ; B099
          sta  COLBK                ; B09C
          sta  COLPM0               ; B09F
-         sta  $D013                ; B0A2
-         sta  $D014                ; B0A5
+         sta  COLPM1               ; B0A2
+         sta  COLPM2               ; B0A5
          lda  #$00                 ; B0A8
          sta  COLPF2               ; B0AA
          lda  #$0A                 ; B0AD
@@ -220,7 +224,7 @@ LB0BA
 
 * read joystick, fire, console keys and keyboard into JOY ---
 INPUT_
-         lsr  $4D                  ; B0BC
+         lsr  ATRACT               ; B0BC
          jsr  GETKEY               ; B0BE
          bcs  LB0CA                ; B0C1
          sec                       ; B0C3
@@ -231,14 +235,15 @@ LB0CA
          beq  LB0CE                ; B0CA
          lda  #$01                 ; B0CC
 LB0CE
-         sta  $B0D8                ; B0CE
+         sta  IN_FIRE              ; B0CE
          lda  SKCTL                ; B0D1
          lsr                       ; B0D4
          lsr                       ; B0D5
          lsr                       ; B0D6
+IN_FIRE          equ *+1                              ; B0D8 RETURN or SPACE held: 0 (fire), else 1; ANDed with SHIFT, triggers, console keys
          and  #$00                 ; B0D7
          and  TRIG0                ; B0D9
-         and  $D011                ; B0DC
+         and  TRIG1                ; B0DC
          and  CONSOL               ; B0DF
          sta  TRIG_ST              ; B0E2
          cmp  TRIG_LAST            ; B0E5
@@ -258,14 +263,14 @@ LB0FB
          bcs  LB10E                ; B102
          ldx  #$04                 ; B104
 LB106
-         cmp  $B512,x              ; B106
+         cmp  IN_KEYS,x            ; B106
          beq  LB10E                ; B109
          dex                       ; B10B
          bne  LB106                ; B10C
 LB10E
-         lda  $B517,x              ; B10E
+         lda  IN_DIRS,x            ; B10E
          eor  #$0F                 ; B111
-         sta  $B123                ; B113
+         sta  IN_DIR               ; B113
          pla                       ; B116
          tax                       ; B117
          lda  PORTA                ; B118
@@ -274,6 +279,7 @@ LB10E
          lsr                       ; B11D
          lsr                       ; B11E
          and  PORTA                ; B11F
+IN_DIR           equ *+1                              ; B123 stick bits of the cursor key (IN_DIRS), ANDed with both sticks
          and  #$00                 ; B122
          cmp  JOY_LAST             ; B124
          bne  LB12E                ; B127
@@ -285,14 +291,14 @@ LB12E
          cmp  JOY_LAST             ; B133
          pha                       ; B136
          php                       ; B137
-         lda  $B511                ; B138
+         lda  RPT_NEXT             ; B138
          plp                       ; B13B
          beq  LB141                ; B13C
-         lda  $B510                ; B13E
+         lda  RPT_FIRST            ; B13E
 LB141
          sta  JOY_RPT              ; B141
          lda  JOY_LAST             ; B144
-         sta  $B17E                ; B147
+         sta  JOY_PREV             ; B147
          pla                       ; B14A
          cmp  #$0F                 ; B14B
          beq  LB155                ; B14D
@@ -311,7 +317,7 @@ INPUT_CLR_
          sta  EVENT                ; B160
          sta  JOY                  ; B163
          lda  #$00                 ; B166
-         sta  $B5BB                ; B168
+         sta  BLINK_CNT            ; B168
 LB16B
          rts                       ; B16B
 
@@ -328,14 +334,15 @@ LB17A
          lda  #$FF                 ; B17A
          sec                       ; B17C
          rts                       ; B17D
-         dta $00                                      ; B17E
+JOY_PREV         dta $00                              ; B17E stick bits before the last change (DIR_TEST_)
 
 * test direction bits --------------------------------------
 DIR_TEST_
          clc                       ; B17F
-         and  $B17E                ; B180
+         and  JOY_PREV             ; B180
          bne  LB186                ; B183
          sec                       ; B185
 LB186
          rts                       ; B186
-         dta $00,$00                                  ; B187
+TX_PAGESAV       dta $00                              ; B187 page edited (0 = start $3A00, 1 = congratulation $3B00), kept between calls
+TX_POSSAV        dta $00                              ; B188 cursor position in the page, kept between calls

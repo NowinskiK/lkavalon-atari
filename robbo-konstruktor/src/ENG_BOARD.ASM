@@ -98,15 +98,15 @@ L2348
          inx                       ; 2348
          lsr                       ; 2349
          bcs  L2348                ; 234A
-         lda  $235B,x              ; 234C
-         sta  $2359                ; 234F
-         lda  $235F,x              ; 2352
-         sta  $235A                ; 2355
+         lda  LMVT,x               ; 234C
+         sta  JMP1+1               ; 234F
+         lda  LMVT+4,x             ; 2352
+         sta  JMP1+2               ; 2355
 
 * JMP to the step routine, operand from the tables $235B / $235F (Robbo JMP1, LMVT) ---
 JMP1
          jmp  JMP1                 ; 2358
-         dta $29,$08,$EF,$D0,$23,$23,$22,$22          ; 235B
+LMVT             dta $29,$08,$EF,$D0,$23,$23,$22,$22  ; 235B UP_ / DW_ / LT_ / RT_ for JMP1: low bytes, then high bytes (Robbo LMVT)
 
 * test the cell to the left --------------------------------
 T_LT
@@ -138,7 +138,7 @@ T_DW
 * properties of the tested cell from WHAT $32B1: bit 0 = a bullet destroys it, bit 1 = a bomb destroys it (Robbo T_EX) ---
 T_EX
          tax                       ; 2388
-         lda  $32B1,x              ; 2389
+         lda  WHAT,x               ; 2389
          rts                       ; 238C
 
 * add points to the score (Robbo: "dodaj punkty") ----------
@@ -174,9 +174,9 @@ L23A8
 GET_
          lda  X                    ; 23AD
          ldy  Y                    ; 23AF
-         ora  $23FD,y              ; 23B1
+         ora  TSTTAB,y             ; 23B1
          sta  ADDR                 ; 23B4
-         lda  $241D,y              ; 23B6
+         lda  TSTTAB+32,y          ; 23B6
          sta  ADDR+1               ; 23B9
          ldy  #$00                 ; 23BB
          lda  (ADDR),y             ; 23BD
@@ -191,9 +191,9 @@ PUT_
          pha                       ; 23C6
          lda  X                    ; 23C7
          ldy  Y                    ; 23C9
-         ora  $23FD,y              ; 23CB
+         ora  TSTTAB,y             ; 23CB
          sta  ADDR                 ; 23CE
-         lda  $241D,y              ; 23D0
+         lda  TSTTAB+32,y          ; 23D0
          sta  ADDR+1               ; 23D3
          pla                       ; 23D5
          ldy  #$00                 ; 23D6
@@ -208,9 +208,9 @@ TST_
          ldy  Y                    ; 23E1
          cpy  #$1F                 ; 23E3
          bcs  TST_W                ; 23E5
-         ora  $23FD,y              ; 23E7
+         ora  TSTTAB,y             ; 23E7
          sta  ADDR                 ; 23EA
-         lda  $241D,y              ; 23EC
+         lda  TSTTAB+32,y          ; 23EC
          sta  ADDR+1               ; 23EF
          ldy  #$00                 ; 23F1
          lda  (ADDR),y             ; 23F3

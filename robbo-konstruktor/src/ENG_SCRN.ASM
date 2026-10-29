@@ -6,7 +6,7 @@
 
 * redraw (Robbo CHNMON, reworked): BREAK back to the editor, FAC_STEP, ANIM, board to the screen with DRAW_ROW ---
 CHNMON
-         ldx  $11                  ; 243D
+         ldx  BRKKEY               ; 243D
          bmi  L2444                ; 243F
          jmp  PLAY_ABORT           ; 2441
 L2444
@@ -14,21 +14,21 @@ L2444
          jsr  FAC_STEP             ; 2447
          jsr  ANIM                 ; 244A
          lda  #$70                 ; 244D
-         sta  $246E                ; 244F
+         sta  ROW_JMP+1            ; 244F
          lda  #$24                 ; 2452
-         sta  $246F                ; 2454
+         sta  ROW_JMP+2            ; 2454
          lda  #$1E                 ; 2457
          sta  SCRA                 ; 2459
          lda  #$B6                 ; 245B
          sta  SCRA+1               ; 245D
          lda  #$00                 ; 245F
-         sta  $249B                ; 2461
+         sta  ROW_CELL+1           ; 2461
          lda  #$BE                 ; 2464
-         sta  $249C                ; 2466
+         sta  ROW_CELL+2           ; 2466
          lda  #$20                 ; 2469
          sta  ADDR                 ; 246B
-L246D
-         jmp  L246D                ; 246D
+ROW_JMP
+         jmp  ROW_JMP              ; 246D
 
 * CHNMON: draw one board row as 2 x 2 characters (target of the self-modified JMP $246D, waits a frame at the visible window) ---
 DRAW_ROW
@@ -39,26 +39,28 @@ DRAW_ROW
          bcc  L247A                ; 2477
          inx                       ; 2479
 L247A
-         cmp  $1E13                ; 247A
+         cmp  DLSA                 ; 247A
          txa                       ; 247D
-         sbc  $1E14                ; 247E
+         sbc  DLSA+1               ; 247E
          bcc  L2498                ; 2481
          lda  #$98                 ; 2483
-         sta  $246E                ; 2485
+         sta  ROW_JMP+1            ; 2485
          lda  #$24                 ; 2488
-         sta  $246F                ; 248A
+         sta  ROW_JMP+2            ; 248A
          jsr  HALT                 ; 248D
+FADR_L           equ *+1                              ; 2491 Robbo's screen address for FADR (set by MFEX), low byte
          lda  #$00                 ; 2490
          sta  FADR                 ; 2492
+FADR_H           equ *+1                              ; 2495 Robbo's screen address for FADR, high byte
          lda  #$00                 ; 2494
          sta  FADR+1               ; 2496
 L2498
          ldx  #$0F                 ; 2498
-L249A
-         lda  $BE00,x              ; 249A
+ROW_CELL
+         lda  BOARD,x              ; 249A
          and  #$7F                 ; 249D
          tay                       ; 249F
-         lda  $3155,y              ; 24A0
+         lda  LOOK,y               ; 24A0
          ldy  #$00                 ; 24A3
          sta  (SCRA),y             ; 24A5
          ora  #$01                 ; 24A7
@@ -73,7 +75,7 @@ L249A
          dec  SCRA                 ; 24B7
          dec  SCRA                 ; 24B9
          dex                       ; 24BB
-         bpl  L249A                ; 24BC
+         bpl  ROW_CELL             ; 24BC
          inc  SCRA                 ; 24BE
          inc  SCRA                 ; 24C0
          clc                       ; 24C2
@@ -84,14 +86,14 @@ L249A
          inc  SCRA+1               ; 24CB
 L24CD
          clc                       ; 24CD
-         lda  $249B                ; 24CE
+         lda  ROW_CELL+1           ; 24CE
          adc  #$10                 ; 24D1
-         sta  $249B                ; 24D3
+         sta  ROW_CELL+1           ; 24D3
          bcc  L24DB                ; 24D6
-         inc  $249C                ; 24D8
+         inc  ROW_CELL+2           ; 24D8
 L24DB
          dec  ADDR                 ; 24DB
-         bne  L246D                ; 24DD
+         bne  ROW_JMP              ; 24DD
          rts                       ; 24DF
 
 * Robbo's step, from CHNMON: direction MOVE_DIR, FAC_TURN at FX / FY ---
@@ -114,7 +116,7 @@ FAC_STEP
          pla                       ; 24FE
          sta  X                    ; 24FF
          rts                       ; 2501
-         dta $00                                      ; 2502
+FACET            dta $00                              ; 2502 Robbo's walking phase (Robbo: CHNMON-1, "FACET")
 
 * CHNMON (Robbo): copy the animation phase (CNTR) of the element shapes from $4800 into the board font ---
 ANIM
@@ -130,10 +132,10 @@ ANIM
 * animated shapes, part 1: characters $1C-$1F of the board font from the phase in $4800 / $4A00 (Robbo CM1) ---
 CM1
          lda  (ADDR),y             ; 2513
-         sta  $3C00,y              ; 2515
+         sta  FONT,y               ; 2515
          inc  ADDR+1               ; 2518
          lda  (ADDR),y             ; 251A
-         sta  $3D00,y              ; 251C
+         sta  FONT+256,y           ; 251C
          dec  ADDR+1               ; 251F
          dey                       ; 2521
          cpy  #$DF                 ; 2522
@@ -143,16 +145,16 @@ CM1
 * animated shapes, part 2: characters $0A-$15 (Robbo CM2) ---
 CM2
          lda  (ADDR),y             ; 2528
-         sta  $3C00,x              ; 252A
+         sta  FONT,x               ; 252A
          inc  ADDR+1               ; 252D
          lda  (ADDR),y             ; 252F
-         sta  $3D00,x              ; 2531
+         sta  FONT+256,x           ; 2531
          dec  ADDR+1               ; 2534
          dey                       ; 2536
          dex                       ; 2537
          cpx  #$4F                 ; 2538
          bne  CM2                  ; 253A
-         lda  $2502                ; 253C
+         lda  FACET                ; 253C
          clc                       ; 253F
          and  #$01                 ; 2540
          asl                       ; 2542
@@ -162,7 +164,7 @@ CM2
          beq  FA1                  ; 2549
          ldx  FAC                  ; 254B
          beq  FA1                  ; 254D
-         inc  $2502                ; 254F
+         inc  FACET                ; 254F
          ldx  #$50                 ; 2552
 L2554
          lda  ENGINE_INIT,x        ; 2554
@@ -190,11 +192,11 @@ L2561
 * copy Robbo's shape into the board font ($3EF0 / $3FF0, Robbo CM3) ---
 CM3
          lda  (ADDR),y             ; 256F
-         sta  $3EF0,x              ; 2571
+         sta  FONT+$2F0,x          ; 2571
          inc  ADDR+1               ; 2574
          lda  (ADDR),y             ; 2576
          dec  ADDR+1               ; 2578
-         sta  $3FF0,x              ; 257A
+         sta  FONT+$3F0,x          ; 257A
          dey                       ; 257D
          dex                       ; 257E
          bpl  CM3                  ; 257F

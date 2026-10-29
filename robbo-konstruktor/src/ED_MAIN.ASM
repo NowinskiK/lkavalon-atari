@@ -65,8 +65,12 @@ TRIG_LAST        dta $00                              ; A845 previous fire / con
          dta $0F,$0F,$20,$4F,$50,$BD,$0F,$0F,$42,$00,$BC,$02,$02,$02,$02,$4F ; A936
          dta $00,$BD,$0F,$0F,$0F,$0F,$42,$C8,$BC,$4F,$00,$BD,$0F,$0F,$41,$00 ; A946
          dta $A9                                      ; A956
+
+* title page editor ------------
+TX_HEAD_A                                             ; A957 header line of the start text
 ;     ·      tekst początkowy:       ·
          dta d'    '*,$DD,d'      tekst pocz@tkowy:       '*,$DD,d'    '* ; A957
+TX_HEAD_B                                             ; A97F header line of the congratulation text
 ;     ·     tekst gratulacyjny:      ·
          dta d'    '*,$DD,d'     tekst gratulacyjny:      '*,$DD,d'    '* ; A97F
 
@@ -100,13 +104,13 @@ EDIT
          bmi  LA9D7                ; A9D4
          rts                       ; A9D6
 LA9D7
-         inc  $B5BB                ; A9D7
+         inc  BLINK_CNT            ; A9D7
          lda  #$00                 ; A9DA
-         sta  $AB3E                ; A9DC
+         sta  ED_ERASE+1           ; A9DC
          ldx  CUR_X                ; A9DF
          ldy  CUR_Y                ; A9E1
          lda  WIN_TOP              ; A9E3
-         sta  $B6                  ; A9E5
+         sta  TMP3                 ; A9E5
          lda  JOY                  ; A9E7
          and  #$08                 ; A9EA
          bne  LAA03                ; A9EC
@@ -158,7 +162,7 @@ LAA38
          lda  WIN_TOP              ; AA38
          cmp  #$15                 ; AA3A
          bcs  LAA40                ; AA3C
-         inc  $B6                  ; AA3E
+         inc  TMP3                 ; AA3E
 LAA40
          lda  JOY                  ; AA40
          and  #$01                 ; AA43
@@ -170,9 +174,9 @@ LAA40
          bcs  LAA55                ; AA4D
          lda  WIN_TOP              ; AA4F
          beq  LAA55                ; AA51
-         dec  $B6                  ; AA53
+         dec  TMP3                 ; AA53
 LAA55
-         lda  $B6                  ; AA55
+         lda  TMP3                 ; AA55
          cmp  WIN_TOP              ; AA57
          bne  LAA63                ; AA59
          cpx  CUR_X                ; AA5B
@@ -181,10 +185,10 @@ LAA55
          beq  LAA80                ; AA61
 LAA63
          lda  #$00                 ; AA63
-         sta  $B5BB                ; AA65
+         sta  BLINK_CNT            ; AA65
          stx  CUR_X                ; AA68
          sty  CUR_Y                ; AA6A
-         lda  $B6                  ; AA6C
+         lda  TMP3                 ; AA6C
          sta  WIN_TOP              ; AA6E
          lda  TRIG_ST              ; AA70
          beq  LAA7B                ; AA73
@@ -192,7 +196,7 @@ LAA63
          jmp  LAA80                ; AA78
 LAA7B
          lda  #$01                 ; AA7B
-         sta  $AB3E                ; AA7D
+         sta  ED_ERASE+1           ; AA7D
 LAA80
          lda  #$FF                 ; AA80
          sta  JOY                  ; AA82
@@ -210,19 +214,19 @@ LAA8D
          lda  CUR_Y                ; AA9B
          asl                       ; AA9D
          adc  CUR_Y                ; AA9E
-         sta  $B6                  ; AAA0
+         sta  TMP3                 ; AAA0
          sec                       ; AAA2
          lda  CUR_X                ; AAA3
          sbc  #$11                 ; AAA5
          clc                       ; AAA7
-         adc  $B6                  ; AAA8
+         adc  TMP3                 ; AAA8
          pha                       ; AAAA
          tax                       ; AAAB
-         lda  $B51C,x              ; AAAC
+         lda  PAL_CODES,x          ; AAAC
          jsr  ELEM_MSG             ; AAAF
          pla                       ; AAB2
          tax                       ; AAB3
-         lda  $B51C,x              ; AAB4
+         lda  PAL_CODES,x          ; AAB4
          bmi  LAAE2                ; AAB7
          cpx  PAL_SEL              ; AAB9
          bne  LAAD8                ; AABB
@@ -233,9 +237,9 @@ LAA8D
          jsr  CELL_HEADER          ; AAC6
          ldy  #$00                 ; AAC9
          clc                       ; AACB
-         lda  ($B2),y              ; AACC
+         lda  (PTR2),y             ; AACC
          adc  #$20                 ; AACE
-         sta  ($B2),y              ; AAD0
+         sta  (PTR2),y             ; AAD0
          jsr  CLICK                ; AAD2
          jmp  LAB2E                ; AAD5
 LAAD8
@@ -246,7 +250,7 @@ LAAD8
 LAAE2
          jsr  INPUT_CLR            ; AAE2
          bne  LAB2E                ; AAE5
-         inc  $B5BA                ; AAE7
+         inc  PAL_SET              ; AAE7
          jmp  CLICK                ; AAEA
 LAAED
          lda  #$00                 ; AAED
@@ -260,10 +264,10 @@ LAAED
          tay                       ; AAFD
          jsr  CELL_ADDR            ; AAFE
          ldx  PAL_SEL              ; AB01
-         lda  $B51C,x              ; AB03
-         sta  $AB35                ; AB06
+         lda  PAL_CODES,x          ; AB03
+         sta  PUT_ELEM+1           ; AB06
          ldy  #$00                 ; AB09
-         lda  ($B2),y              ; AB0B
+         lda  (PTR2),y             ; AB0B
          cmp  #$41                 ; AB0D
          bcc  LAB1D                ; AB0F
          cmp  #$49                 ; AB11
@@ -274,37 +278,37 @@ LAAED
          clc                       ; AB1A
          adc  #$41                 ; AB1B
 LAB1D
-         cmp  $AB35                ; AB1D
-         beq  LAB3D                ; AB20
+         cmp  PUT_ELEM+1           ; AB1D
+         beq  ED_ERASE             ; AB20
          lda  JOY_LAST             ; AB22
          cmp  #$0F                 ; AB25
          bne  LAB2F                ; AB27
          jsr  INPUT_CLR            ; AB29
-         beq  LAB34                ; AB2C
+         beq  PUT_ELEM             ; AB2C
 LAB2E
          rts                       ; AB2E
 LAB2F
          lda  TRIG_ST              ; AB2F
          bne  LAB2E                ; AB32
-LAB34
+PUT_ELEM
          lda  #$00                 ; AB34
          ldy  #$00                 ; AB36
-         sta  ($B2),y              ; AB38
+         sta  (PTR2),y             ; AB38
          jmp  CLICK                ; AB3A
-LAB3D
+ED_ERASE
          lda  #$3D                 ; AB3D
          bne  LAB4A                ; AB3F
          jsr  INPUT_CLR            ; AB41
          bne  LAB2E                ; AB44
          lda  #$20                 ; AB46
-         sta  ($B2),y              ; AB48
+         sta  (PTR2),y             ; AB48
 LAB4A
          jmp  CLICK                ; AB4A
 LAB4D
          jsr  CLICK                ; AB4D
          ldx  #$00                 ; AB50
          stx  ED_FLAGS             ; AB52
-         stx  $B5BB                ; AB54
+         stx  BLINK_CNT            ; AB54
          dex                       ; AB57
          stx  JOY                  ; AB58
          lda  CUR_X                ; AB5B
@@ -341,12 +345,12 @@ LAB89
          jsr  TO_DIGITS            ; AB8E
          tya                       ; AB91
          ldy  #$01                 ; AB92
-         sta  ($B2),y              ; AB94
+         sta  (PTR2),y             ; AB94
          dey                       ; AB96
-         lda  ($B2),y              ; AB97
+         lda  (PTR2),y             ; AB97
          and  #$E0                 ; AB99
          ora  PLANET               ; AB9B
-         sta  ($B2),y              ; AB9D
+         sta  (PTR2),y             ; AB9D
          ldx  PLANET               ; AB9F
          lda  #$01                 ; ABA1
          sta  PLANET_STATE,x       ; ABA3
@@ -358,7 +362,7 @@ AUTO_VARIANT
          ldy  CUR_Y                ; ABA9
          jsr  CELL_ADDR            ; ABAB
          ldy  #$00                 ; ABAE
-         lda  ($B2),y              ; ABB0
+         lda  (PTR2),y             ; ABB0
          cmp  #$41                 ; ABB2
          bcc  LAC08                ; ABB4
          cmp  #$46                 ; ABB6
@@ -368,30 +372,30 @@ AUTO_VARIANT
          and  #$04                 ; ABBD
          clc                       ; ABBF
          adc  #$41                 ; ABC0
-         sta  $B4                  ; ABC2
+         sta  TMP1                 ; ABC2
          ldx  CUR_X                ; ABC4
          ldy  CUR_Y                ; ABC6
          jsr  CELL_ADDR            ; ABC8
          sec                       ; ABCB
-         lda  $B2                  ; ABCC
+         lda  PTR2                 ; ABCC
          sbc  #$11                 ; ABCE
-         sta  $B2                  ; ABD0
+         sta  PTR2                 ; ABD0
          bcs  LABD6                ; ABD2
-         dec  $B3                  ; ABD4
+         dec  PTR2+1               ; ABD4
 LABD6
          ldx  #$03                 ; ABD6
 LABD8
          clc                       ; ABD8
          lda  CUR_X                ; ABD9
-         adc  $AC0D,x              ; ABDB
+         adc  AV_DX,x              ; ABDB
          cmp  #$10                 ; ABDE
          bcs  LABF7                ; ABE0
          lda  CUR_Y                ; ABE2
-         adc  $AC11,x              ; ABE4
+         adc  AV_DY,x              ; ABE4
          cmp  #$1F                 ; ABE7
          bcs  LABF7                ; ABE9
-         ldy  $AC09,x              ; ABEB
-         lda  ($B2),y              ; ABEE
+         ldy  AV_OFS,x             ; ABEB
+         lda  (PTR2),y             ; ABEE
          cmp  #$20                 ; ABF0
          bne  LABF7                ; ABF2
          dex                       ; ABF4
@@ -399,17 +403,19 @@ LABD8
 LABF7
          clc                       ; ABF7
          txa                       ; ABF8
-         adc  $B4                  ; ABF9
+         adc  TMP1                 ; ABF9
          pha                       ; ABFB
          ldx  CUR_X                ; ABFC
          ldy  CUR_Y                ; ABFE
          jsr  CELL_ADDR            ; AC00
          pla                       ; AC03
          ldy  #$00                 ; AC04
-         sta  ($B2),y              ; AC06
+         sta  (PTR2),y             ; AC06
 LAC08
          rts                       ; AC08
-         dta $10,$12,$01,$21,$FF,$01,$00,$00,$00,$00,$FF,$01 ; AC09
+AV_OFS           dta $10,$12,$01,$21                  ; AC09 AUTO_VARIANT: neighbour cells from PTR2-17: left, right, above, below
+AV_DX            dta $FF,$01,$00,$00                  ; AC0D their X step
+AV_DY            dta $00,$00,$FF,$01                  ; AC11 their Y step
 
 * test a planet: empty, Robbo ($2A) exactly 1, capsule ($14) exactly 1, screws ($24) < 100 ---
 PLANET_TEST
@@ -418,14 +424,14 @@ PLANET_TEST
          jsr  CELL_ADDR            ; AC19
          ldy  #$00                 ; AC1C
 LAC1E
-         lda  ($B2),y              ; AC1E
+         lda  (PTR2),y             ; AC1E
          cmp  #$20                 ; AC20
          bne  LAC38                ; AC22
          iny                       ; AC24
          bne  LAC1E                ; AC25
-         inc  $B3                  ; AC27
+         inc  PTR2+1               ; AC27
 LAC29
-         lda  ($B2),y              ; AC29
+         lda  (PTR2),y             ; AC29
          cmp  #$20                 ; AC2B
          bne  LAC38                ; AC2D
          iny                       ; AC2F
@@ -474,57 +480,58 @@ CELL_HEADER
 * cell address: $5000 + planet * $200 + row * 16 + column ---
 CELL_ADDR
          lda  #$00                 ; AC6F
-         sta  $B3                  ; AC71
+         sta  PTR2+1               ; AC71
          tya                       ; AC73
          asl                       ; AC74
          asl                       ; AC75
          asl                       ; AC76
          asl                       ; AC77
-         rol  $B3                  ; AC78
-         sta  $B2                  ; AC7A
+         rol  PTR2+1               ; AC78
+         sta  PTR2                 ; AC7A
          lda  PLANET               ; AC7C
          asl                       ; AC7E
          adc  #$50                 ; AC7F
-         adc  $B3                  ; AC81
-         sta  $B3                  ; AC83
+         adc  PTR2+1               ; AC81
+         sta  PTR2+1               ; AC83
          txa                       ; AC85
-         adc  $B2                  ; AC86
-         sta  $B2                  ; AC88
+         adc  PTR2                 ; AC86
+         sta  PTR2                 ; AC88
          rts                       ; AC8A
 
 * count the cells holding element A on the current planet ---
 COUNT_ELEM_
-         sta  $B4                  ; AC8B
+         sta  TMP1                 ; AC8B
          lda  #$00                 ; AC8D
-         sta  $B6                  ; AC8F
+         sta  TMP3                 ; AC8F
          lda  #$1E                 ; AC91
-         sta  $B7                  ; AC93
+         sta  TMP4                 ; AC93
 LAC95
          ldx  #$0F                 ; AC95
 LAC97
-         ldy  $B7                  ; AC97
+         ldy  TMP4                 ; AC97
          jsr  CELL_ADDR            ; AC99
          ldy  #$00                 ; AC9C
-         lda  ($B2),y              ; AC9E
-         cmp  $B4                  ; ACA0
+         lda  (PTR2),y             ; AC9E
+         cmp  TMP1                 ; ACA0
          bne  LACAA                ; ACA2
-         bit  $B6                  ; ACA4
+         bit  TMP3                 ; ACA4
          bmi  LACAA                ; ACA6
-         inc  $B6                  ; ACA8
+         inc  TMP3                 ; ACA8
 LACAA
          dex                       ; ACAA
          bpl  LAC97                ; ACAB
-         dec  $B7                  ; ACAD
+         dec  TMP4                 ; ACAD
          bpl  LAC95                ; ACAF
-         lda  $B6                  ; ACB1
+         lda  TMP3                 ; ACB1
 
 * copy protection 2 lock: this RTS becomes JMP $B003 (WAIT_VBL) when PROT_BOOT fails - the count is then RTCLOK+2 and PLANET_TEST reports "za duzo robocikow!" ---
+COUNT_RTS
          rts                       ; ACB3
          dta $03,$B0                                  ; ACB4
 
 * redraw: palette, board window, planet strip, element preview; swap display lists ---
 REDRAW_
-         lda  $B5BA                ; ACB6
+         lda  PAL_SET              ; ACB6
          and  #$03                 ; ACB9
          asl                       ; ACBB
          asl                       ; ACBC
@@ -533,22 +540,22 @@ REDRAW_
          tax                       ; ACC0
          ldy  #$07                 ; ACC1
 LACC3
-         lda  $B53A,x              ; ACC3
-         sta  $B532,y              ; ACC6
+         lda  PAL_SETS,x           ; ACC3
+         sta  PAL_CODES+22,y       ; ACC6
          dex                       ; ACC9
          dey                       ; ACCA
          bpl  LACC3                ; ACCB
          lda  #$00                 ; ACCD
          jsr  BLINK                ; ACCF
          lda  #$1D                 ; ACD2
-         sta  $B6                  ; ACD4
+         sta  TMP3                 ; ACD4
          lda  #$09                 ; ACD6
-         sta  $B7                  ; ACD8
+         sta  TMP4                 ; ACD8
 LACDA
          ldx  #$13                 ; ACDA
 LACDC
-         ldy  $B6                  ; ACDC
-         lda  $B51C,y              ; ACDE
+         ldy  TMP3                 ; ACDC
+         lda  PAL_CODES,y          ; ACDE
          bpl  LACE7                ; ACE1
          lda  #$39                 ; ACE3
          bne  LAD06                ; ACE5
@@ -571,9 +578,9 @@ LACF9
          adc  #$60                 ; AD00
 LAD02
          tay                       ; AD02
-         lda  $B55A,y              ; AD03
+         lda  GLYPHS,y             ; AD03
 LAD06
-         ldy  $B6                  ; AD06
+         ldy  TMP3                 ; AD06
          cpy  PAL_SEL              ; AD08
          bne  LAD1B                ; AD0A
          bit  ED_FLAGS             ; AD0C
@@ -584,31 +591,31 @@ LAD06
          lsr                       ; AD14
          pla                       ; AD15
          bcc  LAD1B                ; AD16
-         lda  $B55A                ; AD18
+         lda  GLYPHS               ; AD18
 LAD1B
-         ldy  $B7                  ; AD1B
+         ldy  TMP4                 ; AD1B
          jsr  PUT_CELL             ; AD1D
-         dec  $B6                  ; AD20
+         dec  TMP3                 ; AD20
          dex                       ; AD22
          cpx  #$11                 ; AD23
          bcs  LACDC                ; AD25
-         dec  $B7                  ; AD27
+         dec  TMP4                 ; AD27
          bpl  LACDA                ; AD29
-         lda  $B55A                ; AD2B
+         lda  GLYPHS               ; AD2B
          ldx  #$10                 ; AD2E
          ldy  #$09                 ; AD30
          jsr  PUT_CELL             ; AD32
          ldy  #$00                 ; AD35
-         lda  $B55A                ; AD37
+         lda  GLYPHS               ; AD37
          jsr  PUT_CELL             ; AD3A
          iny                       ; AD3D
          jsr  PUT_CELL             ; AD3E
-         lda  $AF36                ; AD41
-         sta  $B0                  ; AD44
-         lda  $AF37                ; AD46
-         sta  $B1                  ; AD49
+         lda  PC_STA1+1            ; AD41
+         sta  PTR1                 ; AD44
+         lda  PC_STA1+2            ; AD46
+         sta  PTR1+1               ; AD49
          lda  #$00                 ; AD4B
-         sta  $B6                  ; AD4D
+         sta  TMP3                 ; AD4D
          tay                       ; AD4F
 LAD50
          clc                       ; AD50
@@ -616,7 +623,7 @@ LAD50
          adc  #$01                 ; AD53
          lsr                       ; AD55
          lsr                       ; AD56
-         cmp  $B6                  ; AD57
+         cmp  TMP3                 ; AD57
          bne  LAD91                ; AD59
          clc                       ; AD5B
          lda  WIN_TOP              ; AD5C
@@ -630,22 +637,22 @@ LAD68
          asl                       ; AD69
          tax                       ; AD6A
 LAD6B
-         lda  $B5E0,x              ; AD6B
-         sta  ($B0),y              ; AD6E
-         lda  $B55A                ; AD70
+         lda  STRIP_CHR,x          ; AD6B
+         sta  (PTR1),y             ; AD6E
+         lda  GLYPHS               ; AD70
          asl                       ; AD73
          iny                       ; AD74
-         sta  ($B0),y              ; AD75
+         sta  (PTR1),y             ; AD75
          dey                       ; AD77
          clc                       ; AD78
          lda  #$28                 ; AD79
-         adc  $B0                  ; AD7B
-         sta  $B0                  ; AD7D
+         adc  PTR1                 ; AD7B
+         sta  PTR1                 ; AD7D
          bcc  LAD83                ; AD7F
-         inc  $B1                  ; AD81
+         inc  PTR1+1               ; AD81
 LAD83
-         inc  $B6                  ; AD83
-         lda  $B6                  ; AD85
+         inc  TMP3                 ; AD83
+         lda  TMP3                 ; AD85
          cmp  #$08                 ; AD87
          bcs  LADB6                ; AD89
          inx                       ; AD8B
@@ -654,25 +661,25 @@ LAD83
          bne  LAD6B                ; AD8F
 LAD91
          lda  #$54                 ; AD91
-         ldx  $B6                  ; AD93
+         ldx  TMP3                 ; AD93
          bne  LAD99                ; AD95
          lda  #$5C                 ; AD97
 LAD99
-         sta  ($B0),y              ; AD99
-         lda  $B55A                ; AD9B
+         sta  (PTR1),y             ; AD99
+         lda  GLYPHS               ; AD9B
          asl                       ; AD9E
          iny                       ; AD9F
-         sta  ($B0),y              ; ADA0
+         sta  (PTR1),y             ; ADA0
          dey                       ; ADA2
          clc                       ; ADA3
          lda  #$28                 ; ADA4
-         adc  $B0                  ; ADA6
-         sta  $B0                  ; ADA8
+         adc  PTR1                 ; ADA6
+         sta  PTR1                 ; ADA8
          bcc  LADAE                ; ADAA
-         inc  $B1                  ; ADAC
+         inc  PTR1+1               ; ADAC
 LADAE
-         inc  $B6                  ; ADAE
-         lda  $B6                  ; ADB0
+         inc  TMP3                 ; ADAE
+         lda  TMP3                 ; ADB0
          cmp  #$08                 ; ADB2
          bcc  LAD50                ; ADB4
 LADB6
@@ -682,21 +689,21 @@ LADB6
          ldy  WIN_TOP              ; ADBD
          jsr  CELL_ADDR            ; ADBF
          clc                       ; ADC2
-         lda  $B2                  ; ADC3
+         lda  PTR2                 ; ADC3
          adc  #$9F                 ; ADC5
-         sta  $B2                  ; ADC7
-         lda  $B3                  ; ADC9
+         sta  PTR2                 ; ADC7
+         lda  PTR2+1               ; ADC9
          adc  #$00                 ; ADCB
-         sta  $B3                  ; ADCD
+         sta  PTR2+1               ; ADCD
          lda  #$09                 ; ADCF
-         sta  $B6                  ; ADD1
+         sta  TMP3                 ; ADD1
 LADD3
          ldx  #$0F                 ; ADD3
 LADD5
          ldy  #$00                 ; ADD5
          lda  PLANET               ; ADD7
          bmi  LADE7                ; ADD9
-         lda  ($B2),y              ; ADDB
+         lda  (PTR2),y             ; ADDB
          sec                       ; ADDD
          and  #$7F                 ; ADDE
          sbc  #$20                 ; ADE0
@@ -705,36 +712,36 @@ LADD5
 LADE6
          tay                       ; ADE6
 LADE7
-         lda  $B55A,y              ; ADE7
-         ldy  $B6                  ; ADEA
+         lda  GLYPHS,y             ; ADE7
+         ldy  TMP3                 ; ADEA
          jsr  PUT_CELL             ; ADEC
-         lda  $B2                  ; ADEF
+         lda  PTR2                 ; ADEF
          bne  LADF5                ; ADF1
-         dec  $B3                  ; ADF3
+         dec  PTR2+1               ; ADF3
 LADF5
-         dec  $B2                  ; ADF5
+         dec  PTR2                 ; ADF5
          dex                       ; ADF7
          bpl  LADD5                ; ADF8
-         dec  $B6                  ; ADFA
+         dec  TMP3                 ; ADFA
          bpl  LADD3                ; ADFC
          lda  #$00                 ; ADFE
-         sta  $B5                  ; AE00
-         lda  $B4                  ; AE02
+         sta  TMP2                 ; AE00
+         lda  TMP1                 ; AE02
          asl                       ; AE04
          asl                       ; AE05
-         rol  $B5                  ; AE06
+         rol  TMP2                 ; AE06
          asl                       ; AE08
-         rol  $B5                  ; AE09
+         rol  TMP2                 ; AE09
          asl                       ; AE0B
-         rol  $B5                  ; AE0C
-         sta  $B4                  ; AE0E
+         rol  TMP2                 ; AE0C
+         sta  TMP1                 ; AE0E
          lda  #$40                 ; AE10
-         adc  $B5                  ; AE12
-         sta  $B5                  ; AE14
+         adc  TMP2                 ; AE12
+         sta  TMP2                 ; AE14
          lda  #$F0                 ; AE16
-         sta  $B2                  ; AE18
+         sta  PTR2                 ; AE18
          lda  #$43                 ; AE1A
-         sta  $B3                  ; AE1C
+         sta  PTR2+1               ; AE1C
          lda  #$60                 ; AE1E
 LAE20
          cmp  VCOUNT               ; AE20
@@ -762,28 +769,28 @@ LAE46
          lsr                       ; AE4A
          and  #$03                 ; AE4B
          tax                       ; AE4D
-         lda  $B5E0,x              ; AE4E
+         lda  STRIP_CHR,x          ; AE4E
          lda  #$AA                 ; AE51
-         sta  $B5BF                ; AE53
+         sta  FRAME_COL            ; AE53
          ldy  #$00                 ; AE56
          ldx  #$00                 ; AE58
 LAE5A
-         lda  $B5C0,x              ; AE5A
+         lda  FRAME_MASK,x         ; AE5A
          eor  #$FF                 ; AE5D
-         and  ($B4),y              ; AE5F
-         sta  ($B2),y              ; AE61
-         lda  $B5C0,x              ; AE63
-         and  $B5BF                ; AE66
-         ora  ($B2),y              ; AE69
-         sta  ($B2),y              ; AE6B
+         and  (TMP1),y             ; AE5F
+         sta  (PTR2),y             ; AE61
+         lda  FRAME_MASK,x         ; AE63
+         and  FRAME_COL            ; AE66
+         ora  (PTR2),y             ; AE69
+         sta  (PTR2),y             ; AE6B
          inx                       ; AE6D
          iny                       ; AE6E
          cpy  #$10                 ; AE6F
          bcc  LAE5A                ; AE71
          ldy  #$04                 ; AE73
 LAE75
-         inc  $B3                  ; AE75
-         inc  $B5                  ; AE77
+         inc  PTR2+1               ; AE75
+         inc  TMP2                 ; AE77
          dey                       ; AE79
          bne  LAE75                ; AE7A
          cpx  #$1F                 ; AE7C
@@ -793,13 +800,13 @@ LAE75
          tya                       ; AE85
          ldx  PLANET               ; AE86
          bmi  LAE8C                ; AE88
-         lda  ($B2),y              ; AE8A
+         lda  (PTR2),y             ; AE8A
 LAE8C
          lsr                       ; AE8C
          pha                       ; AE8D
          and  #$30                 ; AE8E
-         sta  $B4                  ; AE90
-         sta  $B0                  ; AE92
+         sta  TMP1                 ; AE90
+         sta  PTR1                 ; AE92
          ldx  #$48                 ; AE94
          pla                       ; AE96
          and  #$40                 ; AE97
@@ -807,26 +814,26 @@ LAE8C
          inx                       ; AE9B
          inx                       ; AE9C
 LAE9D
-         stx  $B5                  ; AE9D
+         stx  TMP2                 ; AE9D
          inx                       ; AE9F
-         stx  $B1                  ; AEA0
+         stx  PTR1+1               ; AEA0
          ldy  #$0F                 ; AEA2
 LAEA4
-         lda  ($B4),y              ; AEA4
-         sta  $43E0,y              ; AEA6
-         lda  ($B0),y              ; AEA9
-         sta  $47E0,y              ; AEAB
+         lda  (TMP1),y             ; AEA4
+         sta  BOARD_T_7C,y         ; AEA6
+         lda  (PTR1),y             ; AEA9
+         sta  BOARD_B_7C,y         ; AEAB
          dey                       ; AEAE
          bpl  LAEA4                ; AEAF
          rts                       ; AEB1
 
 * blinking: toggle bit 0 of the selected glyphs every 4 frames ---
 BLINK
-         sta  $B6                  ; AEB2
+         sta  TMP3                 ; AEB2
          lda  FRAMES               ; AEB4
          and  #$04                 ; AEB6
          bne  LAEBC                ; AEB8
-         sta  $B6                  ; AEBA
+         sta  TMP3                 ; AEBA
 LAEBC
          ldy  #$2E                 ; AEBC
 LAEBE
@@ -842,10 +849,10 @@ LAEBE
 
 * blinking: one glyph --------------------------------------
 BLINK_ONE
-         lda  $B55A,y              ; AED2
+         lda  GLYPHS,y             ; AED2
          and  #$FE                 ; AED5
-         ora  $B6                  ; AED7
-         sta  $B55A,y              ; AED9
+         ora  TMP3                 ; AED7
+         sta  GLYPHS,y             ; AED9
          rts                       ; AEDC
 
 * draw one board cell into the screen ----------------------
@@ -854,13 +861,14 @@ PUT_CELL
          bne  LAEFD                ; AEDF
          cpx  CUR_X                ; AEE1
          bne  LAEFD                ; AEE3
-         sta  $B4                  ; AEE5
+         sta  TMP1                 ; AEE5
          bit  ED_FLAGS             ; AEE7
          bpl  LAEFD                ; AEE9
-         sta  $AEF5                ; AEEB
-         lda  $B5BB                ; AEEE
+         sta  PC_CURSOR+1          ; AEEB
+         lda  BLINK_CNT            ; AEEE
          and  #$04                 ; AEF1
          php                       ; AEF3
+PC_CURSOR
          lda  #$F4                 ; AEF4
          plp                       ; AEF6
          bne  LAEFD                ; AEF7
@@ -869,41 +877,43 @@ PUT_CELL
 LAEFD
          pha                       ; AEFD
          lda  #$00                 ; AEFE
-         sta  $B1                  ; AF00
+         sta  PTR1+1               ; AF00
          tya                       ; AF02
          asl                       ; AF03
          asl                       ; AF04
          asl                       ; AF05
-         sta  $B0                  ; AF06
+         sta  PTR1                 ; AF06
          asl                       ; AF08
          asl                       ; AF09
-         rol  $B1                  ; AF0A
-         adc  $B0                  ; AF0C
-         sta  $B0                  ; AF0E
+         rol  PTR1+1               ; AF0A
+         adc  PTR1                 ; AF0C
+         sta  PTR1                 ; AF0E
          bcc  LAF14                ; AF10
-         inc  $B1                  ; AF12
+         inc  PTR1+1               ; AF12
 LAF14
          txa                       ; AF14
          asl                       ; AF15
-         adc  $B0                  ; AF16
-         sta  $AF36                ; AF18
+         adc  PTR1                 ; AF16
+         sta  PC_STA1+1            ; AF18
          ora  #$01                 ; AF1B
-         sta  $AF3B                ; AF1D
+         sta  PC_STA2+1            ; AF1D
          bcc  LAF24                ; AF20
-         inc  $B1                  ; AF22
+         inc  PTR1+1               ; AF22
 LAF24
          clc                       ; AF24
-         lda  $B1                  ; AF25
+         lda  PTR1+1               ; AF25
          adc  SCR_PAGE             ; AF27
-         sta  $AF37                ; AF29
-         sta  $AF3C                ; AF2C
+         sta  PC_STA1+2            ; AF29
+         sta  PC_STA2+2            ; AF2C
          pla                       ; AF2F
          asl                       ; AF30
          php                       ; AF31
          asl                       ; AF32
          plp                       ; AF33
          ror                       ; AF34
-         sta  $AF35                ; AF35
+PC_STA1
+         sta  PC_STA1              ; AF35
          ora  #$01                 ; AF38
-         sta  $AF3A                ; AF3A
+PC_STA2
+         sta  PC_STA2              ; AF3A
          rts                       ; AF3D

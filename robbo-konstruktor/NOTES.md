@@ -12,7 +12,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 4 | Blocks + byte-exact build | src/, main.asm, Makefile | MADS: byte for byte | [x] |
 | 5 | Understand code | call graph, main loop, interrupts, init tables; map shared code to Robbo labels | every routine described | [~] engine and editor named (5.1, 5.2, 5.4-5.6); 5.3 open |
 | 6 | Modules | BLOCKS regrouped, data named | byte-exact, README block table | [x] |
-| 7 | Names + comments | VARIABLES, NAMES, COMMENTS, POKES (Robbo names where code matches) | no sub_XXXX, byte-exact | [ ] |
+| 7 | Names + comments | VARIABLES, NAMES, COMMENTS, POKES (Robbo names where code matches) | no sub_XXXX, byte-exact | [x] no bare addresses left (section 30) |
 | 8 | Graphics + verification | renders, screenshot in img/ | renders match screenshot | [ ] |
 | 9 | Docs, clean, commit | README, NOTES, root README entry | clean tree, verified build | [ ] |
 | – | Optional | board format and saved boards on the disk, compare editor engine with Robbo | | [ ] |
@@ -23,7 +23,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 |---|---|---|---|
 | 5.1 | Start-up and main loop | start routine, screen set-up (display lists, DLIs, fonts), per-frame loop: cursor, keys, messages | [x] |
 | 5.2 | Menu handlers | the 10 handlers of table $9F8E, checked against the menu texts and named; what "test" checks (error messages) | [x] |
-| 5.3 | Palette and elements | element → board cell; do the 27 names follow the object codes; variables $A317, $A7D6 | [~] codes and glyphs known; switch entry 21 (variants) open |
+| 5.3 | Palette and elements | element → board cell; do the 27 names follow the object codes; variables $A317, $A7D6 | [~] codes and glyphs known; entry 21 switches the sets `PAL_SETS` into entries 22-29 (section 30); which code is which element still open |
 | 5.4 | Tape and disk | save / load of planet sets → planet format; the extra disk sectors (saved sets) decoded and rendered | [x] |
 | 5.5 | Engine leftovers | the 58 generated engine labels (`sub_`, `irq_`, `entry_`): Konstruktor's changes to Robbo's engine | [x] |
 | 5.6 | What it is about | ABOUT.md: overview, goal, users, how it is used, elements, glossary Polish–English (suggested by the user) | [x] |
@@ -62,6 +62,7 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Title-page editor typed wrong letters: XL ROM keyboard table read at a fixed address; fixed build uses `KEYDEF` (section 27) |
 | 2026-10-29 | The fixed version gets its own disk: `bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr` (section 28) |
 | 2026-10-29 | GitHub Actions workflow: MADS from source, original (byte-exact) and fixed version, disk images as artifacts (section 29) |
+| 2026-10-29 | Step 7: ~330 bare addresses named (OS, zero page, buffers, tables, self-modified operands), 4 hidden routines disassembled – among them the boot loader of the saved game; palette entries 22-29 explained (section 30) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -932,17 +933,89 @@ Checked locally: every `run` step, in order, on a clean `git archive HEAD` expor
 actions themselves – the first run on GitHub will show (needs a push; the user's decision). Linux is case-sensitive:
 `main.asm` names the `src/` files exactly as they are (upper case).
 
-## Open questions
+## 30. Names and comments (step 7) (2026-10-29)
 
+**Starting point**: every routine already had a name and a comment (steps 5-6), but the operands still held about
+**330 bare addresses** (~1,300 uses): OS / hardware registers missing from the label table, zero page, buffers
+outside the program, tables inside the blocks and **self-modified operands**. A scratch inventory script listed them
+by kind (OS, zero page, outside the image, data in a block, inside an instruction, binary block) and per routine;
+they were named module by module, regenerating and checking byte-exactness after every batch.
+
+**What was named** (all in `util/split.py`; evidence = the code that uses them):
+
+- OS / hardware (`util/xex.py` `L`): `BRKKEY ATRACT CDTMV4 PCOLR0 PCOLR3 KRPDEL KEYREP SIZEP1 GRAFP1 TRIG1 COLPM1-3
+  VSCROL`; `OS_KEYTAB` $FB51 (the XL ROM table of section 27).
+- Zero page: the sound uses Robbo's `_PNTR _ADDR _SCRA _HLP` ($F0-$FF, `R1.ASM` 1494); the editor's $B0-$B7 are
+  **shared temporaries** – every routine gives them its own meaning, so they are `PTR1 PTR2 TMP1-TMP4` with the main
+  uses in the comment (like Robbo's `ADDR` / `HLP`); tape / disk `IO_PTR IO_END IO_POS`; title page `TP_*` ($E0-$ED:
+  frame timer, order position, lives, logo pointers); boot loader `BOOT_ADR BOOT_END BOOT_BCNT BOOT_BPOS`, sector
+  buffer `SEC_BUF` $0400 (`SEC_LINKH/L` $03FE/$03FF read with X = 127 = DOS 2 link bytes 125-126).
+- Engine, Robbo's names where the code matches: `DLSA` $1E13 (the board's display-list address the scroll moves,
+  `R2.ASM` 1323), `TSTTAB` $23FD (row addresses, high bytes at `TSTTAB+32` as in Robbo), `LMVT`, `PROC` / `CALL`
+  (`CALL+1` = the patched JSR), `NEXT LOOK WHAT TMVS NSPS RDZP WBPO`, `FACET` (Robbo's `CHNMON-1`), `FONT` $3C00.
+  Konstruktor's own: `BOARD` $BE00 / `BOARD_HDR` $BFF0, display-list JMPs `DL_BREAK DL_DEMO`, `INFO_TOP/BOT`,
+  `WBPX WBPY` (the bomb's edge checks Robbo did not need), `KEJO_KEYS/DIRS` and the patched `AND #` operands
+  `KEY_FIRE KEY_DIR`, `PLAY_SP OLD_VBI PLAY_NUM PLAY_TRY`.
+- Editor: screens `SCREEN` $B600 / `SCREEN_B` $B800, `PANEL_TXT` $BC00 (`PANEL_LH` = `PANEL_TXT-20`: one routine
+  writes the left half of a row through it), `STATUS` $BCC8, `GR_BLANK` / `GR_LINE` (the dotted $55 line);
+  input `IN_FIRE IN_DIR IN_KEYS IN_DIRS RPT_FIRST RPT_NEXT`; tables `CHR_FROM/CHR_TO` (read by `ATA2SCR_` and
+  `TX_ALLOWED`), `PAL_CODES PAL_SETS GLYPHS FRAME_MASK STRIP_CHR`; menu `MENU_JUMPS MENU_ROWS COL_REG COL_EDIT
+  ORD_* DSK_* SG_CMD SG_SLOT`; tape / disk `IO_LETTERS IO_JUMPS SLOT_SEC SLOT_BIT IO_RANGES LIST_SET LIST_GAME IO_SLOT
+  IO_USED IO_LOADED`; editor texts split into their parts (`MENU_TXT NUM_TXT TITLE_TXT LEGEND_TXT DISK_TXT
+  SAVE_DISK SAVE_TAPE`) and the places the code patches inside messages (`ASK_WORD ASK_NUM ERR_DIGITS MSG_LIST`).
+- `BOARD_T_7C / BOARD_B_7C` ($43E0 / $47E0) were called "element preview" in section 10: `REDRAW_` copies the
+  **planet's wall** (by header byte 0, like `ENTCV`) into characters $7C-$7D and the selected element inside the
+  cursor frame (`FRAME_MASK`) into $7E-$7F.
+
+**Hidden code found** (entry points added, then named):
+
+- **`GB_BOOT` $93A9-$942F – the boot loader of the saved stand-alone game.** `IO_SAVEGAME` ($92C3-$92D3) writes
+  exactly this range to sectors 1-3 of the freshly formatted disk: `GB_HDR` = boot record (flags 0, 3 sectors, load
+  $93A9, **init `TP_START` $35C0**), code at load + 6 = $93AF. It reads from sector `GB_SECTOR` (patched by
+  `IO_WRITE` at $91E2 with the header sector of slot 0), skips the 8-byte slot header and loads segments in the
+  planet-set format until start = 0 – then the OS runs the title page. Section 18 had listed $93D9 as "undisassembled
+  code"; its `findtext-ignore.txt` line is gone.
+- `HLP_STEP_R` $0BD0 / `HLP_STEP_L` $0BF7 – the two line steps of the help scroll, reached only through the JSR at
+  $0BB1 that `HLP_PREV` / `HLP_NEXT` patch (`NOFOLLOW` added).
+- `HLP_INCSCR` $0C4E and `INPUT_FORCE` $3120: never called (section 14 had $3120 as "not code").
+
+**Palette entries 22-29 (step 5.3)**: `REDRAW_` ($ACB6) copies 8 codes from `PAL_SETS + 8 × (PAL_SET & 3)` into
+`PAL_CODES+22`; entry 21 increments `PAL_SET` ($AAE7). The four sets contain direction characters (`>` `"` `<` `^`,
+arrows $1C-$1F) and the teleports 1-3 / 4-6 – entry 21 ("zmiana dział, nietoperzy i teleportacji") turns guns and
+bats and switches the teleport numbers. Which code is which element is still to be read from the glyphs.
+
+**Lister changes** (`util/rdis.py`), all byte-neutral:
+
+- a variable inside an instruction is written in place above it: `HLP_FIRST equ *+1`;
+- an operand inside a labelled instruction is written `LABEL+k` (`sta CALL+1`, `sta PC_STA1+1`) – the
+  self-modifying instructions got labels (`ROW_JMP ROW_CELL PB_BYTE PNL_HINT PNL_RIGHT PUT_ELEM ED_ERASE TX_GO
+  PROT_EOR PROT_CMP COUNT_RTS …`), so no `Lxxxx+k` is left;
+- a variable inside a text line: `NAME equ *+k` above that line; a variable that starts a text: its label;
+- forced-absolute operands show the name (`dta $99,a(IO_PTR)`); offsets above 256 in hex (`FONT+$2F0`);
+- `$00,x` stays `$00,x` (a base, not `DLI_ROW`, the variable at 0);
+- a data variable must not cover code (assertion).
+
+**Left as bare numbers on purpose**: the copy protection's disguised operands `$0A00` / `$0440` (halved at run
+time, PROTECTION.md) and `$00,x` in `ED_SETUP`.
+
+Gate: MADS build byte-exact; `nocopyprot.asm` builds (help page 15 unchanged); `findtext.py` 0 candidates; no
+`sub_` / `entry_` / `Lxxxx+k` names. Local branch labels `Lxxxx` remain, as in the guide (jump targets inside a
+routine).
+
+Lessons (guide): name self-modified operands as `LABEL+k` after labelling the instruction – the code then reads like
+the original sources (Robbo writes `STA CALL+1`); a JSR whose target is patched hides code: look at what the patches
+store (`lda #$D0 / ldx #$0B`) and add those addresses as entry points; data written to disk can be code that runs
+elsewhere (the saved game's boot) – check what an I/O routine writes, not only what it reads.
+
+## Open questions
 
 - Sectors outside the program chain (256, 260-264, 388, 392-396, 520, 524-532, 652, 784, 974, 989): saved boards?
   The singles 256, 388, 520, 652, 784 are 132 sectors apart.
-- Data to classify: `$092E-$09A5` (frame lines of the help screen – which characters), `$B4F9-$B51B` (character
-  table in `PALETTE.ASM` – who reads it), `$3155-$31EE` (shape table of `DRAW_ROW`, `NEXT` $31D5),
-  `$32B1-$3333` (Robbo `WHAT`), `$3937-$395B` (title page colours), `$391F` (logo bitmap),
-  `$4000-$47FF`; help-text preamble `$0C77`: `79 0C 80 01`; tables in `TEXTS.ASM` ($9FA2, $9FAC, $A7F8, $A7FE).
+- Data to classify: `$4000-$47FF` (board fonts: which glyph is which element); help-text preamble `$0C79`
+  `80 01` (page marker of page 1?).
 - `SERIN` with this ATR and the SIO patch off: does it end as $19 (first protection, section 21)?
-- Palette entry 21 (switch) and the placeholders 22-29: which codes do bats, gun, laser, blaster and teleport use?
+- Palette entries 22-29: which of the codes in `PAL_SETS` is bat, gun, laser, blaster (teleports are 1-6)?
+- Unread in step 7: `DSK_SAME` ($9ABA) – exact effect; `GLYPHS` beyond the 32 palette codes.
 - Robbo's abbreviations to confirm (user): `WHAT` legend "zas" / "wyb" (shot / blown up?), `KIES` (kierunek
   strzału – shot direction?), `SKAC` (skacz – jump?), `WYZA` / `WYOT`, `ZABJ`, `CVBL`.
 - Editor screen layout: is it a 16-column board window + palette (cursor X 0-19 skipping 16)?

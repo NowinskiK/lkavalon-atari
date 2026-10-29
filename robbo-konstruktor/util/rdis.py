@@ -137,6 +137,16 @@ class Lister:
         s.placed_comments = set()
         s.texts = texts or {}
 
+    def var_equs(s, st, en):
+        """Variables inside one dta line of a text (st..en): `NAME equ *+k` lines to put above it."""
+        out = []
+        for v in range(st, en + 1):
+            if v in s.vars and v not in s.var_placed:
+                size, name, comment, _ = s.vars[v]
+                out.append('%-16s %-36s ; %04X %s' % (name, 'equ *+%d' % (v - st) if v > st else 'equ *', v, comment))
+                s.var_placed.add(v); s.placed.add(v)
+        return out
+
     def text_lines(s, lo, hi, fmt):
         """Strings with the decoded text as a comment above each dta line (about 56 characters each)."""
         mem, out = s.mem, []
@@ -149,6 +159,7 @@ class Lister:
                     ch = internal_to_atascii(b & 0x7F)
                     ch = glyphs.get(chr(ch), chr(ch)) if 0x20 <= ch < 0x7F else '·'
                     text += ch
+                out += s.var_equs(a, a + len(codes) - 1)
                 out += ['; ' + text.rstrip(), '         dta %-40s ; %04X' % (','.join(text_items(codes, 'd')), a)]
             return out
         if fmt == 'strings':                                        # ATASCII, $00-terminated, bit 7 = inverse
@@ -160,6 +171,7 @@ class Lister:
                 term = a <= hi                                      # include the $00 terminator
                 text = ''.join(POLISH.get(b & 0x7F, chr(b & 0x7F) if 0x20 <= b & 0x7F < 0x7F else '·') for b in codes)
                 items = text_items(codes, 'c') + (['$00'] if term else [])
+                out += s.var_equs(st, min(a, hi))
                 out += ['; ' + text, '         dta %s ; %04X' % (','.join(items), st)]
                 a += 1 if term else 0
             return out
@@ -191,11 +203,14 @@ class Lister:
     def nm(s, a, w):
         if a in s.var_at:
             st, k = s.var_at[a]
-            return s.vars[st][1] + ('+%d' % k if k else '')
+            return s.vars[st][1] + (('+%d' if k <= 256 else '+$%X') % k if k else '')
         if a in L: return L[a]
         if a - 1 in VECTORS: return L[a - 1] + '+1'
         if a in s.labels:
             s.used[a] = s.labels[a]; return s.labels[a]
+        for k in (1, 2):                       # operand of a labelled instruction (self-modified code): LABEL+k
+            if a - k in s.labels and s.code.get(a - k, 0) > k:
+                s.used[a - k] = s.labels[a - k]; return '%s+%d' % (s.labels[a - k], k)
         return ('$%02X' % a) if w == 1 else ('$%04X' % a)
 
     def poke_lines(s, a, count):
@@ -218,6 +233,11 @@ class Lister:
                 out += ['', text + '-' * max(3, 60 - len(text))]
             if a in s.texts and a not in code:
                 last, fmt = s.texts[a]
+                if a in s.vars:                            # a named text: the label on its own line
+                    size, name, comment, group = s.vars[a]
+                    if group: out += ['', group]
+                    out.append('%-53s ; %04X %s' % (name, a, comment))
+                    s.var_placed.add(a); s.placed.add(a)
                 out += s.text_lines(a, last, fmt); a = last + 1
                 continue
             if a in s.pokes and a not in code:
@@ -225,6 +245,7 @@ class Lister:
                 continue
             if a in s.vars and a not in code:
                 size, name, comment, group = s.vars[a]
+                assert not any(a + k in code for k in range(size)), 'variable %s at $%04X covers code' % (name, a)
                 if group: out += ['', group]
                 body = 'dta ' + ','.join('$%02X' % b for b in mem[a:a + size])
                 out.append('%-16s %-36s ; %04X %s' % (name, body, a, comment))
@@ -235,15 +256,21 @@ class Lister:
                 out.append('%s' % labels[a]); s.placed.add(a)
             if a in code:
                 n = code[a]; o = mem[a]; mn, mode = M[o]
+                for k in range(1, n):                      # a variable in the operand (self-modified code)
+                    if a + k in s.vars:
+                        size, name, comment, _ = s.vars[a + k]
+                        out.append('%-16s %-36s ; %04X %s' % (name, 'equ *+%d' % k, a + k, comment))
+                        s.var_placed.add(a + k); s.placed.add(a + k)
                 b1 = mem[a + 1]; w = b1 | mem[a + 2] << 8
                 if mode in ('abs', 'abx', 'aby') and w < 0x100:
                     # an assembler would pick zero page here: keep the absolute form as bytes
-                    out.append('         %-25s ; %04X %s %s' % ('dta $%02X,a($%04X)' % (o, w), a, mn.lower(),
+                    out.append('         %-25s ; %04X %s %s' % ('dta $%02X,a(%s)' % (o, s.nm(w, 2)), a, mn.lower(),
                                                               {'abs': '', 'abx': ',x', 'aby': ',y'}[mode]))
                     a += n
                     continue
                 nm = s.nm
-                opnd = {'imp': '', 'acc': '', 'imm': '#$%02X' % b1, 'zp': nm(b1, 1), 'zpx': nm(b1, 1) + ',x',
+                opnd = {'imp': '', 'acc': '', 'imm': '#$%02X' % b1, 'zp': nm(b1, 1),
+                        'zpx': (nm(b1, 1) if b1 else '$00') + ',x',     # $00,x: a base, not the variable at 0
                         'zpy': nm(b1, 1) + ',y', 'izx': '(%s,x)' % nm(b1, 1), 'izy': '(%s),y' % nm(b1, 1),
                         'rel': nm((a + 2 + (b1 - 256 if b1 > 127 else b1)) & 0xFFFF, 2),
                         'abs': nm(w, 2), 'abx': nm(w, 2) + ',x', 'aby': nm(w, 2) + ',y', 'ind': '(%s)' % nm(w, 2)}[mode]

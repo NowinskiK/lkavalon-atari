@@ -14,7 +14,7 @@ SET_DLIST_
          lda  COLOR4               ; B3CD
          ldx  #$08                 ; B3D0
 LB3D2
-         sta  $02C0,x              ; B3D2
+         sta  PCOLR0,x             ; B3D2
          sta  COLPM0,x             ; B3D5
          dex                       ; B3D8
          bpl  LB3D2                ; B3D9
@@ -28,48 +28,48 @@ LB3D2
          sta  SDMCTL               ; B3ED
          sta  DMACTL               ; B3F0
          rts                       ; B3F3
-         dta $00                                      ; B3F4
+YESNO            dta $00                              ; B3F4 ASK_YESNO: bit 0 = the word highlighted ("tak" / "nie"), +1 by the stick
 
 * yes / no choice: move the highlight in "tak nie" ---------
 ASK_YESNO_
-         lda  $B3F4                ; B3F5
+         lda  YESNO                ; B3F5
          and  #$01                 ; B3F8
          tax                       ; B3FA
          ldy  #$28                 ; B3FB
 LB3FD
          dey                       ; B3FD
 LB3FE
-         lda  $BCC8,y              ; B3FE
+         lda  STATUS,y             ; B3FE
          and  #$7F                 ; B401
          beq  LB3FD                ; B403
          bne  LB408                ; B405
 LB407
          dey                       ; B407
 LB408
-         lda  $BCC8,y              ; B408
+         lda  STATUS,y             ; B408
          and  #$7F                 ; B40B
          bne  LB407                ; B40D
          dex                       ; B40F
          bpl  LB3FE                ; B410
-         lda  $BCC8,y              ; B412
+         lda  STATUS,y             ; B412
          bmi  LB43A                ; B415
          ldx  #$27                 ; B417
 LB419
-         lda  $BCC8,x              ; B419
+         lda  STATUS,x             ; B419
          and  #$7F                 ; B41C
-         sta  $BCC8,x              ; B41E
+         sta  STATUS,x             ; B41E
          dex                       ; B421
          bpl  LB419                ; B422
 LB424
-         lda  $BCC8,y              ; B424
+         lda  STATUS,y             ; B424
          ora  #$80                 ; B427
-         sta  $BCC8,y              ; B429
+         sta  STATUS,y             ; B429
          iny                       ; B42C
-         lda  $BCC8,y              ; B42D
+         lda  STATUS,y             ; B42D
          bne  LB424                ; B430
-         lda  $BCC8,y              ; B432
+         lda  STATUS,y             ; B432
          ora  #$80                 ; B435
-         sta  $BCC8,y              ; B437
+         sta  STATUS,y             ; B437
 LB43A
          lda  JOY                  ; B43A
          cmp  #$FF                 ; B43D
@@ -80,7 +80,7 @@ LB43A
          and  #$08                 ; B448
          bne  LB455                ; B44A
 LB44C
-         inc  $B3F4                ; B44C
+         inc  YESNO                ; B44C
          jsr  CLICK                ; B44F
          jmp  LB459                ; B452
 LB455
@@ -97,7 +97,7 @@ LB464
          bne  LB474                ; B466
 LB468
          ldx  #$6E                 ; B468
-         lda  $B3F4                ; B46A
+         lda  YESNO                ; B46A
          and  #$01                 ; B46D
          beq  LB473                ; B46F
          ldx  #$79                 ; B471
@@ -106,47 +106,48 @@ LB473
 LB474
          pha                       ; B474
          lda  #$00                 ; B475
-         sta  $B3F4                ; B477
+         sta  YESNO                ; B477
          jsr  CLICK                ; B47A
 
 * copy protection 2, run at the first yes / no question (one-shot: the operand of lda #$00 gets bit 7 by ror $B47E): "eor $0A00,x" / "cmp $0440" are halved to $0500 / $0240 - the XOR of $FF and the boot loader $0501-$05FF must equal DFLAGS; else $4C (opcode of START) is written to $ACB3 ---
 PROT_BOOT
          lda  #$00                 ; B47D
          bmi  LB49B                ; B47F
-         lsr  $B48C                ; B481
-         lsr  $B492                ; B484
+         lsr  PROT_EOR+2           ; B481
+         lsr  PROT_CMP+2           ; B484
          ldx  #$FF                 ; B487
          txa                       ; B489
-LB48A
+PROT_EOR
          eor  $0A00,x              ; B48A
          dex                       ; B48D
-         bne  LB48A                ; B48E
+         bne  PROT_EOR             ; B48E
+PROT_CMP
          cmp  $0440                ; B490
          beq  LB49B                ; B493
          lda  START                ; B495
-         sta  $ACB3                ; B498
+         sta  COUNT_RTS            ; B498
 LB49B
          sec                       ; B49B
-         ror  $B47E                ; B49C
+         ror  PROT_BOOT+1          ; B49C
          pla                       ; B49F
          clc                       ; B4A0
          rts                       ; B4A1
 
 * ATASCII -> screen code -----------------------------------
 ATA2SCR_
-         stx  $B4CB                ; B4A2
-         sty  $B4C9                ; B4A5
+         stx  A2S_X                ; B4A2
+         sty  A2S_Y                ; B4A5
          asl                       ; B4A8
          php                       ; B4A9
          lsr                       ; B4AA
          ldx  #$FF                 ; B4AB
 LB4AD
          inx                       ; B4AD
-         ldy  $B4F9,x              ; B4AE
+         ldy  CHR_FROM,x           ; B4AE
          bmi  LB4BB                ; B4B1
-         cmp  $B4F9,x              ; B4B3
+         cmp  CHR_FROM,x           ; B4B3
          bne  LB4AD                ; B4B6
-         lda  $B505,x              ; B4B8
+         lda  CHR_TO,x             ; B4B8
 LB4BB
          asl                       ; B4BB
          cmp  #$C0                 ; B4BC
@@ -157,25 +158,27 @@ LB4BB
 LB4C6
          plp                       ; B4C6
          ror                       ; B4C7
+A2S_Y            equ *+1                              ; B4C9 Y kept by ATA2SCR_
          ldy  #$00                 ; B4C8
+A2S_X            equ *+1                              ; B4CB X kept by ATA2SCR_
          ldx  #$00                 ; B4CA
          rts                       ; B4CC
 
 * number -> two decimal digits (screen codes) --------------
 TO_DIGITS_
-         sta  $B6                  ; B4CD
+         sta  TMP3                 ; B4CD
          lda  #$00                 ; B4CF
-         sta  $B7                  ; B4D1
+         sta  TMP4                 ; B4D1
          ldx  #$07                 ; B4D3
          sed                       ; B4D5
 LB4D6
-         asl  $B6                  ; B4D6
-         adc  $B7                  ; B4D8
-         sta  $B7                  ; B4DA
+         asl  TMP3                 ; B4D6
+         adc  TMP4                 ; B4D8
+         sta  TMP4                 ; B4DA
          dex                       ; B4DC
          bpl  LB4D6                ; B4DD
          cld                       ; B4DF
-         lda  $B7                  ; B4E0
+         lda  TMP4                 ; B4E0
          tay                       ; B4E2
          pha                       ; B4E3
          jsr  DIGIT                ; B4E4

@@ -5,9 +5,11 @@ Level editor for [Robbo](../robbo). Analysis of the disk image
 [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). Process and findings: [NOTES.md](NOTES.md). What the program is
 about, its users and a Polish–English glossary: [ABOUT.md](ABOUT.md).
 
-Status: steps 1-4 of the guide done – the program is split into sources (`src/`, `main.asm`) that reassemble
-**byte for byte** with MADS (12.5 KB of code found). Step 5 in progress: the game engine carries the **original
-Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*.ASM`; the editor is next.
+Status: steps 1-4, 6 and 7 of the guide done, step 5 nearly (5.3 open) – the program is split into 29 modules
+(`src/`, `main.asm`) that reassemble **byte for byte** with MADS (12.8 KB of code found). Every routine, variable
+and table has a name and a comment, and no operand is a bare address (except the copy protection's disguised ones);
+the game engine carries the **original Robbo names** found by matching against `../robbo/d1/*.ASM` (NOTES.md
+section 30).
 
 ## Files
 
@@ -23,7 +25,7 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [util/helppage.py](util/helppage.py) | shows a help page as the program draws it (runs `HLP_PAGE` in the emulator) |
 | [util/mkatr.py](util/mkatr.py) | writes a build into a copy of the original disk (`bin/build.atr`) to boot it in an emulator; the copy is writable (the original is marked write-protected) and keeps planet sets saved on it across rebuilds |
 | [util/split.py](util/split.py) | splits `game.bin` into `src/` and writes `main.asm`; tables `BLOCKS`, `ENTRIES` (+ dispatch tables), `NOFOLLOW`, `VARIABLES`, `COMMENTS`, `NAMES`, `POKES` |
-| `util/xex.py`, `rdis.py`, `asm.py`, `verify.py` | from [../jaskiniowiec/util/](../jaskiniowiec/util/); `rdis.py` here also finds entries written into self-modified jumps and VBIs installed with SETVBV |
+| `util/xex.py`, `rdis.py`, `asm.py`, `verify.py` | from [../jaskiniowiec/util/](../jaskiniowiec/util/); `rdis.py` here also finds entries written into self-modified jumps and VBIs installed with SETVBV, and writes self-modified operands as `LABEL+k` / `NAME equ *+k` |
 | `main.asm`, `src/` | generated sources (see below) |
 | `Makefile` | `make` builds `bin/game.obx` with MADS, `make test` compares it with `game.bin` |
 
@@ -51,7 +53,7 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [src/BOARD_B.FNT](src/BOARD_B.FNT) | $4400-$47FF | editor board font, bottom halves (CHBASE $44) |
 | [src/SHAPES.FNT](src/SHAPES.FNT) | $4800-$4BFF | element shapes, two animation phases (modified Robbo S.FNT; source for ANIM) |
 | [src/INFO.FNT](src/INFO.FNT) | $4C00-$4FFF | info-line, help and title font with icons and (c) (modified Robbo I.FNT) |
-| [src/DISKIO.ASM](src/DISKIO.ASM) | $9000-$9430 | tape / disk: planet sets in 5 slots, format, saving the stand-alone game |
+| [src/DISKIO.ASM](src/DISKIO.ASM) | $9000-$9430 | tape / disk: planet sets in 5 slots, format, saving the stand-alone game and its boot loader `GB_BOOT` |
 | [src/ED_MENU.ASM](src/ED_MENU.ASM) | $94E0-$9CDC | editor: services jump table, main menu and its 10 functions, disk sub-menu |
 | [src/ED_SERV.ASM](src/ED_SERV.ASM) | $9CDD-$9F7A | editor services: messages, set-up, colours, lower panel, digits, planet tables, display list |
 | [src/ED_TEXTS.ASM](src/ED_TEXTS.ASM) | $9F7B-$A808 | editor tables (header buffer, menu table $9F8E) and texts: screens, messages, element names – strings, see "Editor texts" below |
@@ -269,8 +271,10 @@ wrócić do Robbo Konstruktora" (press BREAK to return to Robbo Konstruktor).
 | 9 | `$28` | magnes (magnet) | 20 | `$0E` | działko ruchome (moving gun) |
 | 10 | `$26` | oczy (eyes) | 21 | `$A0` | zmiana dział, nietoperzy i teleportacji – a mode switch, drawn empty |
 
-Entries 22-29 are placeholders (`$78`, one glyph) for nietoperz strzelający, nietoperz, działko, laser, blaster,
-teleportacja – their real codes depend on the switch (entry 21); entries 30-31: `$4E`, `$4A`.
+Entries 22-29 are `$78` in the table, but `REDRAW_` fills them on every redraw from `PAL_SETS` ($B53A): 4 sets
+of 8 codes, chosen by `PAL_SET` ($B5BA), which entry 21 increments. The sets hold the direction characters
+(`>` `"` `<` `^`, arrows `$1C-$1F`) and the teleports `1-3` / `4-6` – entry 21 turns the guns and bats and
+switches the teleport numbers. Entries 30-31 read the first two codes of set 0 (`$4E`, `$4A`).
 
 ![Palette](img/palette.png)
 
