@@ -11,6 +11,16 @@ Sources of LK Avalon (and related) games for 8-bit Atari, assembled with MADS. O
 - Keep the style of the existing sources: MADS syntax, lower-case mnemonics, labels in column 1.
 - Add a new game to the list in the root `README.md`.
 
+## Working rules
+
+- Keep a record of all work: after any further work on a game's code or files, add a new dated section to that
+  game's `NOTES.md` (create it if missing) – what was done, how, findings (with addresses as evidence) and
+  lessons learnt; update its Timeline and Open questions. Do this before reporting the task as finished, and
+  keep the game's `README.md` (reference) in sync. Reason: nobody should forget how and what was done and
+  what was learnt.
+- Project instructions and memory live in this file (it travels with the repository), not in local
+  Claude memory – add new standing preferences here.
+
 ## Environment
 
 - Windows; use `py -3` for Python.
@@ -35,4 +45,6 @@ Read `jaskiniowiec/README.md` (reference) and `jaskiniowiec/NOTES.md` (process, 
   (interrupt vectors, poke tables, DLI chains) must be added as an entry point.
 - `split.py` does not delete files: when blocks are renamed, stale files stay in `src/` – list them for the user
   to delete (deleting `src/*` is blocked by the safety check).
-- Record new findings in `NOTES.md` (with addresses as evidence) and keep the README block table in sync.
+- **Always** add a new dated section to `NOTES.md` whenever you work further on the code or files: what was
+  done, how, findings (with addresses as evidence) and lessons. Also update its Timeline and Open questions,
+  and keep the README block table in sync.
