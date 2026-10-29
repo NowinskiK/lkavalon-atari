@@ -52,6 +52,7 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Help screen credits found ("autor: Janusz Pelc", "Laboratorium Komputerowe Avalon") and written as strings (section 17) |
 | 2026-10-29 | Hidden-text scan (`util/findtext.py`): two more texts as strings, `HDR_BUF`, reviewed ranges; 0 candidates (section 18) |
 | 2026-10-29 | Step 6: 17 segment blocks regrouped into 29 modules, fonts named by use (section 19) |
+| 2026-10-29 | `$F556`: OS ROM (no `PORTB` writes); the XL/XE OS buzzer – `BELL` / `OS_BELL`; written for the XL/XE OS (section 20) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -556,7 +557,8 @@ the original; a build with one byte changed ($A9A7) gives a disk differing in ex
 layout is fixed – code growing past a segment end needs a new file layout.
 
 Altirra's window title showed "ATOS" – Altirra's own OS replacement is in use, as no Atari OS ROM is configured in
-Altirra *(to check: does the program run on it as on the real OS?)*.
+Altirra – the user confirmed it is **AltirraOS 3.44 for XL/XE/XEGS** and that the program starts on it. AltirraOS keeps
+only the documented OS entry points, so it cannot tell what `$F556` is (section 20); Konstruktor does not call it.
 
 ## 17. The help screen credits (2026-10-29)
 
@@ -661,13 +663,40 @@ Old → new files (removed with `git rm` – files in `src/` not referenced by `
 Checks: MADS and `asm.py` builds byte-exact (the MADS output grew to 27,671 bytes – more segment headers, same memory
 image); `util/findtext.py` still 0 candidates; README block table generated from `BLOCKS`.
 
+## 20. `JMP $F556` – ROM or RAM? (2026-10-29)
+
+The user brought the background: on XL/XE machines `$D800-$FFFF` can be RAM when bit 0 of `PORTB` ($D301) is 0, so a
+jump to `$F556` is a ROM call only while the OS is switched in. **Evidence**: no instruction in `src/` writes `PORTB`
+(the only `PORTB` is the OS label in `JOINT.ASM`), and Robbo's sources do not either – the OS stays in, so
+`J_F556` ($A828, an entry of the module jump table) jumps into the **OS ROM**. Nothing in Konstruktor calls `$A828`.
+
+Which routine: Robbo's tape loader (`R1.ASM` `LOAD`, after the `REWT` screen) does `JSR loader+6 / BCC ok / JSR $F556
+/ JMP lerr` – it is called after a load error, before the retry; a "beep and wait for a key" routine like the cassette
+prompt would fit *(interpretation)*. In the 1200XL ROM in the user's Altirra folder ("Atari OS v10 82.10.26")
+`$F556` is in the middle of a routine (`8D A0 02 85 6F A0 00 60`), so the address is not a stable entry across OS
+versions – the programs expect a particular ROM (400/800 OS or 800XL rev. 2), which is needed to name the routine.
+
+**Answer** (with the user, same day): the user disassembled `$F556` in Altirra's debugger with two OS images –
+AltirraOS 3.44 (`LDA DINDEX … PLA` – a `PLA` that pops the caller's return address, no entry) and the 400/800 **OS-B**
+(`ATARIOSB.ROM`): there `$F555` is `8D E6 02 STA MEMTOP+1`, so `$F556` is the middle of an instruction. The
+**XL/XE ROM** next to it (`ATARIXL.ROM`, Atari800Win, md5 06daac977823773a3eea3422fd26a703 – read locally, not copied)
+has a routine start there – `$F553 JMP $F41B` ends the previous one – : `LDY #$20 / JSR $F983 / DEY / BPL / RTS`, and
+`$F983` toggles the console speaker (`STX $D01F`, 64 times, waiting a scan line) = the key click. So **`$F556` is the
+OS buzzer: 33 key clicks** – the bell of the screen editor *(the CTRL+2 link is from memory)*. Robbo buzzes after a
+tape load error and retries; Konstruktor's module service `$A828` is now **`BELL`** (`jmp OS_BELL`), unused by
+Konstruktor itself. The programs target the **XL/XE OS**.
+
+Repository fix: the step-6 commit (96fdbe8) had picked up `util/__pycache__/xex.cpython-311.pyc` – a doc script
+imported `split.py` after the clean-up and the commit staged the whole folder. Removed with `git rm`; the root
+`.gitignore` now has `__pycache__/`. Lesson: clean after the last script run, and look at `git status` before
+staging a folder.
+
 ## Open questions
 
 
 - Sectors outside the program chain (256, 260-264, 388, 392-396, 520, 524-532, 652, 784, 974, 989): saved boards?
   The singles 256, 388, 520, 652, 784 are 132 sectors apart.
 - Boot record init address $19DD – the program has no code there at boot time; what is it for?
-- `JMP $F556` in the jump table – an OS ROM routine or RAM under the OS?
 - Data to classify: `$092E-$09A5` (frame lines of the help screen – which characters), `$B4F9-$B51B` (character
   table in `PALETTE.ASM` – who reads it), `$3155-$31EE` (shape table of `DRAW_ROW`, `NEXT` $31D5),
   `$32B1-$3333` (Robbo `WHAT`), `$3937-$395B` (title page colours), `$391F` (logo bitmap),

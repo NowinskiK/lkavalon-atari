@@ -130,9 +130,8 @@ PNUM           equ $00A9  ; planet number shown in the info line
 TP_TEST        equ $35C1  ; title page started from the Konstruktor ("test Robbo"): BREAK returns
 TP_LAST        equ $35C2  ; last planet number of the game
 
+* OS (XL/XE ROM) ---------------
+OS_BELL        equ $F556  ; XL/XE OS: buzzer - the key click ($F983) 33 times; not an entry in OS-B or AltirraOS
+
 * planets ----------------------
 PLANET_STATE   equ $39A0  ; +1F status of the 32 planets: 0 empty, bit 7 = bad (low bits = error message), else good
-
-; labels not at an instruction boundary or outside the source blocks
-
-LF556      equ $F556

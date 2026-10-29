@@ -21,8 +21,10 @@ INPUT
          jmp  INPUT_               ; A822
 DIR_TEST
          jmp  DIR_TEST_            ; A825
-J_F556
-         jmp  LF556                ; A828
+
+* module service BELL: the OS buzzer (OS_BELL, XL/XE ROM); not called by Konstruktor itself ---
+BELL
+         jmp  OS_BELL              ; A828
 KEY_EVENT
          jmp  KEY_EVENT_           ; A82B
 TO_DIGITS

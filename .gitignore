@@ -2,3 +2,4 @@
 *.XEX
 .idea
 build.atr
+__pycache__/
