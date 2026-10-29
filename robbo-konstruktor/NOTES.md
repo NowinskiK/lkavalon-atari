@@ -23,8 +23,8 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 |---|---|---|---|
 | 5.1 | Start-up and main loop | start routine, screen set-up (display lists, DLIs, fonts), per-frame loop: cursor, keys, messages | [x] |
 | 5.2 | Menu handlers | the 10 handlers of table $9F8E, checked against the menu texts and named; what "test" checks (error messages) | [x] |
-| 5.3 | Palette and elements | element → board cell; do the 27 names follow the object codes; variables $A317, $A7D6 | [~] variables answered, names follow the palette |
-| 5.4 | Tape and disk | save / load of planet sets → planet format; the extra disk sectors (saved sets) decoded and rendered | [~] format and slots known; decoding/rendering open |
+| 5.3 | Palette and elements | element → board cell; do the 27 names follow the object codes; variables $A317, $A7D6 | [~] codes and glyphs known; switch entry 21 (variants) open |
+| 5.4 | Tape and disk | save / load of planet sets → planet format; the extra disk sectors (saved sets) decoded and rendered | [x] |
 | 5.5 | Engine leftovers | the 26 engine routines still `sub_XXXX` (Konstruktor's changes to Robbo's engine) | [ ] |
 
 Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from XFormer is requested from the user.
@@ -42,6 +42,8 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Texts written as `dta c'…'` / `d'…'` strings in the sources; Polish letter codes confirmed (section 8) |
 | 2026-10-29 | `TEXTS.DTA` analysed: two encodings, editor screens, messages, element names → `TEXTS.ASM` (section 9) |
 | 2026-10-29 | Editor analysed and named (5.1-5.2, parts of 5.3-5.4): 144 routines, editor variables, planet format, disk slots (section 10) |
+| 2026-10-29 | Saved planet sets loaded by emulating the program's own loader: erased slots with test boards only (section 11) |
+| 2026-10-29 | Palette codes and glyphs; rendering like the editor (`util/render.py`), palette sheet and test boards in `img/` (section 12) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -375,6 +377,63 @@ TX_`, jump-table targets = service name + `_`), each with a comment; editor vari
 SCR_PAGE PAL_SEL ED_FLAGS MENU_POS PLANET HELP_PAGE PANEL_ST CUR_MSG CUR_ELEM JOY… PLANET_STATE DISK_SLOTS`. MADS and
 `asm.py` builds byte-exact. The 58 generated labels left are all in the engine (step 5.5).
 
+## 11. The saved planet sets on the disk (step 5.4) (2026-10-29)
+
+**Format** (from `IO_SAVESET` / `IO_LOADSET`): after the 8-byte slot header, a stream of segments like an Atari binary
+file without `$FFFF`: start, end (inclusive), data; a start of `0000` ends it. `IO_CHECK` accepts only `$39A0-$39E0`
+(planet tables), `$3A00-$3BFF` and `$5000-$8FFF` (planets). A set is saved as the list `$92E1` (`$39A0-$39DF`,
+`$3A00-$3BFF`) plus one segment `$5000 + n × $200 … +$1F7` per used planet. The list `$92EB` (`$1E00-$3FFF`,
+`$4800-$4FFF` – engine and fonts) is what "zapisz Robbo" writes for the stand-alone game.
+
+**Method – emulate the program's own loader** (guide lesson): `util/emu.py` (copied from Jaskiniowiec) got an SIO
+hook – an OS disk call (`DSKINV $E453` / `SIOV $E459`) reads the requested sector from the ATR into the buffer named in
+the control block – and a `VCOUNT` stub that reaches every line value. `util/planets.py` runs `IO_CMD` with
+`A = 'r'`, `X = slot` on `game.bin` and dumps memory after each slot.
+
+**Result**
+
+| Slot | Header | Sectors read | Planets (status) |
+|---|---|---|---|
+| 1 | " unused " | 256-264 | 0 (`01`) |
+| 2 | " unused " | 388-396 | 0 (`01`) |
+| 3 | " unused " | 520-532 | 0, 1 (`01 01`) |
+| 4, 5 | " unused " | header only | – |
+
+All headers are the plain " unused " signature (`20 75 6E 75 73 65 64 20`, written by `IO_ERASE`) – the sets were
+**erased**; erasing rewrites only the header, so the old data is still readable. The planets are tiny **test boards**:
+sets 1/0, 2/0, 3/0 are identical – Robbo (`$2A`) at row 0 column 15, a capsule (`$14`) at row 4 column 13 and four
+cells of code `$00`; set 3/1: capsule, Robbo and three `$00` cells. So the disk holds no real levels – probably
+someone checking the save function.
+
+Also explained: the step-1 "gap" (slot 1 data at 260-264 after header 256) – sectors 257-259 are read too but contain
+only zeros (mostly empty tables), so the used-sector scan did not count them.
+
+Next: render a palette sheet (element code → glyph, name) – needs the element → glyph mapping (step 5.3) – and the
+four test boards.
+
+## 12. Palette and rendering (steps 5.3-5.4) (2026-10-29)
+
+**How the editor draws a cell** (`REDRAW_`, `PUT_CELL` $AEDD, `ED_DLI` $B05F): element code c → index
+`(c & $7F) − $20` (wrapping below 0) → glyph g = `$B55A[index]`; a cell is **2 × 2 characters**: codes `2g`, `2g+1`
+(bit 7 kept), screen address row × 40 + column × 2; the display list shows each row twice and the DLI switches CHBASE
+between **`$40` and `$44`** on alternate lines – so the board font is `$4000-$47FF` (`D4000.DTA`: top halves at
+$4000, bottom halves at $4400). Mode 4, bit 7 → PF3. Colours from the planet header via `ED_COLORS_`: bytes 2-6 =
+COLOR0-COLOR4, byte 7 = PCOLR3; defaults `$9F83` are all hue 0 (grey).
+
+**Palette** (`$B51C`, 32 entries; the names are messages entry + $1E – README table): the codes are Robbo's level
+characters. Rendering the glyphs answered the doubt raised by Robbo's level parser (which maps `$A0` to "█"): in the
+palette `$00` "murek" draws a brick wall, and `$A0` (entry 21, "zmiana dział, nietoperzy i teleportacji") draws empty
+– it is a mode switch, not an element. Entries 22-29 are placeholders (`$78`) for bats, gun, laser, blaster,
+teleport, whose real codes depend on that switch (still to read in `EDIT`).
+
+**Tool** `util/render.py` (XFormer palette): `palette` → `img/palette.png` (all 32 entries, names on stdout);
+`planet` → one planet from a memory image. The four test boards from the disk: sets 1/0, 2/0, 3/0 are byte-identical
+images → `img/test-board-1.png`; set 3/1 → `img/test-board-2.png`. They show Robbo, the capsule and brick-wall cells,
+exactly as the data says – confirming code → glyph → 2 × 2 characters → fonts $4000/$4400.
+
+`util/render.py` sets its stdout to UTF-8 (Polish element names) – printing failed with the Windows code page when
+the output was redirected.
+
 ## Open questions
 
 
@@ -384,8 +443,7 @@ SCR_PAGE PAL_SEL ED_FLAGS MENU_POS PLANET HELP_PAGE PANEL_ST CUR_MSG CUR_ELEM JO
 - `JMP $F556` in the jump table – an OS ROM routine or RAM under the OS?
 - Data to classify: `$0803-$09A5` (display list + tables), `$3142-$3333`, `$35D0-$3682` (display list),
   `$4000-$47FF`; help-text preamble `$0C77`: `79 0C 80 01`; tables in `TEXTS.ASM` ($9FA2, $9FAC, $A7F8, $A7FE).
-- Palette ↔ object codes: which code does each of the 27 palette entries put on the board (table $B51C)?
-- Decode and render the saved planet sets in the disk slots (sectors 256, 388, 520, 652, 784).
+- Palette entry 21 (switch) and the placeholders 22-29: which codes do bats, gun, laser, blaster and teleport use?
 - Editor screen layout: is it a 16-column board window + palette (cursor X 0-19 skipping 16)?
 - The 26 remaining `sub_XXXX` in the engine and the editor code (no source): analyse and name.
 - Engine data tables: compare with Robbo's (e.g. `$33CC` = Robbo `R1.ASM` 1624 ff.).

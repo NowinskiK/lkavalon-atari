@@ -16,6 +16,9 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | `game.bin` | 64 KB memory image at program start (boot loader + all segments) |
 | [util/atr.py](util/atr.py) | ATR reader: header, boot record, used sectors, DOS 2-style sector chains |
 | [util/image.py](util/image.py) | builds `game.bin` from the disk |
+| [util/emu.py](util/emu.py) | 6502 emulator (from Jaskiniowiec) with an SIO hook serving disk sectors from the ATR |
+| [util/planets.py](util/planets.py) | loads the saved planet sets by running the program's own loader in the emulator |
+| [util/render.py](util/render.py) | renders the palette and planets the way the editor draws them (XFormer palette) |
 | [util/split.py](util/split.py) | splits `game.bin` into `src/` and writes `main.asm`; tables `BLOCKS`, `ENTRIES` (+ dispatch tables), `NOFOLLOW`, `VARIABLES`, `COMMENTS`, `NAMES`, `POKES` |
 | `util/xex.py`, `rdis.py`, `asm.py`, `verify.py` | from [../jaskiniowiec/util/](../jaskiniowiec/util/); `rdis.py` here also finds entries written into self-modified jumps and VBIs installed with SETVBV |
 | `main.asm`, `src/` | generated sources (see below) |
@@ -183,3 +186,32 @@ The menu text has a typo in the original: "funcje podstawowe" (for "funkcje").
 - A test accepts a planet with exactly one Robbo, exactly one capsule and fewer than 100 screws.
 - Disk: 5 slots for planet sets, header sectors **256, 388, 520, 652, 784** (slot 0 = sector 4 = the program);
   header signature inverse " RKdata " (used) or " unused " (erased). These are the extra used sectors of the disk.
+- On this disk all five slots are **erased** (" unused "); slots 1-3 still hold old data – four tiny test boards
+  (Robbo, a capsule, a few other cells). `util/planets.py` loads them by running the program's own loader in the
+  emulator (`util/emu.py` with an SIO hook serving sectors from the ATR).
+
+## Palette
+
+`$B51C`, 32 entries; codes are Robbo's level characters. A cell is drawn as 2 × 2 characters from the board font at
+`$4000` (top) / `$4400` (bottom), glyph = `$B55A[code − $20]` (NOTES.md section 12).
+
+| # | Code | Element | # | Code | Element |
+|---|---|---|---|---|---|
+| 0 | `$2A` | Robbo | 11 | `$29` | magnes (magnet, second) |
+| 1 | `$24` | śrubka (screw) | 12 | `$00` | murek (brick wall) |
+| 2 | `$14` | kapsuła (capsule) | 13 | `$3D` | klucz (key) |
+| 3 | `$23` | skrzynka (box) | 14 | `$13` | nicość (void) |
+| 4 | `$12` | drzwi (door) | 15 | `$20` | gumka (eraser = empty cell) |
+| 5 | `$06` | skrzynka na kółkach (box on wheels) | 16 | `$41` | stworek leworęczny (left-hand creature) |
+| 6 | `$21` | amunicja (ammunition) | 17 | `$45` | stworek praworęczny (right-hand creature) |
+| 7 | `$25` | gruz (rubble) | 18 | `$3F` | niespodzianka (surprise) |
+| 8 | `$40` | bomba (bomb) | 19 | `$2E` | działko obrotowe (rotating gun) |
+| 9 | `$28` | magnes (magnet) | 20 | `$0E` | działko ruchome (moving gun) |
+| 10 | `$26` | oczy (eyes) | 21 | `$A0` | zmiana dział, nietoperzy i teleportacji – a mode switch, drawn empty |
+
+Entries 22-29 are placeholders (`$78`, one glyph) for nietoperz strzelający, nietoperz, działko, laser, blaster,
+teleportacja – their real codes depend on the switch (entry 21); entries 30-31: `$4E`, `$4A`.
+
+![Palette](img/palette.png)
+
+Test boards from the erased disk slots: ![Test board 1](img/test-board-1.png) ![Test board 2](img/test-board-2.png)
