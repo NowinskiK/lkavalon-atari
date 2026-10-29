@@ -10,12 +10,48 @@ then (later) annotate it the same way as Dangerous City's `DC.ASM`.
 
 | File | Purpose |
 |---|---|
-| `jaskiniowiec.asm` | Disassembly listing of the whole 64 KB image ($0000–$FFFF), 8,489 lines: code with labels, everything else as `dta` |
+| `main.asm` | MADS file linking all blocks from `src/` back into the game memory image |
+| `src/` | The game split into blocks (see [Source blocks](#source-blocks)) |
 | `game.bin` | 64 KB memory image as it is when the game starts (after loader, depacker and snapshot restore) |
 | `xex.py` | XEX segment parser + linear 6502 disassembler + Atari OS/hardware label table |
 | `emu.py` | Minimal 6502 emulator that runs the XEX load sequence (INITAD/RUNAD) and dumps memory at a stop address |
 | `resume.py` | Continues from `mem.bin` at $0480 (snapshot restore) until `RTI`, prints the resume PC, writes `game.bin` |
 | `rdis.py` | Recursive-descent disassembler (follows JMP/JSR/branches and DLI/VBI vector setups) → MADS-style listing |
+| `split.py` | Splits `game.bin` into the blocks of `src/` (block table `BLOCKS` at the top) and writes `main.asm` |
+| `asm.py` | Minimal assembler for the MADS subset `split.py` writes – checks the split without MADS |
+| `verify.py` | Compares an assembled segment file with `game.bin` byte for byte |
+| `Makefile` | `make` builds `bin/game.obx` with MADS, `make test` verifies it |
+
+## Source blocks
+
+Like [Misja](../misja) and [Digi Duck](../digi-duck): code areas are disassembled to `.ASM` files,
+data areas are binary files with an Atari `$FFFF` header (included with `OPT h-` / `INS`).
+Names are by address where the content is not understood yet – rename them in `BLOCKS` in `split.py`.
+
+| File | Address | Content |
+|---|---|---|
+| [src/JOINT.ASM](src/JOINT.ASM) | – | common labels (Atari OS/hardware, labels outside the blocks) |
+| [src/SYSTEM.DTA](src/SYSTEM.DTA) | $0000-$04FF | zero page, stack, OS variables at snapshot time |
+| [src/D0500.DTA](src/D0500.DTA) | $0500-$17FF | data |
+| [src/D1800.DTA](src/D1800.DTA) | $1800-$24FF | data |
+| [src/D2500.DTA](src/D2500.DTA) | $2500-$2F7F | data (32-byte records) |
+| [src/LEVELS.DTA](src/LEVELS.DTA) | $2F80-$61FF | level tile maps |
+| [src/TRAINER.ASM](src/TRAINER.ASM) | $6200-$646F | CAMOsoft crack stub and trainer |
+| [src/D6470.DTA](src/D6470.DTA) | $6470-$6BFF | character screen |
+| [src/FONT6C.FNT](src/FONT6C.FNT) | $6C00-$6FFF | font |
+| [src/D7000.DTA](src/D7000.DTA) | $7000-$7BFF | data |
+| [src/CODE7C.ASM](src/CODE7C.ASM) | $7C00-$8DEF | code and tables |
+| [src/MAIN.ASM](src/MAIN.ASM) | $8DF0-$9FFF | game entry ($8E67), NMI/IRQ/VBI handlers |
+| [src/CODEA0.ASM](src/CODEA0.ASM) | $A000-$BBFF | code, display list ($ACFC) |
+| [src/START.ASM](src/START.ASM) | $BC00-$BFFF | start stub ($BC00) and tables |
+| [src/TABLES.DTA](src/TABLES.DTA) | $C000-$C9FF | tables (bit reverse at $C000) |
+| [src/MUSIC.CMC](src/MUSIC.CMC) | $EA00-$F2E0 | CMC music module |
+| [src/CMC.ASM](src/CMC.ASM) | $F2E1-$FAD1 | CMC music player |
+| [src/VECTORS.ASM](src/VECTORS.ASM) | $FFFA-$FFFF | NMI, RESET, IRQ vectors |
+
+$CA00-$FFF9 outside the blocks and the I/O area $D000-$D7FF are zero in `game.bin`.
+`main.asm` produces a segment file equal to `game.bin`, not a runnable executable
+(segments under the OS ROM need a loader – see next steps).
 
 ## How to regenerate
 
@@ -25,13 +61,18 @@ Requires Python 3 (`py -3`). Run from this folder (scripts import each other fro
 py -3 xex.py "x:\ATARI\GryKamil\Jaskiniowiec (1995)(StanBit)(PL)[h CAMOsoft][t +1 CAMOsoft].xex"
 py -3 emu.py "x:\ATARI\GryKamil\Jaskiniowiec (1995)(StanBit)(PL)[h CAMOsoft][t +1 CAMOsoft].xex" 0480 mem.bin
 py -3 resume.py
-py -3 rdis.py game.bin 0000-FFFF 6214 9EAE 9EC8 9ED6 62DF 9E97 F2E1 F2E4 F2E7
+py -3 split.py game.bin 6214 9EAE 9EC8 9ED6 62DF 9E97 F2E1 F2E4 F2E7
+py -3 asm.py main.asm bin/game.obx
+py -3 verify.py bin/game.obx
 ```
 
 1. `xex.py` – lists segments.
 2. `emu.py` – loads all segments, runs INIT/RUN vectors, stops when PC reaches $0480 → `mem.bin`.
 3. `resume.py` – runs the snapshot restore → reports `resume PC=$6200` → `game.bin`.
-4. `rdis.py` – writes `0000_FFFF.asm` (renamed to `jaskiniowiec.asm`). Arguments after the range are entry points.
+4. `split.py` – writes `src/*` and `main.asm`. Arguments after `game.bin` are entry points.
+5. `asm.py` + `verify.py` – reassemble and check the result equals `game.bin` (with MADS: `make test`).
+
+`py -3 rdis.py game.bin 0000-FFFF <entries>` still writes the whole image as one listing (`0000_FFFF.asm`).
 
 ## XEX structure (22 segments)
 
@@ -85,8 +126,9 @@ py -3 rdis.py game.bin 0000-FFFF 6214 9EAE 9EC8 9ED6 62DF 9E97 F2E1 F2E4 F2E7
 | $EA00 | Music data (tune passed in X/Y = $00/$EA) |
 | `A=$21, X=$18, Y=$14, JSR $F2E4` | Sound effect, e.g. on life lost ($8C50, $9822) |
 | $2F80-~$5500 | Character tile maps of side-scrolling levels (clouds `cdde`, platforms `GKJKILJ…O`, `PQR`, `TU`, water rows `MNMN`) |
-| CHBAS $E0 | Font at $E000 (RAM under OS) |
-| DLIST $BDEF | Display list at the moment of the snapshot |
+| CHBAS $E0 | Set by the trainer ($6234) – OS ROM font; RAM under the OS at $E000 is empty |
+| $6C00 | Game font (`LDA #$6C / STA CHBASE`) |
+| $ACFC | Display list (set at $AC18, $B25C); SDLSTL=$BDEF in the snapshot is not a real display list |
 
 Code ranges found by `rdis.py` (≈9.7 KB, 4,557 instructions, 421 labels):
 $6214-$6375 (trainer), $7C03-$87AC, $87CC-$8873, $8A4D-$8A8E, $8DF0-$9F96,
@@ -106,5 +148,6 @@ $AB7D-$AC27, $AEF0-$B3DA, $BC00-$BC17, $C0AB-$C0BF, $F2E1-$FA97 (music player).
 
 - Annotate the main loop from $8E67 (like `DC.ASM`): joystick handling, player movement, collisions, lives ($A7).
 - Find the level map format/width and extract levels to images.
-- Extract the font ($E000) and CMC music ($EA00) to files.
-- Turn the listing into MADS source that reassembles byte-for-byte.
+- Identify the `Dxxxx.DTA` blocks and give them proper names (fonts, P/M graphics, screens).
+- `CMC.ASM` has `JMP $5968` ($F372) and `JSR $5B73` ($F654) into `LEVELS.DTA` – probably player tables disassembled as code.
+- Add a loader so `main.asm` builds a runnable XEX (copy blocks under the OS ROM, restore hardware state, `JMP $8E67`).
