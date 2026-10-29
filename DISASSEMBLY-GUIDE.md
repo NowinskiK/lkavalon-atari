@@ -256,7 +256,12 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
   (accept only when all call sites agree). Robbo Konstruktor got 110 original routine names and the zero-page
   layout this way (see `robbo-konstruktor/NOTES.md` section 5).
 - Dispatch tables that copy a handler address into the operand of the next JSR/JMP are common; treat the operands
-  of such self-modified jumps as vectors – every immediate address written there is an entry point.
+  of such self-modified jumps as vectors – every immediate address written there is an entry point. But do not call
+  such a target an interrupt handler: `lda #lo / sta op / lda #hi / sta op+1` looks like a vector set-up, so check
+  the store address (Robbo Konstruktor's "irq_2470" was a loop body behind a self-modified `JMP`).
+- When the matching fails because the related code was changed, compare **dispatch tables** entry by entry with the
+  original ones (handler of object code n ↔ original handler n) – Robbo Konstruktor's object table named 27 handlers
+  this way; then read the reworked routines side by side with the original source.
 
 ### 6.3 Data and the crack
 - A crack can damage the game: the trainer was loaded over level 2's map rows, and in the level 3 loader three

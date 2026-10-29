@@ -35,9 +35,9 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [src/BOOT.ASM](src/BOOT.ASM) | $0500-$067F | boot sectors 1-3: boot record and binary-file loader (cracked) |
 | [src/EDIT08.ASM](src/EDIT08.ASM) | $0800-$0C6C | code: JMP $09A6 at $0800, tables, routines |
 | [src/HELP.ASM](src/HELP.ASM) | $0C6D-$1DD0 | help text: 16 pages in Polish (HELP key) as `dta c'…'` strings with the decoded text in comments – see "Help text" below |
-| [src/ENGINE1.ASM](src/ENGINE1.ASM) | $1E00-$23FC | game engine: jump table $1E00, display list, DLIs |
-| [src/ENGINE2.ASM](src/ENGINE2.ASM) | $243D-$35A3 | game engine: object behaviour (table $31EF), VBI $2F54 |
-| [src/ENGINE3.ASM](src/ENGINE3.ASM) | $35C0-$395C | game engine: display list, code |
+| [src/ENGINE1.ASM](src/ENGINE1.ASM) | $1E00-$23FC | game engine: jump table $1E00, display list, info-line texts, DLIs, main loop (Robbo R1 reworked) |
+| [src/ENGINE2.ASM](src/ENGINE2.ASM) | $243D-$35A3 | game engine: board drawing (CHNMON), Robbo, object behaviour (table $31EF), VBI CVBL, input KEJO, sound |
+| [src/ENGINE3.ASM](src/ENGINE3.ASM) | $35C0-$395C | title page of the saved Robbo game (also "test Robbo"): display list, texts, logo, planet sequence |
 | [src/FONT3C.FNT](src/FONT3C.FNT) | $3C00-$3FFF | font (modified Robbo F.FNT) |
 | [src/D4000.DTA](src/D4000.DTA) | $4000-$47FF | data |
 | [src/FONT48.FNT](src/FONT48.FNT) | $4800-$4BFF | font (modified Robbo S.FNT) |
@@ -178,6 +178,27 @@ The menu text has a typo in the original: "funcje podstawowe" (for "funkcje").
 | tape / disk | `IO_CMD` (letters r w e d), `IO_*`, `DISK_*` sub-menu, `IO_FORMAT` (zapisz Robbo) |
 | text input | `TX_*` (title page texts) |
 | engine entries | `ENGINE_INIT` ($1E00), `ENGINE_PLAY` ($1E03) |
+
+## Engine structure
+
+Robbo's engine (`../robbo/d1/R1.ASM`, `R2.ASM`), reworked to be called from the editor; names are Robbo's where the
+routine corresponds (NOTES.md sections 5 and 14).
+
+| Part | Routines |
+|---|---|
+| entries | `ENGINE_INIT` → `ENGINE_INIT_` (screen, board row tables $23FD / $241D for the board at $BE00, DLI1); `ENGINE_PLAY` → `ENGINE_PLAY_` (A = planet data page, X = number shown, Y = lives – $FF = one try, carry = demo; own VBI) |
+| play loop | `PLA1` (start a planet: header, colours, players), `ENTCV` (draw it), `CHNGCV` (one turn: behaviour of every cell from table $31EF), `WYBC` + `WHIL` (Robbo destroyed: the planet explodes), `NXCV` (planet done), `PLAY_ABORT` / `PLAY_EXIT` (back to the caller: BREAK, game over) |
+| screen | `CHNMON`: BREAK test, `FAC_STEP`, `ANIM` (animation phase of the shapes), `DRAW_ROW` (board → screen as 2 × 2 characters); `DLI1` → `DLI2` → `DLI3` (playfield / info line / blinking text); VBI `CVBL` (sound, info line via `INFO_BYTE` / `INFO_DIGIT`, scrolling `SCRL`) |
+| Robbo | `MFAC` only notes the position; `FAC_STEP` → `FAC_TURN`: `TFAC` / `ZABJ` (creature next to Robbo), `MGNL` (magnet in the row), `FAC_MOVE` (move or shoot, `SJMP` via `KIET`) – Robbo's checks were moved from the creatures to Robbo |
+| objects | Robbo's handlers by object code: `STWA`-`STWL` creatures, `TOPL` / `TOPR` shooting bats, `LEDZ` eyes, `DZ1x`-`DZ3x` guns, `POnx` / `PPnx` bullets, `BEZx` sliding boxes, `MGFL` / `MGFR` magnet pull, `TELP` / `TELE_IN` teleports, `WYZA` / `WYOT` capsule closed / open, `BOMB`, `NIES` surprise, `WFAC` Robbo appearing |
+| input | `KEJO`: fire = joystick triggers, SHIFT, RETURN; stick = both joysticks AND cursor keys → `MOVE_IN`, `FIRE`; ESC → `ESC_KEY`; `GET_KEY` |
+| title page ($35C0) | `TP_START` (saved game, or "test Robbo" with `TP_TEST` set), `TP_LOOP`, `TP_PAGE` (text page $3A00 start / $3B00 congratulation), `TP_LOGO`, `TP_FRAME`, `TP_KEY`, `TP_DEMO` (OPTION or a pause), `TP_PLAY` (planets in the order $39E0, 8 lives, restart point every 4 planets), `TP_EXIT` (BREAK back to the Konstruktor) |
+
+Engine texts (screen codes, `dta d'…'`): info line $1E8E "BREAK: powrót do Robbo Konstruktora" (BREAK: back to
+Robbo Konstruktor) and $1EB6 "Wciśnięcie strzału przerywa demonstrację" (pressing fire stops the demo); title page
+$3603 "Ta gra powstała przy pomocy Robbo Konstruktora /1990 Avalon" (this game was made with Robbo Konstruktor,
+(c) 1990 Avalon – `/` is probably the © glyph of the font) or, in "test Robbo", $3643 "wciśnij klawisz BREAK aby
+wrócić do Robbo Konstruktora" (press BREAK to return to Robbo Konstruktor).
 
 ## Planet format and disk slots
 

@@ -10,7 +10,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 2 | Memory image | game.bin, boot chain | odd regions explained | [x] (other sectors open) |
 | 3 | Entry points + disassembly | entry list, code ranges | gaps looked at | [x] 12.5 KB |
 | 4 | Blocks + byte-exact build | src/, main.asm, Makefile | MADS: byte for byte | [x] |
-| 5 | Understand code | call graph, main loop, interrupts, init tables; map shared code to Robbo labels | every routine described | [~] engine named from Robbo |
+| 5 | Understand code | call graph, main loop, interrupts, init tables; map shared code to Robbo labels | every routine described | [~] engine and editor named (5.1, 5.2, 5.4-5.6); 5.3 open |
 | 6 | Modules | BLOCKS regrouped, data named | byte-exact, README block table | [ ] |
 | 7 | Names + comments | VARIABLES, NAMES, COMMENTS, POKES (Robbo names where code matches) | no sub_XXXX, byte-exact | [ ] |
 | 8 | Graphics + verification | renders, screenshot in img/ | renders match screenshot | [ ] |
@@ -25,7 +25,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 5.2 | Menu handlers | the 10 handlers of table $9F8E, checked against the menu texts and named; what "test" checks (error messages) | [x] |
 | 5.3 | Palette and elements | element → board cell; do the 27 names follow the object codes; variables $A317, $A7D6 | [~] codes and glyphs known; switch entry 21 (variants) open |
 | 5.4 | Tape and disk | save / load of planet sets → planet format; the extra disk sectors (saved sets) decoded and rendered | [x] |
-| 5.5 | Engine leftovers | the 26 engine routines still `sub_XXXX` (Konstruktor's changes to Robbo's engine) | [ ] |
+| 5.5 | Engine leftovers | the 58 generated engine labels (`sub_`, `irq_`, `entry_`): Konstruktor's changes to Robbo's engine | [x] |
 | 5.6 | What it is about | ABOUT.md: overview, goal, users, how it is used, elements, glossary Polish–English (suggested by the user) | [x] |
 
 Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from XFormer is requested from the user.
@@ -46,6 +46,8 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Saved planet sets loaded by emulating the program's own loader: erased slots with test boards only (section 11) |
 | 2026-10-29 | Palette codes and glyphs; rendering like the editor (`util/render.py`), palette sheet and test boards in `img/` (section 12) |
 | 2026-10-29 | ABOUT.md: what the program is about, users, usage, elements, Polish–English glossary (section 13) |
+| 2026-10-29 | Engine leftovers named (5.5): 58 labels, 17 variables, engine and title-page texts; no generated labels left (section 14) |
+| 2026-10-29 | The last 30 "not analysed yet" engine routines described from Robbo's source and comments (section 15) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -210,7 +212,7 @@ Comments in `COMMENTS` quote Robbo's Polish comment with a translation; routines
 had no label because Konstruktor reaches them without a jump).
 
 Result: 110 engine routines and 26 zero-page variables named; 26 engine routines still `sub_XXXX` (Konstruktor's own
-code or no match); MADS build still byte-exact.
+code or no match – named in section 14); MADS build still byte-exact.
 
 Lesson (also in the guide): with related sources, match by instruction shape (ignore absolute operands), then
 propagate names through call sites – it finds routines a direct match cannot separate.
@@ -452,6 +454,88 @@ and the players of the saved game), how it is used (menu function table), elemen
 The convention is now general: `CLAUDE.md` and `DISASSEMBLY-GUIDE.md` (step 5, plan template, definition of done) ask
 for an `ABOUT.md` in every game folder.
 
+## 14. Engine leftovers (step 5.5) (2026-10-29)
+
+**Starting point**: 58 generated labels, all in the engine – 26 `sub_`, 5 `irq_`, 27 `entry_`. Each routine was read
+and compared with Robbo's sources (`../robbo/d1/R1.ASM`, `R2.ASM`) by hand – the shape match of section 5 had missed
+them because Konstruktor changed them.
+
+**Method 1 – the object table in parallel with Robbo's `PROC`.** `$31EF` is indexed by object code × 2, like Robbo's
+`PROC` table (`R2.ASM`, `DTA D'    '` = two empty entries). Reading both side by side (scratch script) gave the
+handler of each code: `$0B/$0C MGFL/MGFR`, `$14 WYZA`, `$15/$16 WYOT`, `$1B WFAC`, `$1D DZ1D`, `$1E DZ1L`, `$1F DZ1R`,
+`$26 LEDZ`, `$2A MFAC`, `$30-$38 TELP`, `$3A NIES`, `$41-$4C STWA-STWL`, `$4D/$4E TOPL/TOPR`, `$60 BOMB` – each then
+checked against Robbo's code (same calls, same codes put). Differences: Robbo's `$28 MGNL` is empty (moved, below);
+`$27` points to `DZ2D` (empty in Robbo); **`$39` has its own handler `TELE_IN` ($28ED)** – `PHAJ` ($27B5) saves the
+teleport Robbo walks into in `TELE_CODE` ($28EC) and puts `$39`; the next turn restores it and sets `TELE`.
+
+**Method 2 – reading the reworked routines against `R1.ASM`.**
+
+| Address | Name | Evidence |
+|---|---|---|
+| $20C4 / $20FC | `WYBC` / `WHIL` | same loop as Robbo's "wybu komnate": cells other than `$20 $00 $13 $11 $05` → `RANDOM & 3 + $61`; `WHIL`: timer $21E = $30, `CHNGCV` until 0 |
+| $210B | `CHNGCV` | the cell loop calling `$31EF` through the self-modified `JSR $2148`, bit 7 / `$61-$7A` handling as Robbo's `NOR_` / `NXT_`; `$210A` = `CNTR`; the frame timer moved to the end (`CDTMV3`) |
+| $219F / $2247 | `PLA1` / `ENTCV` | header copy, `ZEBR`, colours, players `$40 $60 $80 $A0`, `TELE/KEYS/NABO/RUCH`, `LM = $0D` as Robbo's `PLA1`; `ENTCV` = "wejscie": wall shapes by the header (operand `$2248` = header byte $F0), `*` → `MFX1`, `+` and `LSTE` |
+| $23A0 / $23A6 | `WAIT` / `HALT` | identical to Robbo's (`RTCLOK+2`); `$3913` is a copy (`TP_HALT`) |
+| $1EDE, $1EFD, $1F3C | `DLI1-3` | Robbo's `DLI` dispatches on a counter; Konstruktor chains by rewriting `VDSLST`: players → PCOLR3; info line (VCOUNT $60, font $4C, DMA); text colour `RTCLOK / 4` |
+| $2470 | `DRAW_ROW` | not an interrupt: the target of the self-modified `JMP $246D` (`lda #$70 / sta $246E` looked like a vector set-up); draws a board row as 2 × 2 characters, switches the target to `$2498` after waiting a frame at the visible window |
+| $2582-$2648 | `TFAC ZABJ MGNL FAC_TURN FAC_MOVE` | Robbo tests "czy obok jest fac?" in every creature (`STWA: JSR TFAC`); Konstruktor's creatures do not – instead `TFAC` checks the four cells around Robbo for eyes `$26` / creatures `$41-$4E` (`ZABJ`: explosion `$61`), `MGNL` looks along Robbo's row for magnet `$29` right / `$28` left and puts `$0C` / `$0B` (`MGFR` / `MGFL`); `FAC_MOVE` = the rest of Robbo's `MFAC` (`STRC` $26CF, `KIES`, `KIET` $26C7) |
+| $26B9 | `SJMP` | `JSR *` with operand from `KIET` – as Robbo's `SJMP` |
+| $2F54, $307F | `CVBL`, `INFO_BYTE/DIGIT` | Robbo's VBI: `SOUNDV`, planet number via `BDEC` ($2F53), ammunition / keys / lives / screws / score at the same offsets (`ldy #$25 $1F $19 $13 $0D $07`); digits from tables $309E / $30A8 (two-line digits) instead of `DSPD`'s arithmetic. `DSPB` / `DSPD` are taken by the editor's copy ($9EE2) |
+| $30B2 | `KEJO` | replaces Robbo's `KEJO` / `TETR`: fire = `TRIG0 & TRIG1 & SHIFT & RETURN` (RETURN through the operand $30CF), ESC `$1C` → `ESC_KEY`, cursor keys (table $314A → $314F) through the operand $3114 AND both sticks (`PORTA`) → `MOVE_IN` |
+| $35C0-$3919 | `TP_*` | the title page of the stand-alone game: display list $35D0 (logo $B600 in mode A, texts $3A00 / $3B00, two narrow lines from $3603 or $3643); `M_TESTALL` sets `TP_TEST` and jumps to `TP_START`; `TP_PLAY` walks the order table $39E0 (bit 7 = used), finds the planet whose header byte $F0 matches, calls `ENGINE_PLAY` with 8 lives, saves a restart point (`TP_RNUM/TP_RPOS`) every 4 planets; OPTION or ~8 × 256 frames → demo (`TP_DEMOFLAG`, carry to `ENGINE_PLAY`) |
+
+Also named: `ENGINE_INIT_` / `ENGINE_PLAY_` (jump-table targets), `PLAY_ABORT` ($202C: BREAK from `CHNMON` – `BRKKEY`
+$11 = 0 – or the end, Y = $99), `PLAY_EXIT`, `TP_LOOP`, `TP_EXIT`; `ENGINE_PLAY` with Y = $FF gives one try (the
+operand of `ldx #` at $207D holds Y: `inx / beq` → game over at the first death) – used by "test planety"
+*(interpretation from the code)*. `WFAC` is now code `$1B`'s entry $2615 (sets `FAC` first); the old `WFAC` $2619 is
+`WFA1`.
+
+**Texts**: the engine info lines $1E8E / $1EB6 (40 characters, `DLI2` sets normal width) and the title page lines
+$3603-$3682 (4 × 32 characters, narrow playfield) are now `dta d'…'` strings (`TEXTS` in `split.py`) – README
+"Engine structure".
+
+**Not code**: `$3120-$312F` (`lda $3146 / bne / lda #$FF / sta $3146 / sta $3142 / lda #$00 / rts`) is never
+referenced – a leftover routine, kept as data.
+
+**Tool note**: `MADS` was not in this session's environment (set for the user, the session started earlier); the build
+used the value from the user environment (`HKCU\Environment`), not a hard-coded path.
+
+Result: no generated labels left anywhere (`grep -E '^[a-z]+_[0-9A-F]{4}' src/*.ASM` is empty); 65 names, 17
+variables; MADS and `asm.py` builds byte-exact.
+
+Lesson (guide): a self-modified `JMP` whose operand is set with `lda #lo / sta op / lda #hi / sta op+1` looks like a
+vector set-up – check the store address before calling the target an interrupt handler.
+
+## 15. The remaining Robbo routines described (step 5.5, part 2) (2026-10-29)
+
+After section 14 every label had a name, but 30 engine routines named by the shape match (section 5) still had the
+placeholder comment "Robbo routine …, not analysed yet". Each was read in Konstruktor next to Robbo's source; the
+`COMMENTS` in `split.py` now say what they do. No placeholder is left in `src/`.
+
+Findings worth keeping:
+
+- **`WHAT` ($32B1, Robbo `R2.ASM` 1721) – property of each object code**, returned by `T_EX`. Robbo's legend line
+  `* !zas "wyb #itoito` gives the values as screen codes: `!` = 1, `"` = 2, `#` = 3. The code says what the bits do:
+  bullets (`PPP1`, `lsr` → carry = bit 0) destroy cells with bit 0 – a bomb becomes a lit bomb (`WYBO`), a surprise
+  is opened (`PUNIES`), others explode; `BOMB` destroys cells with bit 1 (`and #%10`). So 1 = "zas" – shot
+  (*zastrzelić*?), 2 = "wyb" – blown up (*wybuch*), 3 = "i to i to" (both) *(expansions are guesses – to confirm)*.
+- **"super!"** (`SUP1` / `SUP2`, in `NIES`): a rare surprise – over the whole board magnets vanish, doors, eyes and
+  creatures explode, +500 points (`ASCO` with X = $05).
+- **Barrier** (`ZAPO`, code $11, Robbo comment "zapora"): moves a block `$0F` along the row to the right until the end
+  piece `$05`, then starts again – not in the editor's palette *(interpretation of the movement)*.
+- **Robbo's animation** (`CM1 CM2 FA1 CM3` in `ANIM`): element shapes for the animation phase (`CNTR`) come from the
+  shapes font $4800 – characters $1C-$1F and $0A-$15 – and Robbo's own shape for the direction LM and walking phase
+  goes to characters $5E/$5F; while he walks, bytes of the engine code are written to `CONSOL` as a footstep click
+  (Robbo's comment "-tup-").
+- **`MFEX` lost Robbo's creature and magnet tests** ("stworek?", "tst mgnes") – they are `TFAC` / `MGNL` in
+  Konstruktor (section 14); `MFEX` now computes Robbo's screen address itself (row × 64 + column × 2 + $B600) for the
+  scroll target in the `FADR` operands $2491 / $2495.
+- Sound (`PSST RESE SO1-SO3`), teleport exit (`WYCP WYSE`), eyes (`LEX SKAC`), rotating gun (`RDZL RDZ1`), Robbo's
+  move (`MFC1 MFX1 FGET KIES`), the step dispatcher (`FD_ JMP1`) and `TST_W` (outside the board = wall `$A0`) are as in
+  Robbo.
+
+Builds: MADS byte-exact.
+
 ## Open questions
 
 
@@ -459,9 +543,11 @@ for an `ABOUT.md` in every game folder.
   The singles 256, 388, 520, 652, 784 are 132 sectors apart.
 - Boot record init address $19DD – the program has no code there at boot time; what is it for?
 - `JMP $F556` in the jump table – an OS ROM routine or RAM under the OS?
-- Data to classify: `$0803-$09A5` (display list + tables), `$3142-$3333`, `$35D0-$3682` (display list),
+- Data to classify: `$0803-$09A5` (display list + tables), `$3155-$31EE` (shape table of `DRAW_ROW`, `NEXT` $31D5),
+  `$32B1-$3333` (Robbo `WHAT`), `$3937-$395B` (title page colours), `$391F` (logo bitmap),
   `$4000-$47FF`; help-text preamble `$0C77`: `79 0C 80 01`; tables in `TEXTS.ASM` ($9FA2, $9FAC, $A7F8, $A7FE).
 - Palette entry 21 (switch) and the placeholders 22-29: which codes do bats, gun, laser, blaster and teleport use?
+- Robbo's abbreviations to confirm (user): `WHAT` legend "zas" / "wyb" (shot / blown up?), `KIES` (kierunek
+  strzału – shot direction?), `SKAC` (skacz – jump?), `WYZA` / `WYOT`, `ZABJ`, `CVBL`.
 - Editor screen layout: is it a 16-column board window + palette (cursor X 0-19 skipping 16)?
-- The 26 remaining `sub_XXXX` in the engine and the editor code (no source): analyse and name.
 - Engine data tables: compare with Robbo's (e.g. `$33CC` = Robbo `R1.ASM` 1624 ff.).

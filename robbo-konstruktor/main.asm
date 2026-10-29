@@ -12,9 +12,9 @@
          icl "src/BOOT.ASM"         ; $0500-$067F boot sectors 1-3: boot record and binary-file loader (cracked)
          icl "src/EDIT08.ASM"       ; $0800-$0C6C code: JMP $09A6 at $0800, tables, routines
          icl "src/HELP.ASM"         ; $0C6D-$1DD0 help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space
-         icl "src/ENGINE1.ASM"      ; $1E00-$23FC game engine: jump table $1E00, display list, DLIs
-         icl "src/ENGINE2.ASM"      ; $243D-$35A3 game engine: object behaviour (table $31EF), VBI $2F54
-         icl "src/ENGINE3.ASM"      ; $35C0-$395C game engine: display list, code
+         icl "src/ENGINE1.ASM"      ; $1E00-$23FC game engine: jump table $1E00, display list, info-line texts, DLIs, main loop (Robbo R1 reworked)
+         icl "src/ENGINE2.ASM"      ; $243D-$35A3 game engine: board drawing (CHNMON), Robbo, object behaviour (table $31EF), VBI CVBL, input KEJO, sound
+         icl "src/ENGINE3.ASM"      ; $35C0-$395C title page of the saved Robbo game (also "test Robbo"): display list, texts, logo, planet sequence
 
          opt h-
          ins "src/FONT3C.FNT"       ; $3C00-$3FFF font (modified Robbo F.FNT)

@@ -1,18 +1,18 @@
-; ENGINE2.ASM - game engine: object behaviour (table $31EF), VBI $2F54
+; ENGINE2.ASM - game engine: board drawing (CHNMON), Robbo, object behaviour (table $31EF), VBI CVBL, input KEJO, sound
 ; $243D-$35A3
 
          org $243D
 
 
-* Robbo routine CHNMON, not analysed yet -------------------
+* redraw (Robbo CHNMON, reworked): BREAK back to the editor, FAC_STEP, ANIM, board to the screen with DRAW_ROW ---
 CHNMON
          ldx  $11                  ; 243D
          bmi  L2444                ; 243F
-         jmp  L202C                ; 2441
+         jmp  PLAY_ABORT           ; 2441
 L2444
-         jsr  sub_30B2             ; 2444
-         jsr  sub_24E0             ; 2447
-         jsr  sub_2503             ; 244A
+         jsr  KEJO                 ; 2444
+         jsr  FAC_STEP             ; 2447
+         jsr  ANIM                 ; 244A
          lda  #$70                 ; 244D
          sta  $246E                ; 244F
          lda  #$24                 ; 2452
@@ -29,7 +29,9 @@ L2444
          sta  ADDR                 ; 246B
 L246D
          jmp  L246D                ; 246D
-irq_2470
+
+* CHNMON: draw one board row as 2 x 2 characters (target of the self-modified JMP $246D, waits a frame at the visible window) ---
+DRAW_ROW
          clc                       ; 2470
          lda  SCRA                 ; 2471
          adc  #$BF                 ; 2473
@@ -45,7 +47,7 @@ L247A
          sta  $246E                ; 2485
          lda  #$24                 ; 2488
          sta  $246F                ; 248A
-         jsr  sub_23A6             ; 248D
+         jsr  HALT                 ; 248D
          lda  #$00                 ; 2490
          sta  FADR                 ; 2492
          lda  #$00                 ; 2494
@@ -91,9 +93,11 @@ L24DB
          dec  ADDR                 ; 24DB
          bne  L246D                ; 24DD
          rts                       ; 24DF
-sub_24E0
-         lda  $3143                ; 24E0
-         sta  $3142                ; 24E3
+
+* Robbo's step, from CHNMON: direction MOVE_DIR, FAC_TURN at FX / FY ---
+FAC_STEP
+         lda  MOVE_IN              ; 24E0
+         sta  MOVE_DIR             ; 24E3
          lda  X                    ; 24E6
          pha                       ; 24E8
          lda  Y                    ; 24E9
@@ -104,24 +108,26 @@ sub_24E0
          lda  FY                   ; 24F2
          sta  Y                    ; 24F4
          sta  Y1                   ; 24F6
-         jsr  sub_263D             ; 24F8
+         jsr  FAC_TURN             ; 24F8
          pla                       ; 24FB
          sta  Y                    ; 24FC
          pla                       ; 24FE
          sta  X                    ; 24FF
          rts                       ; 2501
          dta $00                                      ; 2502
-sub_2503
+
+* CHNMON (Robbo): copy the animation phase (CNTR) of the element shapes from $4800 into the board font ---
+ANIM
          lda  #$00                 ; 2503
          sta  ADDR                 ; 2505
-         lda  $210A                ; 2507
+         lda  CNTR                 ; 2507
          clc                       ; 250A
          and  #$02                 ; 250B
          adc  #$48                 ; 250D
          sta  ADDR+1               ; 250F
          ldy  #$FF                 ; 2511
 
-* Robbo routine CM1, not analysed yet ----------------------
+* animated shapes, part 1: characters $1C-$1F of the board font from the phase in $4800 / $4A00 (Robbo CM1) ---
 CM1
          lda  (ADDR),y             ; 2513
          sta  $3C00,y              ; 2515
@@ -134,7 +140,7 @@ CM1
          bne  CM1                  ; 2524
          ldx  #$AF                 ; 2526
 
-* Robbo routine CM2, not analysed yet ----------------------
+* animated shapes, part 2: characters $0A-$15 (Robbo CM2) ---
 CM2
          lda  (ADDR),y             ; 2528
          sta  $3C00,x              ; 252A
@@ -164,7 +170,7 @@ L2554
          dex                       ; 255A
          bpl  L2554                ; 255B
 
-* Robbo routine FA1, not analysed yet ----------------------
+* Robbo's shape for the direction LM, walking phase $2502 when he moves; the footstep click on CONSOL (Robbo FA1, "-tup-") ---
 FA1
          lda  LM                   ; 255D
          ldy  #$04                 ; 255F
@@ -181,7 +187,7 @@ L2561
          tay                       ; 256C
          ldx  #$0F                 ; 256D
 
-* Robbo routine CM3, not analysed yet ----------------------
+* copy Robbo's shape into the board font ($3EF0 / $3FF0, Robbo CM3) ---
 CM3
          lda  (ADDR),y             ; 256F
          sta  $3EF0,x              ; 2571
@@ -193,7 +199,9 @@ CM3
          dex                       ; 257E
          bpl  CM3                  ; 257F
          rts                       ; 2581
-sub_2582
+
+* is a creature next to Robbo (Robbo: "czy obok jest fac?"), tested from Robbo's side; carry clear = Robbo destroyed ---
+TFAC
          lda  FX                   ; 2582
          sta  X                    ; 2584
          lda  FY                   ; 2586
@@ -205,21 +213,23 @@ sub_2582
          rts                       ; 2592
 L2593
          jsr  T_RT                 ; 2593
-         jsr  sub_25B7             ; 2596
+         jsr  ZABJ                 ; 2596
          bcc  L25B6                ; 2599
          jsr  T_LT                 ; 259B
-         jsr  sub_25B7             ; 259E
+         jsr  ZABJ                 ; 259E
          bcc  L25B6                ; 25A1
          jsr  T_UP                 ; 25A3
-         jsr  sub_25B7             ; 25A6
+         jsr  ZABJ                 ; 25A6
          bcc  L25B6                ; 25A9
          jsr  T_DW                 ; 25AB
-         jsr  sub_25B7             ; 25AE
+         jsr  ZABJ                 ; 25AE
          bcc  L25B6                ; 25B1
-         jsr  sub_25D1             ; 25B3
+         jsr  MGNL                 ; 25B3
 L25B6
          rts                       ; 25B6
-sub_25B7
+
+* kill (Robbo: ZABJ "zabij"): if X is eyes $26 or a creature $41-$4E, put an explosion at Robbo ---
+ZABJ
          cpx  #$26                 ; 25B7
          beq  L25C5                ; 25B9
          cpx  #$41                 ; 25BB
@@ -236,7 +246,9 @@ L25C5
          jsr  PUT_                 ; 25CC
          clc                       ; 25CF
          rts                       ; 25D0
-sub_25D1
+
+* magnet in Robbo's row (Robbo MGNL, tested from Robbo's side): magnet $29 to the right / $28 to the left pulls Robbo ---
+MGNL
          jsr  TST_                 ; 25D1
          ldx  X                    ; 25D4
 L25D6
@@ -279,17 +291,19 @@ L2601
 L2613
          sec                       ; 2613
          rts                       ; 2614
-entry_2615
+
+* Robbo appears (Robbo: "pojawiaj"), code $1B: FAC = 1, then WFA1 ---
+WFAC
          lda  #$01                 ; 2615
          sta  FAC                  ; 2617
 
-* Robbo appears (Robbo: "pojawiaj") ------------------------
-WFAC
+* Robbo appears: when the scroll is done, sound $0B, Robbo's appearing shape $6A ---
+WFA1
          lda  VSF                  ; 2619
          beq  L261E                ; 261B
          rts                       ; 261D
 L261E
-         jsr  sub_23A6             ; 261E
+         jsr  HALT                 ; 261E
          lda  VSF                  ; 2621
          beq  L2626                ; 2623
          rts                       ; 2625
@@ -298,7 +312,9 @@ L2626
          jsr  SOUND_               ; 2628
          lda  #$6A                 ; 262B
          jmp  PUT_                 ; 262D
-entry_2630
+
+* Robbo $2A (Robbo: "ruch"): only notes FX / FY, FAC = 1 - the move itself is FAC_STEP, from CHNMON ---
+MFAC
          lda  X                    ; 2630
          sta  FX                   ; 2632
          lda  Y                    ; 2634
@@ -306,21 +322,25 @@ entry_2630
          lda  #$01                 ; 2638
          sta  FAC                  ; 263A
          rts                       ; 263C
-sub_263D
-         jsr  sub_2582             ; 263D
+
+* Robbo's turn: TFAC, FAC_MOVE, TFAC again -----------------
+FAC_TURN
+         jsr  TFAC                 ; 263D
          bcc  L2645                ; 2640
-         jsr  sub_2648             ; 2642
+         jsr  FAC_MOVE             ; 2642
 L2645
-         jmp  sub_2582             ; 2645
-sub_2648
+         jmp  TFAC                 ; 2645
+
+* Robbo moves or shoots (body of Robbo's MFAC): fire + direction shoots (ammunition), else MFC1 ---
+FAC_MOVE
          jsr  TST_                 ; 2648
          cmp  #$2A                 ; 264B
          beq  L2650                ; 264D
          rts                       ; 264F
 L2650
-         dec  $26CF                ; 2650
+         dec  STRC                 ; 2650
          bpl  L2658                ; 2653
-         inc  $26CF                ; 2655
+         inc  STRC                 ; 2655
 L2658
          lda  DEMO                 ; 2658
          beq  L2663                ; 265A
@@ -328,13 +348,13 @@ L2658
          and  #$0F                 ; 265F
          beq  L266B                ; 2661
 L2663
-         lda  $3145                ; 2663
+         lda  FIRE                 ; 2663
          beq  L266B                ; 2666
          jmp  MFC1                 ; 2668
 L266B
          lda  #$00                 ; 266B
          sta  RUCH                 ; 266D
-         lda  $26CF                ; 266F
+         lda  STRC                 ; 266F
          beq  L2675                ; 2672
          rts                       ; 2674
 L2675
@@ -343,7 +363,7 @@ L2675
          lda  LM                   ; 2679
          bpl  L2685                ; 267B
 L267D
-         lda  $3142                ; 267D
+         lda  MOVE_DIR             ; 267D
          cmp  #$0F                 ; 2680
          bne  L2685                ; 2682
          rts                       ; 2684
@@ -363,10 +383,10 @@ L268F
          cld                       ; 2698
          pla                       ; 2699
          ldx  #$05                 ; 269A
-         stx  $26CF                ; 269C
+         stx  STRC                 ; 269C
          ldx  #$FF                 ; 269F
 
-* Robbo routine KIES, not analysed yet ---------------------
+* shot direction number from the bits of LM, start the bullet through KIET / SJMP (Robbo KIES) ---
 KIES
          inx                       ; 26A1
          lsr                       ; 26A2
@@ -378,19 +398,22 @@ L26AA
          txa                       ; 26AA
          asl                       ; 26AB
          tax                       ; 26AC
-         lda  $26C7,x              ; 26AD
+         lda  KIET,x               ; 26AD
          sta  $26BA                ; 26B0
-         lda  $26C8,x              ; 26B3
+         lda  KIET+1,x             ; 26B3
          sta  $26BB                ; 26B6
-sub_26B9
-         jsr  sub_26B9             ; 26B9
+
+* JSR to the bullet start for the direction (operand from KIET, Robbo SJMP) ---
+SJMP
+         jsr  SJMP                 ; 26B9
          jsr  TST_                 ; 26BC
          jsr  PUT_                 ; 26BF
          lda  #$01                 ; 26C2
          jmp  SOUND_               ; 26C4
-         dta $6D,$2B,$93,$2B,$01,$2B,$47,$2B,$00      ; 26C7
+KIET             dta $6D,$2B,$93,$2B,$01,$2B,$47,$2B  ; 26C7 bullet start for each shot direction: PP1U, PP1D, PP1L, PP1R (Robbo KIET)
+STRC             dta $00                              ; 26CF delay between Robbo's shots (Robbo STRC)
 
-* Robbo routine MFC1, not analysed yet ---------------------
+* Robbo moves in the direction (stick; random in the demo): LT_ / RT_ / UP_ / DW_, blocked -> PHAJ (Robbo MFC1) ---
 MFC1
          ldx  DEMO                 ; 26D0
          beq  L26EE                ; 26D2
@@ -409,7 +432,7 @@ L26EA
          lda  LM                   ; 26EA
          bpl  L26F1                ; 26EC
 L26EE
-         lda  $3142                ; 26EE
+         lda  MOVE_DIR             ; 26EE
 L26F1
          cmp  #$0F                 ; 26F1
          beq  L26F7                ; 26F3
@@ -447,12 +470,12 @@ L2727
          inc  Y                    ; 272C
          jmp  PHAJ                 ; 272E
 
-* Robbo routine MFX1, not analysed yet ---------------------
+* Robbo stops (RUCH = 0), then MFEX (Robbo MFX1) -----------
 MFX1
          lda  #$00                 ; 2731
          sta  RUCH                 ; 2733
 
-* Robbo routine MFEX, not analysed yet ---------------------
+* Robbo at X / Y: put him, his screen address is the scroll target ($2491 / $2495), FX / FY; the creature and magnet tests of Robbo's MFEX moved to TFAC / MGNL (Robbo MFEX) ---
 MFEX
          jsr  TST_                 ; 2735
          jsr  PUT_                 ; 2738
@@ -523,7 +546,7 @@ L27AA
 L27B1
          cmp  #$3A                 ; 27B1
          bcs  L27D3                ; 27B3
-         sta  $28EC                ; 27B5
+         sta  TELE_CODE            ; 27B5
          lda  #$39                 ; 27B8
          jsr  PUT_                 ; 27BA
          lda  X1                   ; 27BD
@@ -552,7 +575,7 @@ L27D3
          lda  #$09                 ; 27E9
          jsr  SOUND_               ; 27EB
 
-* Robbo routine FGET, not analysed yet ---------------------
+* take the object (GET_) and step in the direction LM, then MFEX (Robbo FGET) ---
 FGET
          jsr  GET_                 ; 27EE
 L27F1
@@ -696,15 +719,19 @@ L28E1
          lda  FY                   ; 28E5
          sta  Y                    ; 28E7
          jmp  MFX1                 ; 28E9
-         dta $00                                      ; 28EC
-entry_28ED
+TELE_CODE        dta $00                              ; 28EC teleport Robbo is entering (TELE_IN)
+
+* Robbo entering a teleport, code $39 (Konstruktor): FAC = 1, TELE = the teleport, put the teleport back ---
+TELE_IN
          lda  #$01                 ; 28ED
          sta  FAC                  ; 28EF
-         lda  $28EC                ; 28F1
+         lda  TELE_CODE            ; 28F1
          sta  TELE                 ; 28F4
          jmp  PUT_                 ; 28F6
          dta $00,$0F,$11,$20                          ; 28F9
-entry_28FD
+
+* teleport $30-$38 (Robbo: "wyj z telepor"): if it is TELE, Robbo comes out next to it ---
+TELP
          jsr  TST_                 ; 28FD
          cmp  TELE                 ; 2900
          beq  L2905                ; 2902
@@ -746,7 +773,7 @@ L2932
          tay                       ; 2939
          dey                       ; 293A
 
-* Robbo routine WYCP, not analysed yet ---------------------
+* teleport exit: try the directions in turn (table TMVS $296B) for a free cell (Robbo WYCP) ---
 WYCP
          tya                       ; 293B
          pha                       ; 293C
@@ -766,7 +793,7 @@ L2954
          pla                       ; 2954
          sta  LM                   ; 2955
 
-* Robbo routine WYSE, not analysed yet ---------------------
+* Robbo leaves the teleport: put him at the new cell, the teleport back, TELE = 1 (Robbo WYSE) ---
 WYSE
          jsr  MFX1                 ; 2957
          lda  X1                   ; 295A
@@ -796,7 +823,7 @@ L2992
          lda  #$0F                 ; 2992
          sta  X                    ; 2994
 
-* Robbo routine SUP1, not analysed yet ---------------------
+* "super!" - a rare surprise (Robbo: "super!"): over the whole board magnets vanish, doors, eyes and creatures explode (Robbo SUP1) ---
 SUP1
          jsr  TST_                 ; 2996
          and  #$7F                 ; 2999
@@ -817,7 +844,7 @@ SUP1
          cpx  #$4F                 ; 29B6
          bcs  L29BF                ; 29B8
 
-* Robbo routine SUP2, not analysed yet ---------------------
+* put an explosion $E1; at the end +500 points, sound $0D (Robbo SUP2) ---
 SUP2
          lda  #$E1                 ; 29BA
 L29BC
@@ -883,7 +910,9 @@ RNDR
          pla                       ; 2A31
 L2A32
          rts                       ; 2A32
-entry_2A33
+
+* bomb, code $60 (Robbo: "bomba"): explodes the 3 x 3 cells around it that may be destroyed (table $32B1, Robbo WHAT) ---
+BOMB
          lda  #$00                 ; 2A33
          jsr  SOUND_               ; 2A35
          jsr  TST_                 ; 2A38
@@ -915,7 +944,7 @@ L2A48
          and  #$02                 ; 2A6A
          beq  L2A88                ; 2A6C
 
-* Robbo routine BOM0, not analysed yet ---------------------
+* blow up one of the 3 x 3 cells: a bomb $40 becomes a lit bomb $E0 (chain reaction), the others an explosion phase from WBPO (Robbo BOM0) ---
 BOM0
          tya                       ; 2A6E
          pha                       ; 2A6F
@@ -938,7 +967,7 @@ L2A88
          bpl  L2A48                ; 2A89
          jmp  TST_                 ; 2A8B
 
-* Robbo routine WYBO, not analysed yet ---------------------
+* a bullet hit a bomb: put a lit bomb $60 (Robbo WYBO) -----
 WYBO
          lda  #$60                 ; 2A8E
          jmp  PUT_                 ; 2A90
@@ -958,7 +987,9 @@ L2AC0
          lda  #$66                 ; 2AC2
 L2AC4
          jmp  PUT_                 ; 2AC4
-entry_2AC7
+
+* Robbo pulled left by a magnet (Robbo: "przyciagania faca") ---
+MGFL
          lda  #$01                 ; 2AC7
          sta  FAC                  ; 2AC9
          sta  RUCH                 ; 2ACB
@@ -974,14 +1005,18 @@ PRZY
          sta  FAC                  ; 2ADA
          lda  #$0A                 ; 2ADC
          jmp  SOUND_               ; 2ADE
-entry_2AE1
+
+* Robbo pulled right by a magnet ---------------------------
+MGFR
          lda  #$01                 ; 2AE1
          sta  FAC                  ; 2AE3
          sta  RUCH                 ; 2AE5
          jsr  RT_                  ; 2AE7
          bcs  PRZY                 ; 2AEA
          rts                       ; 2AEC
-entry_2AED
+
+* small gun firing left (Robbo DZ1L) -----------------------
+DZ1L
          jsr  RNDR                 ; 2AED
          lda  #$01                 ; 2AF0
          jsr  SOUND_               ; 2AF2
@@ -1026,7 +1061,9 @@ L2B29
          jsr  SOUND_               ; 2B2B
          lda  #$61                 ; 2B2E
          jmp  PUT_                 ; 2B30
-entry_2B33
+
+* small gun firing right (Robbo DZ1R) ----------------------
+DZ1R
          jsr  RNDR                 ; 2B33
          lda  #$01                 ; 2B36
          jsr  SOUND_               ; 2B38
@@ -1078,7 +1115,9 @@ PP1U
 L2B7A
          lda  #$51                 ; 2B7A
          jmp  PUT_                 ; 2B7C
-entry_2B7F
+
+* small gun firing down (Robbo DZ1D) -----------------------
+DZ1D
          jsr  RNDR                 ; 2B7F
          lda  #$01                 ; 2B82
          jsr  SOUND_               ; 2B84
@@ -1372,7 +1411,7 @@ PUNIES
 
 * rotating small gun (Robbo: "ruch dzialo") ----------------
 DZRU
-         lda  $210A                ; 2D33
+         lda  CNTR                 ; 2D33
          and  #$03                 ; 2D36
          bne  RDZ1                 ; 2D38
          lda  RANDOM               ; 2D3A
@@ -1388,7 +1427,7 @@ DZRU
 L2D51
          jmp  PUT_                 ; 2D51
 
-* Robbo routine RDZL, not analysed yet ---------------------
+* rotating gun turns to the previous direction, codes $2C-$2F (Robbo RDZL) ---
 RDZL
          sbc  #$01                 ; 2D54
          cmp  #$2C                 ; 2D56
@@ -1397,7 +1436,7 @@ RDZL
 L2D5C
          jmp  PUT_                 ; 2D5C
 
-* Robbo routine RDZ1, not analysed yet ---------------------
+* rotating gun fires in its direction, 1 turn in 8 (table RDZP, Robbo RDZ1) ---
 RDZ1
          lda  RANDOM               ; 2D5F
          and  #$07                 ; 2D62
@@ -1418,7 +1457,7 @@ L2D67
 
 * moving small gun, left (Robbo: "mov dziala") -------------
 MODL
-         lda  $210A                ; 2D80
+         lda  CNTR                 ; 2D80
          lsr                       ; 2D83
          bcc  MOD1                 ; 2D84
          jsr  LT_                  ; 2D86
@@ -1429,7 +1468,7 @@ MODL
 
 * moving small gun, right ----------------------------------
 MODR
-         lda  $210A                ; 2D93
+         lda  CNTR                 ; 2D93
          lsr                       ; 2D96
          bcc  MOD1                 ; 2D97
          jsr  RT_                  ; 2D99
@@ -1441,7 +1480,7 @@ MODR
 MOD1
          jmp  DZ1U                 ; 2DA3
 
-* Robbo routine ZAPO, not analysed yet ---------------------
+* barrier (Robbo: "zapora"), code $11: moves the block $0F one cell right along the row up to the end $05, then again from the start (interpretation) ---
 ZAPO
          jsr  TST_                 ; 2DA6
          ldy  #$01                 ; 2DA9
@@ -1481,7 +1520,9 @@ L2DD0
 L2DDF
          sta  (ADDR),y             ; 2DDF
          rts                       ; 2DE1
-entry_2DE2
+
+* left-hand creature, moving left (Robbo: "stworki leworecz") ---
+STWA
          jsr  LT_                  ; 2DE2
          bcs  L2DEC                ; 2DE5
          lda  #$44                 ; 2DE7
@@ -1493,7 +1534,9 @@ L2DEC
 L2DF2
          lda  #$43                 ; 2DF2
          jmp  PUT_                 ; 2DF4
-entry_2DF7
+
+* left-hand creature, moving right -------------------------
+STWB
          jsr  RT_                  ; 2DF7
          bcs  L2E01                ; 2DFA
          lda  #$C3                 ; 2DFC
@@ -1505,7 +1548,9 @@ L2E01
 L2E07
          lda  #$44                 ; 2E07
          jmp  PUT_                 ; 2E09
-entry_2E0C
+
+* left-hand creature, moving up ----------------------------
+STWC
          jsr  UP_                  ; 2E0C
          bcs  L2E16                ; 2E0F
          lda  #$41                 ; 2E11
@@ -1517,7 +1562,9 @@ L2E16
 L2E1C
          lda  #$42                 ; 2E1C
          jmp  PUT_                 ; 2E1E
-entry_2E21
+
+* left-hand creature, moving down --------------------------
+STWD
          jsr  DW_                  ; 2E21
          bcs  L2E2B                ; 2E24
          lda  #$C2                 ; 2E26
@@ -1529,7 +1576,9 @@ L2E2B
 L2E31
          lda  #$41                 ; 2E31
          jmp  PUT_                 ; 2E33
-entry_2E36
+
+* right-hand creature, moving left (Robbo: "praworeczne") ---
+STWE
          jsr  LT_                  ; 2E36
          bcs  L2E40                ; 2E39
          lda  #$47                 ; 2E3B
@@ -1541,7 +1590,9 @@ L2E40
 L2E46
          lda  #$48                 ; 2E46
          jmp  PUT_                 ; 2E48
-entry_2E4B
+
+* right-hand creature, moving right ------------------------
+STWF
          jsr  RT_                  ; 2E4B
          bcs  L2E55                ; 2E4E
          lda  #$C8                 ; 2E50
@@ -1553,7 +1604,9 @@ L2E55
 L2E5B
          lda  #$C7                 ; 2E5B
          jmp  PUT_                 ; 2E5D
-entry_2E60
+
+* right-hand creature, moving up ---------------------------
+STWG
          jsr  UP_                  ; 2E60
          bcs  L2E6A                ; 2E63
          lda  #$46                 ; 2E65
@@ -1565,7 +1618,9 @@ L2E6A
 L2E70
          lda  #$45                 ; 2E70
          jmp  PUT_                 ; 2E72
-entry_2E75
+
+* right-hand creature, moving down -------------------------
+STWH
          jsr  DW_                  ; 2E75
          bcs  L2E7F                ; 2E78
          lda  #$C5                 ; 2E7A
@@ -1577,40 +1632,52 @@ L2E7F
 L2E85
          lda  #$46                 ; 2E85
          jmp  PUT_                 ; 2E87
-entry_2E8A
+
+* creature going left and right (Robbo: "lewo-prawo"), moving left ---
+STWI
          jsr  LT_                  ; 2E8A
          bcs  L2E90                ; 2E8D
          rts                       ; 2E8F
 L2E90
          lda  #$CA                 ; 2E90
          jmp  PUT_                 ; 2E92
-entry_2E95
+
+* creature going left and right, moving right --------------
+STWJ
          jsr  RT_                  ; 2E95
          bcs  L2E9B                ; 2E98
          rts                       ; 2E9A
 L2E9B
          lda  #$C9                 ; 2E9B
          jmp  PUT_                 ; 2E9D
-entry_2EA0
+
+* creature going up and down (Robbo: "gora-dol"), moving up ---
+STWK
          jsr  UP_                  ; 2EA0
          bcs  L2EA6                ; 2EA3
          rts                       ; 2EA5
 L2EA6
          lda  #$CC                 ; 2EA6
          jmp  PUT_                 ; 2EA8
-entry_2EAB
+
+* creature going up and down, moving down ------------------
+STWL
          jsr  DW_                  ; 2EAB
          bcs  L2EB1                ; 2EAE
          rts                       ; 2EB0
 L2EB1
          lda  #$CB                 ; 2EB1
          jmp  PUT_                 ; 2EB3
-entry_2EB6
+
+* shooting bat flying left (Robbo: "toperze pif-pafy"), shoots down at random ---
+TOPL
          jsr  LT_                  ; 2EB6
          bcc  L2ECA                ; 2EB9
          lda  #$4E                 ; 2EBB
          jmp  PUT_                 ; 2EBD
-entry_2EC0
+
+* shooting bat flying right --------------------------------
+TOPR
          jsr  RT_                  ; 2EC0
          bcc  L2ECA                ; 2EC3
          lda  #$4D                 ; 2EC5
@@ -1622,7 +1689,9 @@ L2ECA
          rts                       ; 2ED1
 L2ED2
          jmp  PP1D                 ; 2ED2
-entry_2ED5
+
+* eyes - follow Robbo (Robbo: "sledz") ---------------------
+LEDZ
          lsr  RANDOM               ; 2ED5
          bcs  SKAC                 ; 2ED8
          lda  Y                    ; 2EDA
@@ -1637,13 +1706,13 @@ L2EE8
          bcs  LEX                  ; 2EEB
          rts                       ; 2EED
 
-* Robbo routine LEX, not analysed yet ----------------------
+* eyes in Robbo's row or column: step towards him (Robbo LEX) ---
 LEX
          lda  X                    ; 2EEE
          cmp  FX                   ; 2EF0
          bne  L2F11                ; 2EF2
 
-* Robbo routine SKAC, not analysed yet ---------------------
+* eyes: now and then a step in a random direction (table TMVS, Robbo SKAC) ---
 SKAC
          lda  RANDOM               ; 2EF4
          and  #$20                 ; 2EF7
@@ -1666,7 +1735,9 @@ L2F11
          jmp  RT_                  ; 2F13
 L2F16
          jmp  LT_                  ; 2F16
-entry_2F19
+
+* capsule, closed: when all screws are collected, flash and open it (Robbo WYZA) ---
+WYZA
          lda  ZEBR                 ; 2F19
          beq  L2F1E                ; 2F1B
 L2F1D
@@ -1681,15 +1752,17 @@ L2F1E
          pha                       ; 2F2B
          lda  #$0F                 ; 2F2C
          sta  $02C3                ; 2F2E
-         jsr  sub_23A6             ; 2F31
-         jsr  sub_23A6             ; 2F34
-         jsr  sub_23A6             ; 2F37
+         jsr  HALT                 ; 2F31
+         jsr  HALT                 ; 2F34
+         jsr  HALT                 ; 2F37
          pla                       ; 2F3A
          sta  $02C3                ; 2F3B
          lda  #$15                 ; 2F3E
          jmp  PUT_                 ; 2F40
-entry_2F43
-         lda  $210A                ; 2F43
+
+* capsule, open: blinks $15 / $16 (Robbo WYOT) -------------
+WYOT
+         lda  CNTR                 ; 2F43
          and  #$03                 ; 2F46
          beq  L2F4B                ; 2F48
          rts                       ; 2F4A
@@ -1697,43 +1770,45 @@ L2F4B
          jsr  TST_                 ; 2F4B
          eor  #$03                 ; 2F4E
          jmp  PUT_                 ; 2F50
-         dta $00                                      ; 2F53
-irq_2F54
+BDEC             dta $00                              ; 2F53 planet number in BCD (Robbo BDEC)
+
+* VBI (Robbo CVBL): sound, info line (planet, ammunition, keys, lives, screws, score), DLI1, scrolling ---
+CVBL
          jsr  SOUNDV               ; 2F54
-         lda  $A9                  ; 2F57
+         lda  PNUM                 ; 2F57
          pha                       ; 2F59
          lda  #$00                 ; 2F5A
-         sta  $2F53                ; 2F5C
+         sta  BDEC                 ; 2F5C
          ldx  #$07                 ; 2F5F
          sed                       ; 2F61
 L2F62
-         asl  $A9                  ; 2F62
-         adc  $2F53                ; 2F64
-         sta  $2F53                ; 2F67
+         asl  PNUM                 ; 2F62
+         adc  BDEC                 ; 2F64
+         sta  BDEC                 ; 2F67
          dex                       ; 2F6A
          bpl  L2F62                ; 2F6B
          cld                       ; 2F6D
          ldy  #$25                 ; 2F6E
-         jsr  sub_307F             ; 2F70
+         jsr  INFO_BYTE            ; 2F70
          pla                       ; 2F73
-         sta  $A9                  ; 2F74
+         sta  PNUM                 ; 2F74
          ldy  #$1F                 ; 2F76
          lda  NABO                 ; 2F78
-         jsr  sub_307F             ; 2F7A
+         jsr  INFO_BYTE            ; 2F7A
          ldy  #$19                 ; 2F7D
          lda  KEYS                 ; 2F7F
-         jsr  sub_307F             ; 2F81
+         jsr  INFO_BYTE            ; 2F81
          ldy  #$13                 ; 2F84
          lda  LIVS                 ; 2F86
-         jsr  sub_307F             ; 2F88
+         jsr  INFO_BYTE            ; 2F88
          ldy  #$0D                 ; 2F8B
          lda  ZEBR                 ; 2F8D
-         jsr  sub_307F             ; 2F8F
+         jsr  INFO_BYTE            ; 2F8F
          ldx  #$02                 ; 2F92
          ldy  #$07                 ; 2F94
 L2F96
          lda  SCOR,x               ; 2F96
-         jsr  sub_307F             ; 2F98
+         jsr  INFO_BYTE            ; 2F98
          dex                       ; 2F9B
          bpl  L2F96                ; 2F9C
          lda  COLOR4               ; 2F9E
@@ -1858,15 +1933,19 @@ L3078
          lda  #$02                 ; 3078
          sta  VSC                  ; 307A
          jmp  EXTV                 ; 307C
-sub_307F
+
+* show a BCD byte in the info line at Y (Robbo DSPB) -------
+INFO_BYTE
          pha                       ; 307F
-         jsr  sub_3088             ; 3080
+         jsr  INFO_DIGIT           ; 3080
          pla                       ; 3083
          lsr                       ; 3084
          lsr                       ; 3085
          lsr                       ; 3086
          lsr                       ; 3087
-sub_3088
+
+* show a digit in the info line at Y, top and bottom half (Robbo DSPD) ---
+INFO_DIGIT
          stx  $309B                ; 3088
          and  #$0F                 ; 308B
          tax                       ; 308D
@@ -1879,7 +1958,9 @@ sub_3088
          rts                       ; 309D
          dta $06,$03,$07,$07,$08,$09,$09,$0A,$0B,$0B,$02,$03,$04,$05,$03,$05 ; 309E
          dta $02,$03,$02,$05                          ; 30AE
-sub_30B2
+
+* read the input (Robbo: "key to joy"): fire = triggers, SHIFT, RETURN; ESC; stick = both joysticks AND cursor keys ---
+KEJO
          lda  SKCTL                ; 30B2
          and  #$04                 ; 30B5
          bne  L30C1                ; 30B7
@@ -1899,21 +1980,21 @@ L30C5
          and  #$00                 ; 30CE
          and  TRIG0                ; 30D0
          and  $D011                ; 30D3
-         sta  $3145                ; 30D6
-         cmp  $3147                ; 30D9
+         sta  FIRE                 ; 30D6
+         cmp  FIRE_LAST            ; 30D9
          beq  L30E1                ; 30DC
-         sta  $3146                ; 30DE
+         sta  INPUT_NEW            ; 30DE
 L30E1
-         lda  $3145                ; 30E1
-         sta  $3147                ; 30E4
+         lda  FIRE                 ; 30E1
+         sta  FIRE_LAST            ; 30E4
          txa                       ; 30E7
          pha                       ; 30E8
          ldx  #$00                 ; 30E9
-         jsr  sub_3130             ; 30EB
+         jsr  GET_KEY              ; 30EB
          bcs  L3101                ; 30EE
          cmp  #$1C                 ; 30F0
          bne  L30F7                ; 30F2
-         sta  $3154                ; 30F4
+         sta  ESC_KEY              ; 30F4
 L30F7
          ldx  #$04                 ; 30F7
 L30F9
@@ -1933,14 +2014,16 @@ L3101
          lsr                       ; 310F
          and  PORTA                ; 3110
          and  #$00                 ; 3113
-         sta  $3143                ; 3115
+         sta  MOVE_IN              ; 3115
          cmp  #$0F                 ; 3118
          beq  L311F                ; 311A
-         sta  $3146                ; 311C
+         sta  INPUT_NEW            ; 311C
 L311F
          rts                       ; 311F
          dta $AD,$46,$31,$D0,$0A,$A9,$FF,$8D,$46,$31,$8D,$42,$31,$A9,$00,$60 ; 3120
-sub_3130
+
+* key pressed: carry clear, A = key code; none: carry set, A = $FF ---
+GET_KEY
          lda  SKCTL                ; 3130
          and  #$04                 ; 3133
          bne  L313E                ; 3135
@@ -1952,38 +2035,44 @@ L313E
          lda  #$FF                 ; 313E
          sec                       ; 3140
          rts                       ; 3141
-         dta $00,$00,$00,$00,$00,$00,$07,$00,$00,$07,$06,$0E,$0F,$0F,$07,$0B ; 3142
-         dta $0E,$0D,$00,$80,$46,$00,$00,$48,$80,$4E,$4E,$4E,$4E,$4E,$5E,$5E ; 3152
-         dta $CA,$CA,$9E,$00,$80,$C4,$42,$1A,$1A,$9A,$4C,$4A,$00,$00,$1A,$4A ; 3162
-         dta $4C,$48,$46,$40,$56,$4C,$CE,$5A,$50,$14,$00,$16,$18,$5E,$54,$46 ; 3172
-         dta $4C,$48,$4A,$9C,$9C,$9C,$9C,$9C,$9C,$9C,$9C,$9C,$9C,$40,$00,$48 ; 3182
-         dta $5C,$46,$52,$58,$0E,$0E,$0E,$0E,$10,$10,$10,$10,$12,$12,$12,$12 ; 3192
-         dta $92,$92,$0C,$0C,$0A,$0A,$0C,$0C,$0A,$0A,$02,$02,$02,$02,$0A,$00 ; 31A2
-         dta $0C,$4A,$00,$58,$02,$04,$06,$08,$06,$04,$02,$00,$40,$02,$04,$06 ; 31B2
-         dta $5E,$40,$02,$04,$06,$08,$06,$04,$02,$5E,$5E,$00,$00,$C4,$00,$C4 ; 31C2
-         dta $00,$00,$00,$62,$63,$64,$65,$66,$67,$20,$00,$6A,$6B,$6C,$6D,$2A ; 31D2
-         dta $6F,$70,$71,$72,$73,$74,$75,$3A,$77,$61,$00,$00,$20,$00,$00,$8E ; 31E2
-         dta $2C,$00,$00,$00,$00,$5F,$2C,$00,$00,$00,$00,$F3,$29,$FE,$29,$09 ; 31F2
-         dta $2A,$14,$2A,$C7,$2A,$E1,$2A,$93,$2D,$80,$2D,$00,$00,$00,$00,$A6 ; 3202
-         dta $2D,$00,$00,$00,$00,$19,$2F,$43,$2F,$43,$2F,$EC,$2C,$BD,$2C,$00 ; 3212
-         dta $00,$00,$00,$15,$26,$59,$2B,$7F,$2B,$ED,$2A,$33,$2B,$00,$00,$00 ; 3222
-         dta $00,$37,$2C,$00,$00,$00,$00,$00,$00,$D5,$2E,$37,$2C,$00,$00,$00 ; 3232
-         dta $00,$30,$26,$00,$00,$33,$2D,$33,$2D,$33,$2D,$33,$2D,$FD,$28,$FD ; 3242
-         dta $28,$FD,$28,$FD,$28,$FD,$28,$FD,$28,$FD,$28,$FD,$28,$FD,$28,$ED ; 3252
-         dta $28,$7B,$29,$00,$00,$A8,$2B,$00,$00,$ED,$2B,$00,$00,$00,$00,$E2 ; 3262
-         dta $2D,$F7,$2D,$0C,$2E,$21,$2E,$36,$2E,$4B,$2E,$60,$2E,$75,$2E,$8A ; 3272
-         dta $2E,$95,$2E,$A0,$2E,$AB,$2E,$B6,$2E,$C0,$2E,$F8,$2A,$3E,$2B,$64 ; 3282
-         dta $2B,$8A,$2B,$AE,$2B,$F3,$2B,$18,$2C,$3D,$2C,$65,$2C,$94,$2C,$C3 ; 3292
-         dta $2C,$F2,$2C,$00,$00,$00,$00,$00,$00,$12,$2C,$00,$00,$33,$2A,$00 ; 32A2
-         dta $02,$00,$00,$02,$00,$02,$02,$02,$02,$02,$00,$00,$02,$02,$03,$00 ; 32B2
-         dta $00,$02,$00,$00,$00,$00,$02,$02,$00,$00,$00,$02,$02,$02,$02,$03 ; 32C2
-         dta $03,$02,$02,$02,$03,$03,$00,$00,$00,$03,$03,$02,$02,$02,$02,$02 ; 32D2
-         dta $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$00,$02,$02,$02,$03,$03 ; 32E2
-         dta $03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$00,$00 ; 32F2
-         dta $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$02,$00,$00 ; 3302
-         dta $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02 ; 3312
-         dta $02,$02,$02,$02,$02,$00,$00,$00,$00,$00,$00,$02,$00,$00,$00,$00 ; 3322
-         dta $00,$00                                  ; 3332
+MOVE_DIR         dta $00                              ; 3142 Robbo's direction this step (stick bits, $0F = none, $FF = start)
+MOVE_IN          dta $00                              ; 3143 direction read by KEJO
+         dta $00                                      ; 3144
+FIRE             dta $00                              ; 3145 fire, 0 = pressed
+INPUT_NEW        dta $00                              ; 3146 set when the input changed
+FIRE_LAST        dta $00                              ; 3147 previous FIRE
+         dta $07,$00,$00,$07,$06,$0E,$0F,$0F,$07,$0B,$0E,$0D ; 3148
+ESC_KEY          dta $00                              ; 3154 ESC pressed - Robbo gives up
+         dta $80,$46,$00,$00,$48,$80,$4E,$4E,$4E,$4E,$4E,$5E,$5E,$CA,$CA,$9E ; 3155
+         dta $00,$80,$C4,$42,$1A,$1A,$9A,$4C,$4A,$00,$00,$1A,$4A,$4C,$48,$46 ; 3165
+         dta $40,$56,$4C,$CE,$5A,$50,$14,$00,$16,$18,$5E,$54,$46,$4C,$48,$4A ; 3175
+         dta $9C,$9C,$9C,$9C,$9C,$9C,$9C,$9C,$9C,$9C,$40,$00,$48,$5C,$46,$52 ; 3185
+         dta $58,$0E,$0E,$0E,$0E,$10,$10,$10,$10,$12,$12,$12,$12,$92,$92,$0C ; 3195
+         dta $0C,$0A,$0A,$0C,$0C,$0A,$0A,$02,$02,$02,$02,$0A,$00,$0C,$4A,$00 ; 31A5
+         dta $58,$02,$04,$06,$08,$06,$04,$02,$00,$40,$02,$04,$06,$5E,$40,$02 ; 31B5
+         dta $04,$06,$08,$06,$04,$02,$5E,$5E,$00,$00,$C4,$00,$C4,$00,$00,$00 ; 31C5
+         dta $62,$63,$64,$65,$66,$67,$20,$00,$6A,$6B,$6C,$6D,$2A,$6F,$70,$71 ; 31D5
+         dta $72,$73,$74,$75,$3A,$77,$61,$00,$00,$20,$00,$00,$8E,$2C,$00,$00 ; 31E5
+         dta $00,$00,$5F,$2C,$00,$00,$00,$00,$F3,$29,$FE,$29,$09,$2A,$14,$2A ; 31F5
+         dta $C7,$2A,$E1,$2A,$93,$2D,$80,$2D,$00,$00,$00,$00,$A6,$2D,$00,$00 ; 3205
+         dta $00,$00,$19,$2F,$43,$2F,$43,$2F,$EC,$2C,$BD,$2C,$00,$00,$00,$00 ; 3215
+         dta $15,$26,$59,$2B,$7F,$2B,$ED,$2A,$33,$2B,$00,$00,$00,$00,$37,$2C ; 3225
+         dta $00,$00,$00,$00,$00,$00,$D5,$2E,$37,$2C,$00,$00,$00,$00,$30,$26 ; 3235
+         dta $00,$00,$33,$2D,$33,$2D,$33,$2D,$33,$2D,$FD,$28,$FD,$28,$FD,$28 ; 3245
+         dta $FD,$28,$FD,$28,$FD,$28,$FD,$28,$FD,$28,$FD,$28,$ED,$28,$7B,$29 ; 3255
+         dta $00,$00,$A8,$2B,$00,$00,$ED,$2B,$00,$00,$00,$00,$E2,$2D,$F7,$2D ; 3265
+         dta $0C,$2E,$21,$2E,$36,$2E,$4B,$2E,$60,$2E,$75,$2E,$8A,$2E,$95,$2E ; 3275
+         dta $A0,$2E,$AB,$2E,$B6,$2E,$C0,$2E,$F8,$2A,$3E,$2B,$64,$2B,$8A,$2B ; 3285
+         dta $AE,$2B,$F3,$2B,$18,$2C,$3D,$2C,$65,$2C,$94,$2C,$C3,$2C,$F2,$2C ; 3295
+         dta $00,$00,$00,$00,$00,$00,$12,$2C,$00,$00,$33,$2A,$00,$02,$00,$00 ; 32A5
+         dta $02,$00,$02,$02,$02,$02,$02,$00,$00,$02,$02,$03,$00,$00,$02,$00 ; 32B5
+         dta $00,$00,$00,$02,$02,$00,$00,$00,$02,$02,$02,$02,$03,$03,$02,$02 ; 32C5
+         dta $02,$03,$03,$00,$00,$00,$03,$03,$02,$02,$02,$02,$02,$02,$02,$02 ; 32D5
+         dta $02,$02,$02,$02,$02,$02,$02,$00,$02,$02,$02,$03,$03,$03,$03,$03 ; 32E5
+         dta $03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$00,$00,$00,$00,$00 ; 32F5
+         dta $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$02,$00,$00,$02,$02,$02 ; 3305
+         dta $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02 ; 3315
+         dta $02,$02,$00,$00,$00,$00,$00,$00,$02,$00,$00,$00,$00,$00,$00 ; 3325
 
 * start a sound effect (A = effect) ------------------------
 SOUND_
@@ -2020,14 +2109,14 @@ L3357
          sta  $F5,x                ; 3364
          rts                       ; 3366
 
-* Robbo routine PSST, not analysed yet ---------------------
+* reset the sound: SKCTL = 3, all voices off (Robbo PSST) ---
 PSST
          lda  #$03                 ; 3367
          sta  SKCTL                ; 3369
          lda  #$00                 ; 336C
          ldx  #$08                 ; 336E
 
-* Robbo routine RESE, not analysed yet ---------------------
+* clear the voice pointers and registers (loop of PSST, Robbo RESE) ---
 RESE
          sta  $F0,x                ; 3370
          sta  AUDF1,x              ; 3372
@@ -2045,19 +2134,19 @@ L3380
          ldx  #$03                 ; 3380
          ldy  #$06                 ; 3382
 
-* Robbo routine SO1, not analysed yet ----------------------
+* sound VBI: for each of the 4 voices play the effect (SOPL) or silence it (Robbo SO1) ---
 SO1
          lda  $F0,x                ; 3384
          beq  SO2                  ; 3386
          jsr  SOPL                 ; 3388
          jmp  SO3                  ; 338B
 
-* Robbo routine SO2, not analysed yet ----------------------
+* silence the voice (Robbo SO2) ----------------------------
 SO2
          sta  AUDF1,y              ; 338E
          sta  AUDC1,y              ; 3391
 
-* Robbo routine SO3, not analysed yet ----------------------
+* next voice (Robbo SO3) -----------------------------------
 SO3
          dey                       ; 3394
          dey                       ; 3395

@@ -1,4 +1,4 @@
-; ENGINE1.ASM - game engine: jump table $1E00, display list, DLIs
+; ENGINE1.ASM - game engine: jump table $1E00, display list, info-line texts, DLIs, main loop (Robbo R1 reworked)
 ; $1E00-$23FC
 
          org $1E00
@@ -6,7 +6,7 @@
 
 * engine set-up: screen, display list $1E0F, DLI $1EDE, font $3C00, score / keys / ammunition cleared ---
 ENGINE_INIT
-         jmp  L1F46                ; 1E00
+         jmp  ENGINE_INIT_         ; 1E00
 
 * play a planet: A = data page ($50 + 2n), X = number shown, Y = lives, carry = demo; own VBI, returns to the editor ---
 ENGINE_PLAY
@@ -14,7 +14,7 @@ ENGINE_PLAY
          tsx                       ; 1E06
          stx  $3331                ; 1E07
          ldx  #$0A                 ; 1E0A
-         jmp  L1FC8                ; 1E0C
+         jmp  ENGINE_PLAY_         ; 1E0C
          dta $70,$70,$F0,$64,$00,$B6,$24,$24,$24,$24,$24,$24,$24,$24,$24,$24 ; 1E0F
          dta $24,$24,$24,$24,$24,$24,$24,$24,$A4,$04,$50,$42,$3E,$1E,$02,$01 ; 1E1F
          dta $2F,$1E,$42,$8E,$1E,$01,$35,$1E,$80,$42,$B6,$1E,$41,$0F,$1E,$00 ; 1E2F
@@ -22,13 +22,14 @@ ENGINE_PLAY
          dta $4A,$00,$00,$00,$00,$55,$56,$00,$00,$00,$00,$51,$52,$00,$00,$00 ; 1E4F
          dta $00,$45,$46,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; 1E5F
          dta $00,$4F,$50,$00,$00,$00,$00,$4B,$4C,$00,$00,$00,$00,$57,$58,$00 ; 1E6F
-         dta $00,$00,$00,$53,$54,$00,$00,$00,$00,$47,$48,$00,$00,$00,$00,$00 ; 1E7F
-         dta $00,$22,$32,$25,$21,$2B,$1A,$00,$00,$70,$6F,$77,$72,$3F,$74,$00 ; 1E8F
-         dta $64,$6F,$00,$32,$6F,$62,$62,$6F,$00,$2B,$6F,$6E,$73,$74,$72,$75 ; 1E9F
-         dta $6B,$74,$6F,$72,$61,$00,$00,$37,$63,$69,$7B,$6E,$69,$3C,$63,$69 ; 1EAF
-         dta $65,$00,$73,$74,$72,$7A,$61,$3D,$75,$00,$70,$72,$7A,$65,$72,$79 ; 1EBF
-         dta $77,$61,$00,$64,$65,$6D,$6F,$6E,$73,$74,$72,$61,$63,$6A,$3C ; 1ECF
-irq_1EDE
+         dta $00,$00,$00,$53,$54,$00,$00,$00,$00,$47,$48,$00,$00,$00,$00 ; 1E7F
+;   BREAK:  powrót do Robbo Konstruktora
+         dta d'  BREAK:  powr_t do Robbo Konstruktora  ' ; 1E8E
+; Wciśnięcie strzału przerywa demonstrację
+         dta d'Wci{ni\cie strza]u przerywa demonstracj\' ; 1EB6
+
+* DLI 1 (Robbo DLI1): players to the planet colour PCOLR3, chains to DLI2 ---
+DLI1
          pha                       ; 1EDE
          lda  $02C3                ; 1EDF
          sta  WSYNC                ; 1EE2
@@ -42,7 +43,9 @@ irq_1EDE
          sta  VDSLST+1             ; 1EF8
          pla                       ; 1EFB
          rti                       ; 1EFC
-irq_1EFD
+
+* DLI 2 (Robbo DLI2): info line at VCOUNT $60 - font $4C00, colours from COLOR4, chains to DLI3 ---
+DLI2
          pha                       ; 1EFD
          cld                       ; 1EFE
          lda  #$60                 ; 1EFF
@@ -71,7 +74,9 @@ L1F01
          sta  VDSLST+1             ; 1F37
          pla                       ; 1F3A
          rti                       ; 1F3B
-irq_1F3C
+
+* DLI 3 (Robbo DLI, 3rd case): info text colour cycles with RTCLOK ---
+DLI3
          pha                       ; 1F3C
          lda  RTCLOK+2             ; 1F3D
          lsr                       ; 1F3F
@@ -79,8 +84,10 @@ irq_1F3C
          sta  COLPF1               ; 1F41
          pla                       ; 1F44
          rti                       ; 1F45
-L1F46
-         jsr  sub_23A6             ; 1F46
+
+* ENGINE_INIT: clear score / keys / ammunition, board row tables $23FD/$241D (board $BE00), display list, DLI1 ---
+ENGINE_INIT_
+         jsr  HALT                 ; 1F46
          lda  #$00                 ; 1F49
          sta  SDMCTL               ; 1F4B
          sta  DMACTL               ; 1F4E
@@ -130,7 +137,7 @@ L1F9D
          sta  SDLSTL               ; 1FA9
          lda  #$1E                 ; 1FAC
          sta  SDLSTH               ; 1FAE
-         jsr  sub_23A6             ; 1FB1
+         jsr  HALT                 ; 1FB1
          lda  #$DE                 ; 1FB4
          sta  VDSLST               ; 1FB6
          lda  #$1E                 ; 1FB9
@@ -139,9 +146,11 @@ L1F9D
          sta  NMIEN                ; 1FC0
          lda  #$FF                 ; 1FC3
          jmp  SOUND_               ; 1FC5
-L1FC8
+
+* ENGINE_PLAY: own VBI (CVBL), clear the board, then the play loop (Robbo PCLO); a lost life restarts the planet ---
+ENGINE_PLAY_
          sta  CNUM                 ; 1FC8
-         stx  $A9                  ; 1FCA
+         stx  PNUM                 ; 1FCA
          lda  #$00                 ; 1FCC
          bcc  L1FD2                ; 1FCE
          lda  #$80                 ; 1FD0
@@ -170,31 +179,35 @@ L1FF7
          bne  L1FF7                ; 1FFE
          jsr  CHNMON               ; 2000
 L2003
-         jsr  sub_219F             ; 2003
-         jsr  sub_2247             ; 2006
+         jsr  PLA1                 ; 2003
+         jsr  ENTCV                ; 2006
          lda  #$00                 ; 2009
-         sta  $3154                ; 200B
+         sta  ESC_KEY              ; 200B
 L200E
          lsr  $4D                  ; 200E
          lda  #$00                 ; 2010
          sta  FAC                  ; 2012
-         jsr  sub_210B             ; 2014
+         jsr  CHNGCV               ; 2014
          lda  DEMO                 ; 2017
          beq  L2057                ; 2019
-         lda  $3145                ; 201B
+         lda  FIRE                 ; 201B
          beq  L2027                ; 201E
          lda  $021F                ; 2020
          bne  L205C                ; 2023
          beq  L2062                ; 2025
 L2027
          ldx  #$10                 ; 2027
-         jsr  sub_23A0             ; 2029
-L202C
+         jsr  WAIT                 ; 2029
+
+* leave the game (BREAK or the end): Y = $99, back to the caller of ENGINE_PLAY ---
+PLAY_ABORT
          ldx  $3331                ; 202C
          txs                       ; 202F
          ldy  #$99                 ; 2030
-         ldx  $A9                  ; 2032
-L2034
+         ldx  PNUM                 ; 2032
+
+* restore the caller's VBI, silence, players off; return X = planet number, Y = lives ---
+PLAY_EXIT
          txa                       ; 2034
          pha                       ; 2035
          tya                       ; 2036
@@ -217,7 +230,7 @@ L204C
          tax                       ; 2055
          rts                       ; 2056
 L2057
-         lda  $3154                ; 2057
+         lda  ESC_KEY              ; 2057
          bne  L206C                ; 205A
 L205C
          lda  FAC                  ; 205C
@@ -227,9 +240,9 @@ L2062
          lda  #$00                 ; 2062
          sta  RUCH                 ; 2064
          sta  $021F                ; 2066
-         jsr  sub_20FC             ; 2069
+         jsr  WHIL                 ; 2069
 L206C
-         jsr  sub_20C4             ; 206C
+         jsr  WYBC                 ; 206C
          lda  DEMO                 ; 206F
          bne  NXCV                 ; 2071
          sed                       ; 2073
@@ -250,8 +263,8 @@ L2083
 L208B
          ldy  LIVS                 ; 208B
 L208D
-         ldx  $A9                  ; 208D
-         jmp  L2034                ; 208F
+         ldx  PNUM                 ; 208D
+         jmp  PLAY_EXIT            ; 208F
 
 * next cave (Robbo: "nxtcv") -------------------------------
 NXCV
@@ -271,18 +284,20 @@ L209E
          lda  X                    ; 20AA
          and  #$03                 ; 20AC
          bne  L20B3                ; 20AE
-         inc  $210A                ; 20B0
+         inc  CNTR                 ; 20B0
 L20B3
-         jsr  sub_23A6             ; 20B3
+         jsr  HALT                 ; 20B3
          dec  X                    ; 20B6
          bpl  L2096                ; 20B8
-         inc  $A9                  ; 20BA
+         inc  PNUM                 ; 20BA
          sec                       ; 20BC
          lda  DEMO                 ; 20BD
          bne  L208B                ; 20BF
          clc                       ; 20C1
          bcc  L208B                ; 20C2
-sub_20C4
+
+* Robbo destroyed - the planet explodes (Robbo: "wybu komnate"): every cell except walls / empty becomes an explosion ---
+WYBC
          lda  #$00                 ; 20C4
          sta  RUCH                 ; 20C6
          jsr  SOUND_               ; 20C8
@@ -313,18 +328,22 @@ L20F4
          bpl  L20D3                ; 20F6
          dec  Y                    ; 20F8
          bpl  L20CF                ; 20FA
-sub_20FC
+
+* run the board for $30 frames (Robbo WHIL) ----------------
+WHIL
          lda  #$30                 ; 20FC
          sta  $021E                ; 20FE
 L2101
-         jsr  sub_210B             ; 2101
+         jsr  CHNGCV               ; 2101
          lda  $021E                ; 2104
          bne  L2101                ; 2107
          rts                       ; 2109
-         dta $00                                      ; 210A
-sub_210B
-         inc  $210A                ; 210B
-         jsr  sub_2582             ; 210E
+CNTR             dta $00                              ; 210A animation counter (Robbo CNTR)
+
+* one turn of the board (Robbo: "chng cave"): call the behaviour of each cell from table $31EF, next animation phase ---
+CHNGCV
+         inc  CNTR                 ; 210B
+         jsr  TFAC                 ; 210E
          ldy  #$00                 ; 2111
          sty  Y1                   ; 2113
 L2115
@@ -363,7 +382,7 @@ L214B
          lda  Y1                   ; 2155
          cmp  #$1F                 ; 2157
          bcc  L2115                ; 2159
-         jsr  sub_2582             ; 215B
+         jsr  TFAC                 ; 215B
 L215E
          lda  CDTMV3               ; 215E
          bne  L215E                ; 2161
@@ -398,9 +417,11 @@ L2189
          cmp  #$2A                 ; 2194
          bne  L214B                ; 2196
          lda  #$FF                 ; 2198
-         sta  $3142                ; 219A
+         sta  MOVE_DIR             ; 219A
          bmi  L214B                ; 219D
-sub_219F
+
+* start a planet (Robbo PLA1): info-line texts by mode, header to $BFF0, screws, colours, players, TELE / KEYS / NABO ---
+PLA1
          lda  DEMO                 ; 219F
          beq  L21A8                ; 21A1
          lda  #$05                 ; 21A3
@@ -408,7 +429,7 @@ sub_219F
 L21A8
          ldx  #$34                 ; 21A8
          ldy  #$1E                 ; 21AA
-         lda  $35C1                ; 21AC
+         lda  TP_TEST              ; 21AC
          beq  L21B5                ; 21AF
          ldx  #$31                 ; 21B1
          ldy  #$1E                 ; 21B3
@@ -441,7 +462,7 @@ L21D8
          sta  ZEBR                 ; 21E9
          lda  #$04                 ; 21EB
          sta  GPRIOR               ; 21ED
-         jsr  sub_23A6             ; 21F0
+         jsr  HALT                 ; 21F0
          lda  #$21                 ; 21F3
          sta  SDMCTL               ; 21F5
          sta  DMACTL               ; 21F8
@@ -480,7 +501,9 @@ L2219
          sta  LM                   ; 2240
          rts                       ; 2242
          dta $2C,$2D,$2E,$2F                          ; 2243
-sub_2247
+
+* enter a planet (Robbo: "wejscie"): wall shapes into the font by the header, draw the board column by column ---
+ENTCV
          lda  #$00                 ; 2247
          lsr                       ; 2249
          pha                       ; 224A
@@ -554,9 +577,9 @@ L22AC
          lda  X                    ; 22BF
          and  #$03                 ; 22C1
          bne  L22C8                ; 22C3
-         inc  $210A                ; 22C5
+         inc  CNTR                 ; 22C5
 L22C8
-         jsr  sub_23A6             ; 22C8
+         jsr  HALT                 ; 22C8
          dec  X                    ; 22CB
          bpl  L2272                ; 22CD
          rts                       ; 22CF
@@ -647,7 +670,7 @@ L2334
          clc                       ; 2342
          rts                       ; 2343
 
-* Robbo routine FD_, not analysed yet ----------------------
+* step one cell in the direction LM: UP_ / DW_ / LT_ / RT_ through JMP1, carry set if blocked (Robbo FD_) ---
 FD_
          lda  LM                   ; 2344
          ldx  #$FF                 ; 2346
@@ -660,7 +683,7 @@ L2348
          lda  $235F,x              ; 2352
          sta  $235A                ; 2355
 
-* Robbo routine JMP1, not analysed yet ---------------------
+* JMP to the step routine, operand from the tables $235B / $235F (Robbo JMP1, LMVT) ---
 JMP1
          jmp  JMP1                 ; 2358
          dta $29,$08,$EF,$D0,$23,$23,$22,$22          ; 235B
@@ -692,7 +715,7 @@ T_DW
          jsr  TST_                 ; 2383
          dec  Y                    ; 2386
 
-* Robbo routine T_EX, not analysed yet ---------------------
+* properties of the tested cell from WHAT $32B1: bit 0 = a bullet destroys it, bit 1 = a bomb destroys it (Robbo T_EX) ---
 T_EX
          tax                       ; 2388
          lda  $32B1,x              ; 2389
@@ -712,11 +735,15 @@ ASCO
          sta  SCOR                 ; 239C
          cld                       ; 239E
          rts                       ; 239F
-sub_23A0
-         jsr  sub_23A6             ; 23A0
+
+* wait X frames (Robbo WAIT) -------------------------------
+WAIT
+         jsr  HALT                 ; 23A0
          dex                       ; 23A3
-         bne  sub_23A0             ; 23A4
-sub_23A6
+         bne  WAIT                 ; 23A4
+
+* wait for the next frame (Robbo HALT) ---------------------
+HALT
          lda  RTCLOK+2             ; 23A6
 L23A8
          cmp  RTCLOK+2             ; 23A8
@@ -771,7 +798,7 @@ TST_
          cmp  #$20                 ; 23F7
          rts                       ; 23F9
 
-* Robbo routine TST_W, not analysed yet --------------------
+* outside the board: answer $A0, a wall (Robbo TST_W) ------
 TST_W
          lda  #$A0                 ; 23FA
          rts                       ; 23FC

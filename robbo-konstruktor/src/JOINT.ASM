@@ -125,6 +125,11 @@ PLANET         equ $00CD  ; current planet (0-31), bit 7 = none
 HELP_PAGE      equ $00CE  ; help page shown by the HELP key (2 = menu, 3-12 = functions)
 PANEL_ST       equ $00CF  ; lower screen panel state (PANEL)
 
+* engine variables (Konstruktor) ---
+PNUM           equ $00A9  ; planet number shown in the info line
+TP_TEST        equ $35C1  ; title page started from the Konstruktor ("test Robbo"): BREAK returns
+TP_LAST        equ $35C2  ; last planet number of the game
+
 * planets ----------------------
 PLANET_STATE   equ $39A0  ; +1F status of the 32 planets: 0 empty, bit 7 = bad (low bits = error message), else good
 

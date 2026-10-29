@@ -16,9 +16,9 @@ BLOCKS = [
     ('BOOT.ASM',    0x0500, 0x067F, 'boot sectors 1-3: boot record and binary-file loader (cracked)'),
     ('EDIT08.ASM',  0x0800, 0x0C6C, 'code: JMP $09A6 at $0800, tables, routines'),
     ('HELP.ASM',    0x0C6D, 0x1DD0, 'help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space'),
-    ('ENGINE1.ASM', 0x1E00, 0x23FC, 'game engine: jump table $1E00, display list, DLIs'),
-    ('ENGINE2.ASM', 0x243D, 0x35A3, 'game engine: object behaviour (table $31EF), VBI $2F54'),
-    ('ENGINE3.ASM', 0x35C0, 0x395C, 'game engine: display list, code'),
+    ('ENGINE1.ASM', 0x1E00, 0x23FC, 'game engine: jump table $1E00, display list, info-line texts, DLIs, main loop (Robbo R1 reworked)'),
+    ('ENGINE2.ASM', 0x243D, 0x35A3, 'game engine: board drawing (CHNMON), Robbo, object behaviour (table $31EF), VBI CVBL, input KEJO, sound'),
+    ('ENGINE3.ASM', 0x35C0, 0x395C, 'title page of the saved Robbo game (also "test Robbo"): display list, texts, logo, planet sequence'),
     ('FONT3C.FNT',  0x3C00, 0x3FFF, 'font (modified Robbo F.FNT)'),
     ('D4000.DTA',   0x4000, 0x47FF, 'data'),
     ('FONT48.FNT',  0x4800, 0x4BFF, 'font (modified Robbo S.FNT)'),
@@ -65,6 +65,11 @@ def entries(mem):
 TEXTS = {
     0x0C7B: (0x1DD0, 'help'),       # help pages 0-15 (after the preamble $0C6D-$0C7A)
     0x9FBB: (0xA316, 'screen-pl'),  # editor screens: main menu, title, planet legend, disk panel, save hints
+    0x1E8E: (0x1EDD, 'screen-pl'),  # engine info-line texts: BREAK back to the Konstruktor / end of the demo
+    0x3603: (0x3622, 'screen-pl'),  # title page bottom lines (narrow, 32 characters), saved game: line 1
+    0x3623: (0x3642, 'screen-pl'),  #   line 2
+    0x3643: (0x3662, 'screen-pl'),  # title page bottom lines, "test Robbo" from the Konstruktor: line 1
+    0x3663: (0x3682, 'screen-pl'),  #   line 2
     0xA318: (0xA7D5, 'strings'),    # editor messages, errors, element names ($A317 is a variable)
     0xA7D8: (0xA7F7, 'strings'),    # tape/disk labels, 8 characters each (read with lda $A7D8,x)
     0xA804: (0xA808, 'strings'),    # "Robbo"
@@ -121,6 +126,24 @@ VARIABLES = [
     (0xA843, 1, 'TRIG_ST', 'fire / console keys'),
     (0xA844, 1, 'EVENT', 'input event flag'),
     (0xA845, 1, 'TRIG_LAST', 'previous fire / console keys'),
+    '* engine variables (Konstruktor) ---',
+    (0x00A9, 1, 'PNUM', 'planet number shown in the info line'),
+    (0x210A, 1, 'CNTR', 'animation counter (Robbo CNTR)'),
+    (0x26CF, 1, 'STRC', 'delay between Robbo\'s shots (Robbo STRC)'),
+    (0x26C7, 8, 'KIET', 'bullet start for each shot direction: PP1U, PP1D, PP1L, PP1R (Robbo KIET)'),
+    (0x28EC, 1, 'TELE_CODE', 'teleport Robbo is entering (TELE_IN)'),
+    (0x2F53, 1, 'BDEC', 'planet number in BCD (Robbo BDEC)'),
+    (0x3142, 1, 'MOVE_DIR', 'Robbo\'s direction this step (stick bits, $0F = none, $FF = start)'),
+    (0x3143, 1, 'MOVE_IN', 'direction read by KEJO'),
+    (0x3145, 1, 'FIRE', 'fire, 0 = pressed'),
+    (0x3146, 1, 'INPUT_NEW', 'set when the input changed'),
+    (0x3147, 1, 'FIRE_LAST', 'previous FIRE'),
+    (0x3154, 1, 'ESC_KEY', 'ESC pressed - Robbo gives up'),
+    (0x35C1, 1, 'TP_TEST', 'title page started from the Konstruktor ("test Robbo"): BREAK returns'),
+    (0x35C2, 1, 'TP_LAST', 'last planet number of the game'),
+    (0x395A, 1, 'TP_RNUM', 'restart point: planet number shown'),
+    (0x395B, 1, 'TP_RPOS', 'restart point: position in the planet order'),
+    (0x395C, 1, 'TP_DEMOFLAG', 'title page: $80 = demo'),
     '* planets ----------------------',
     (0x39A0, 32, 'PLANET_STATE', 'status of the 32 planets: 0 empty, bit 7 = bad (low bits = error message), else good'),
     (0x94F8, 1, 'DISK_SLOTS', 'directory result: used slots, negative = no disk'),
@@ -128,29 +151,28 @@ VARIABLES = [
 
 COMMENTS = {
     0x2092: 'next cave (Robbo: "nxtcv")',   # Robbo $1E5F
-    0x2344: 'Robbo routine FD_, not analysed yet',   # Robbo $2124
+    0x2344: 'step one cell in the direction LM: UP_ / DW_ / LT_ / RT_ through JMP1, carry set if blocked (Robbo FD_)',   # Robbo $2124
     0x2363: 'test the cell to the left',   # Robbo $2143
     0x236D: 'test the cell to the right',   # Robbo $214D
     0x238D: 'add points to the score (Robbo: "dodaj punkty")',   # Robbo $256C
-    0x23FA: 'Robbo routine TST_W, not analysed yet',   # Robbo $2C6E
-    0x2513: 'Robbo routine CM1, not analysed yet',   # Robbo $2055
-    0x2528: 'Robbo routine CM2, not analysed yet',   # Robbo $206A
-    0x255D: 'Robbo routine FA1, not analysed yet',   # Robbo $209F
-    0x256F: 'Robbo routine CM3, not analysed yet',   # Robbo $20B1
-    0x2619: 'Robbo appears (Robbo: "pojawiaj")',   # Robbo $2182
-    0x26A1: 'Robbo routine KIES, not analysed yet',   # Robbo $21FC
-    0x26D0: 'Robbo routine MFC1, not analysed yet',   # Robbo $2250
+    0x23FA: 'outside the board: answer $A0, a wall (Robbo TST_W)',   # Robbo $2C6E
+    0x2513: 'animated shapes, part 1: characters $1C-$1F of the board font from the phase in $4800 / $4A00 (Robbo CM1)',   # Robbo $2055
+    0x2528: 'animated shapes, part 2: characters $0A-$15 (Robbo CM2)',   # Robbo $206A
+    0x255D: 'Robbo\'s shape for the direction LM, walking phase $2502 when he moves; the footstep click on CONSOL (Robbo FA1, "-tup-")',   # Robbo $209F
+    0x256F: "copy Robbo's shape into the board font ($3EF0 / $3FF0, Robbo CM3)",   # Robbo $20B1
+    0x26A1: 'shot direction number from the bits of LM, start the bullet through KIET / SJMP (Robbo KIES)',   # Robbo $21FC
+    0x26D0: 'Robbo moves in the direction (stick; random in the demo): LT_ / RT_ / UP_ / DW_, blocked -> PHAJ (Robbo MFC1)',   # Robbo $2250
     0x276E: 'push an object (Robbo: "pchaj?")',   # Robbo $231F
-    0x27EE: 'Robbo routine FGET, not analysed yet',   # Robbo $23F6
+    0x27EE: 'take the object (GET_) and step in the direction LM, then MFEX (Robbo FGET)',   # Robbo $23F6
     0x27FF: 'door: opens with a key, KEYS (Robbo: "drzwi?")',   # Robbo $2407
     0x2825: 'screw / treasure (Robbo: "skarb?")',   # Robbo $242D
     0x2858: 'exit (Robbo: "wyjscie?")',   # Robbo $2460
     0x28C2: 'test: sliding box',   # Robbo $24CA
-    0x293B: 'Robbo routine WYCP, not analysed yet',   # Robbo $239D
-    0x2957: 'Robbo routine WYSE, not analysed yet',   # Robbo $23B9
+    0x293B: 'teleport exit: try the directions in turn (table TMVS $296B) for a free cell (Robbo WYCP)',   # Robbo $239D
+    0x2957: 'Robbo leaves the teleport: put him at the new cell, the teleport back, TELE = 1 (Robbo WYSE)',   # Robbo $23B9
     0x297B: 'surprise box: random object (RND)',   # Robbo $24F4
-    0x2996: 'Robbo routine SUP1, not analysed yet',   # Robbo $250F
-    0x29BA: 'Robbo routine SUP2, not analysed yet',   # Robbo $2533
+    0x2996: '"super!" - a rare surprise (Robbo: "super!"): over the whole board magnets vanish, doors, eyes and creatures explode (Robbo SUP1)',   # Robbo $250F
+    0x29BA: 'put an explosion $E1; at the end +500 points, sound $0D (Robbo SUP2)',   # Robbo $2533
     0x29F3: 'sliding box (bezwladna skrzynia) moving left until blocked (Robbo: "bezw skrzynie")',   # Robbo $257F
     0x29FE: 'sliding box (bezwladna skrzynia) moving right until blocked (Robbo: "bezw skrzynie")',   # Robbo $258A
     0x2A09: 'sliding box (bezwladna skrzynia) moving up until blocked (Robbo: "bezw skrzynie")',   # Robbo $2595
@@ -158,7 +180,7 @@ COMMENTS = {
     0x2A19: 'sliding box: cannot move',   # Robbo $25A5
     0x2A24: 'sliding box: common part',   # Robbo $25B0
     0x2A29: 'random return (Robbo: "losowy powrot")',   # Robbo $25B5
-    0x2A6E: 'Robbo routine BOM0, not analysed yet',   # Robbo $25E5
+    0x2A6E: 'blow up one of the 3 x 3 cells: a bomb $40 becomes a lit bomb $E0 (chain reaction), the others an explosion phase from WBPO (Robbo BOM0)',   # Robbo $25E5
     0x2AB7: 'put an explosion or empty space (Robbo: "put wyb|spc")',   # Robbo $261A
     0x2AD3: 'pulled in by a magnet: Robbo destroyed, sound $0A',   # Robbo $2658
     0x2AF8: 'small gun bullet (pocisk) moving left',   # Robbo $267B
@@ -196,42 +218,42 @@ COMMENTS = {
     0x2D1B: 'blaster: test for a bomb (Robbo: "dz3 test bomba")',   # Robbo $289E
     0x2D29: 'put a surprise box (Robbo: "put niespodzianka")',   # Robbo $28AC
     0x2D33: 'rotating small gun (Robbo: "ruch dzialo")',   # Robbo $28B6
-    0x2D54: 'Robbo routine RDZL, not analysed yet',   # Robbo $28D7
-    0x2D5F: 'Robbo routine RDZ1, not analysed yet',   # Robbo $28E2
+    0x2D54: 'rotating gun turns to the previous direction, codes $2C-$2F (Robbo RDZL)',   # Robbo $28D7
+    0x2D5F: 'rotating gun fires in its direction, 1 turn in 8 (table RDZP, Robbo RDZ1)',   # Robbo $28E2
     0x2D80: 'moving small gun, left (Robbo: "mov dziala")',   # Robbo $2903
     0x2D93: 'moving small gun, right',   # Robbo $2916
     0x2DA3: 'moving small gun: common part',   # Robbo $2926
-    0x2DA6: 'Robbo routine ZAPO, not analysed yet',   # Robbo $2929
-    0x2EEE: 'Robbo routine LEX, not analysed yet',   # Robbo $2AE0
-    0x2EF4: 'Robbo routine SKAC, not analysed yet',   # Robbo $2AE6
+    0x2DA6: 'barrier (Robbo: "zapora"), code $11: moves the block $0F one cell right along the row up to the end $05, then again from the start (interpretation)',   # Robbo $2929
+    0x2EEE: "eyes in Robbo's row or column: step towards him (Robbo LEX)",   # Robbo $2AE0
+    0x2EF4: 'eyes: now and then a step in a random direction (table TMVS, Robbo SKAC)',   # Robbo $2AE6
     0x300D: 'scroll the cave view',   # Robbo $2E14
     0x3029: 'scroll up',   # Robbo $2E30
     0x304D: 'scroll down',   # Robbo $2E54
     0x305A: 'scroll: load a screen line',   # Robbo $2E61
     0x3334: 'start a sound effect (A = effect)',   # Robbo $307A
-    0x3367: 'Robbo routine PSST, not analysed yet',   # Robbo $30AD
-    0x3370: 'Robbo routine RESE, not analysed yet',   # Robbo $30B6
+    0x3367: 'reset the sound: SKCTL = 3, all voices off (Robbo PSST)',   # Robbo $30AD
+    0x3370: 'clear the voice pointers and registers (loop of PSST, Robbo RESE)',   # Robbo $30B6
     0x3379: 'sound effects: VBI part',   # Robbo $30BF
-    0x3384: 'Robbo routine SO1, not analysed yet',   # Robbo $30CA
-    0x338E: 'Robbo routine SO2, not analysed yet',   # Robbo $30D4
-    0x3394: 'Robbo routine SO3, not analysed yet',   # Robbo $30DA
+    0x3384: 'sound VBI: for each of the 4 voices play the effect (SOPL) or silence it (Robbo SO1)',   # Robbo $30CA
+    0x338E: 'silence the voice (Robbo SO2)',   # Robbo $30D4
+    0x3394: 'next voice (Robbo SO3)',   # Robbo $30DA
     0x339A: 'sound effects: play',   # Robbo $30E0
     0x9EE2: 'display a byte as two digits (Robbo: "display byte")',   # Robbo $2E86
     0x22D0: 'step X one cell right; carry set if the cell is free',   # Robbo $20C4 (name from call sites)
     0x22EF: 'step X one cell left; carry set if the cell is free',   # Robbo $20DD (name from call sites)
     0x2308: 'step Y one cell down; carry set if the cell is free',   # Robbo $20F4 (name from call sites)
     0x2329: 'step Y one cell up; carry set if the cell is free',   # Robbo $210D (name from call sites)
-    0x2358: 'Robbo routine JMP1, not analysed yet',   # Robbo $2138 (name from call sites)
+    0x2358: 'JMP to the step routine, operand from the tables $235B / $235F (Robbo JMP1, LMVT)',   # Robbo $2138 (name from call sites)
     0x2377: 'test the cell above',   # Robbo $2157 (name from call sites)
     0x2381: 'test the cell below',   # Robbo $2161 (name from call sites)
-    0x2388: 'Robbo routine T_EX, not analysed yet',   # Robbo $2168 (name from call sites)
+    0x2388: 'properties of the tested cell from WHAT $32B1: bit 0 = a bullet destroys it, bit 1 = a bomb destroys it (Robbo T_EX)',   # Robbo $2168 (name from call sites)
     0x23AD: 'read the board cell at X/Y',   # Robbo $2BD0 (name from call sites)
     0x23C6: 'write object A to the board cell at X/Y',   # Robbo $2C0B (name from call sites)
     0x23DB: 'test the board cell',   # Robbo $2C51 (name from call sites)
-    0x243D: 'Robbo routine CHNMON, not analysed yet',   # Robbo $2042 (name from call sites)
-    0x2731: 'Robbo routine MFX1, not analysed yet',   # Robbo $22B4 (name from call sites)
-    0x2735: 'Robbo routine MFEX, not analysed yet',   # Robbo $22B8 (name from call sites)
-    0x2A8E: 'Robbo routine WYBO, not analysed yet',   # Robbo $2603 (name from call sites)
+    0x243D: 'redraw (Robbo CHNMON, reworked): BREAK back to the editor, FAC_STEP, ANIM, board to the screen with DRAW_ROW',   # Robbo $2042 (name from call sites)
+    0x2731: 'Robbo stops (RUCH = 0), then MFEX (Robbo MFX1)',   # Robbo $22B4 (name from call sites)
+    0x2735: "Robbo at X / Y: put him, his screen address is the scroll target ($2491 / $2495), FX / FY; the creature and magnet tests of Robbo's MFEX moved to TFAC / MGNL (Robbo MFEX)",   # Robbo $22B8 (name from call sites)
+    0x2A8E: 'a bullet hit a bomb: put a lit bomb $60 (Robbo WYBO)',   # Robbo $2603 (name from call sites)
     0x2B13: 'small gun bullet: hit something',   # Robbo $2696 (name from call sites)
     0x2B59: 'small gun (dzialko) fires up',   # Robbo $26DC (name from call sites)
     0x2BCD: 'laser: hit something',   # Robbo $2750 (name from call sites)
@@ -358,6 +380,72 @@ COMMENTS = {
     0x0531: 'boot: JMP (INITAD) after each segment',
     0x0534: 'boot: next byte of the file',
     0x05F5: 'boot: read the next sector of the chain (DOS 2 link: bytes 125-127)',
+    0x1EDE: 'DLI 1 (Robbo DLI1): players to the planet colour PCOLR3, chains to DLI2',
+    0x1EFD: 'DLI 2 (Robbo DLI2): info line at VCOUNT $60 - font $4C00, colours from COLOR4, chains to DLI3',
+    0x1F3C: 'DLI 3 (Robbo DLI, 3rd case): info text colour cycles with RTCLOK',
+    0x1F46: 'ENGINE_INIT: clear score / keys / ammunition, board row tables $23FD/$241D (board $BE00), display list, DLI1',
+    0x1FC8: 'ENGINE_PLAY: own VBI (CVBL), clear the board, then the play loop (Robbo PCLO); a lost life restarts the planet',
+    0x202C: 'leave the game (BREAK or the end): Y = $99, back to the caller of ENGINE_PLAY',
+    0x2034: "restore the caller's VBI, silence, players off; return X = planet number, Y = lives",
+    0x20C4: 'Robbo destroyed - the planet explodes (Robbo: "wybu komnate"): every cell except walls / empty becomes an explosion',
+    0x20FC: 'run the board for $30 frames (Robbo WHIL)',
+    0x210B: 'one turn of the board (Robbo: "chng cave"): call the behaviour of each cell from table $31EF, next animation phase',
+    0x219F: 'start a planet (Robbo PLA1): info-line texts by mode, header to $BFF0, screws, colours, players, TELE / KEYS / NABO',
+    0x2247: 'enter a planet (Robbo: "wejscie"): wall shapes into the font by the header, draw the board column by column',
+    0x23A0: 'wait X frames (Robbo WAIT)',
+    0x23A6: 'wait for the next frame (Robbo HALT)',
+    0x2470: 'CHNMON: draw one board row as 2 x 2 characters (target of the self-modified JMP $246D, waits a frame at the visible window)',
+    0x24E0: "Robbo's step, from CHNMON: direction MOVE_DIR, FAC_TURN at FX / FY",
+    0x2503: 'CHNMON (Robbo): copy the animation phase (CNTR) of the element shapes from $4800 into the board font',
+    0x2582: 'is a creature next to Robbo (Robbo: "czy obok jest fac?"), tested from Robbo\'s side; carry clear = Robbo destroyed',
+    0x25B7: 'kill (Robbo: ZABJ "zabij"): if X is eyes $26 or a creature $41-$4E, put an explosion at Robbo',
+    0x25D1: "magnet in Robbo's row (Robbo MGNL, tested from Robbo's side): magnet $29 to the right / $28 to the left pulls Robbo",
+    0x263D: "Robbo's turn: TFAC, FAC_MOVE, TFAC again",
+    0x2648: "Robbo moves or shoots (body of Robbo's MFAC): fire + direction shoots (ammunition), else MFC1",
+    0x26B9: 'JSR to the bullet start for the direction (operand from KIET, Robbo SJMP)',
+    0x2615: 'Robbo appears (Robbo: "pojawiaj"), code $1B: FAC = 1, then WFA1',
+    0x2619: "Robbo appears: when the scroll is done, sound $0B, Robbo's appearing shape $6A",
+    0x2630: 'Robbo $2A (Robbo: "ruch"): only notes FX / FY, FAC = 1 - the move itself is FAC_STEP, from CHNMON',
+    0x28ED: 'Robbo entering a teleport, code $39 (Konstruktor): FAC = 1, TELE = the teleport, put the teleport back',
+    0x28FD: 'teleport $30-$38 (Robbo: "wyj z telepor"): if it is TELE, Robbo comes out next to it',
+    0x2AC7: 'Robbo pulled left by a magnet (Robbo: "przyciagania faca")',
+    0x2AE1: 'Robbo pulled right by a magnet',
+    0x2AED: 'small gun firing left (Robbo DZ1L)',
+    0x2B33: 'small gun firing right (Robbo DZ1R)',
+    0x2B7F: 'small gun firing down (Robbo DZ1D)',
+    0x2DE2: 'left-hand creature, moving left (Robbo: "stworki leworecz")',
+    0x2DF7: 'left-hand creature, moving right',
+    0x2E0C: 'left-hand creature, moving up',
+    0x2E21: 'left-hand creature, moving down',
+    0x2E36: 'right-hand creature, moving left (Robbo: "praworeczne")',
+    0x2E4B: 'right-hand creature, moving right',
+    0x2E60: 'right-hand creature, moving up',
+    0x2E75: 'right-hand creature, moving down',
+    0x2E8A: 'creature going left and right (Robbo: "lewo-prawo"), moving left',
+    0x2E95: 'creature going left and right, moving right',
+    0x2EA0: 'creature going up and down (Robbo: "gora-dol"), moving up',
+    0x2EAB: 'creature going up and down, moving down',
+    0x2EB6: 'shooting bat flying left (Robbo: "toperze pif-pafy"), shoots down at random',
+    0x2EC0: 'shooting bat flying right',
+    0x2ED5: 'eyes - follow Robbo (Robbo: "sledz")',
+    0x2F19: 'capsule, closed: when all screws are collected, flash and open it (Robbo WYZA)',
+    0x2F43: 'capsule, open: blinks $15 / $16 (Robbo WYOT)',
+    0x2A33: 'bomb, code $60 (Robbo: "bomba"): explodes the 3 x 3 cells around it that may be destroyed (table $32B1, Robbo WHAT)',
+    0x2F54: 'VBI (Robbo CVBL): sound, info line (planet, ammunition, keys, lives, screws, score), DLI1, scrolling',
+    0x307F: 'show a BCD byte in the info line at Y (Robbo DSPB)',
+    0x3088: 'show a digit in the info line at Y, top and bottom half (Robbo DSPD)',
+    0x30B2: 'read the input (Robbo: "key to joy"): fire = triggers, SHIFT, RETURN; ESC; stick = both joysticks AND cursor keys',
+    0x3130: 'key pressed: carry clear, A = key code; none: carry set, A = $FF',
+    0x35C0: 'title page program - start of the saved Robbo game and of "test Robbo" ($35C1 = from the Konstruktor, $35C2 = planets)',
+    0x3683: 'title page: start text; fire / START plays, OPTION or a pause starts the demo; then the congratulation text',
+    0x36BC: 'play the planets in the order $39E0 with ENGINE_PLAY, 8 lives; every 4th planet is the restart point; carry set = game over',
+    0x373C: 'fire / START / SHIFT pressed: carry clear on a new press',
+    0x375B: 'OPTION pressed or a long pause: demo (TP_DEMOFLAG = $80), carry clear',
+    0x3776: 'title page frame: timer, BREAK back to the Konstruktor, colour bars of the logo and the texts',
+    0x3816: 'draw the "ROBBO" logo into the title screen $B600 (bitmap $391F, pixels doubled)',
+    0x3880: 'show the title page with the text page A ($3A start / $3B congratulation)',
+    0x388A: 'back to the Konstruktor ("BREAK aby wrocic"): texts back to normal video, JMP START',
+    0x3913: 'wait for the next frame (copy of HALT)',
 }
 
 NAMES = {
@@ -371,7 +459,6 @@ NAMES = {
     0x2528: 'CM2',
     0x255D: 'FA1',
     0x256F: 'CM3',
-    0x2619: 'WFAC',
     0x26A1: 'KIES',
     0x26D0: 'MFC1',
     0x276E: 'PHAJ',
@@ -615,6 +702,72 @@ NAMES = {
     0x0531: 'BOOT_INIT',
     0x0534: 'BOOT_GETBYTE',
     0x05F5: 'BOOT_NEXTSEC',
+    0x1EDE: 'DLI1',
+    0x1EFD: 'DLI2',
+    0x1F3C: 'DLI3',
+    0x1F46: 'ENGINE_INIT_',
+    0x1FC8: 'ENGINE_PLAY_',
+    0x202C: 'PLAY_ABORT',
+    0x2034: 'PLAY_EXIT',
+    0x20C4: 'WYBC',
+    0x20FC: 'WHIL',
+    0x210B: 'CHNGCV',
+    0x219F: 'PLA1',
+    0x2247: 'ENTCV',
+    0x23A0: 'WAIT',
+    0x23A6: 'HALT',
+    0x2470: 'DRAW_ROW',
+    0x24E0: 'FAC_STEP',
+    0x2503: 'ANIM',
+    0x2582: 'TFAC',
+    0x25B7: 'ZABJ',
+    0x25D1: 'MGNL',
+    0x263D: 'FAC_TURN',
+    0x2648: 'FAC_MOVE',
+    0x26B9: 'SJMP',
+    0x2615: 'WFAC',
+    0x2619: 'WFA1',
+    0x2630: 'MFAC',
+    0x28ED: 'TELE_IN',
+    0x28FD: 'TELP',
+    0x2AC7: 'MGFL',
+    0x2AE1: 'MGFR',
+    0x2AED: 'DZ1L',
+    0x2B33: 'DZ1R',
+    0x2B7F: 'DZ1D',
+    0x2DE2: 'STWA',
+    0x2DF7: 'STWB',
+    0x2E0C: 'STWC',
+    0x2E21: 'STWD',
+    0x2E36: 'STWE',
+    0x2E4B: 'STWF',
+    0x2E60: 'STWG',
+    0x2E75: 'STWH',
+    0x2E8A: 'STWI',
+    0x2E95: 'STWJ',
+    0x2EA0: 'STWK',
+    0x2EAB: 'STWL',
+    0x2EB6: 'TOPL',
+    0x2EC0: 'TOPR',
+    0x2ED5: 'LEDZ',
+    0x2F19: 'WYZA',
+    0x2F43: 'WYOT',
+    0x2A33: 'BOMB',
+    0x2F54: 'CVBL',
+    0x307F: 'INFO_BYTE',
+    0x3088: 'INFO_DIGIT',
+    0x30B2: 'KEJO',
+    0x3130: 'GET_KEY',
+    0x35C0: 'TP_START',
+    0x3683: 'TP_LOOP',
+    0x36BC: 'TP_PLAY',
+    0x373C: 'TP_KEY',
+    0x375B: 'TP_DEMO',
+    0x3776: 'TP_FRAME',
+    0x3816: 'TP_LOGO',
+    0x3880: 'TP_PAGE',
+    0x388A: 'TP_EXIT',
+    0x3913: 'TP_HALT',
 }
 POKES = {}
 

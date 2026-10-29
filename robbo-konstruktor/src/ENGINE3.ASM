@@ -1,70 +1,76 @@
-; ENGINE3.ASM - game engine: display list, code
+; ENGINE3.ASM - title page of the saved Robbo game (also "test Robbo"): display list, texts, logo, planet sequence
 ; $35C0-$395C
 
          org $35C0
 
-L35C0
-         lda  L35C0                ; 35C0
+
+* title page program - start of the saved Robbo game and of "test Robbo" ($35C1 = from the Konstruktor, $35C2 = planets) ---
+TP_START
+         lda  TP_START             ; 35C0
          cli                       ; 35C3
          cld                       ; 35C4
          ldx  #$FF                 ; 35C5
          txs                       ; 35C7
          lda  #$3A                 ; 35C8
-         jsr  sub_3880             ; 35CA
-         jmp  L3683                ; 35CD
+         jsr  TP_PAGE              ; 35CA
+         jmp  TP_LOOP              ; 35CD
          dta $70,$70,$70,$70,$4A,$00,$B6,$00,$0A,$00,$0A,$00,$0A,$00,$0A,$00 ; 35D0
          dta $0A,$00,$0A,$00,$0A,$30,$70,$70,$42,$00,$3A,$10,$02,$10,$02,$10 ; 35E0
          dta $02,$10,$02,$10,$02,$10,$02,$10,$02,$70,$70,$70,$42,$03,$36,$02 ; 35F0
-         dta $41,$D0,$35,$00,$00,$34,$61,$00,$67,$72,$61,$00,$70,$6F,$77,$73 ; 3600
-         dta $74,$61,$3D,$61,$00,$00,$70,$72,$7A,$79,$00,$70,$6F,$6D,$6F,$63 ; 3610
-         dta $79,$00,$00,$32,$6F,$62,$62,$6F,$00,$2B,$6F,$6E,$73,$74,$72,$75 ; 3620
-         dta $6B,$74,$6F,$72,$61,$00,$00,$0F,$11,$19,$19,$10,$00,$21,$76,$61 ; 3630
-         dta $6C,$6F,$6E,$77,$63,$69,$7B,$6E,$69,$6A,$00,$6B,$6C,$61,$77,$69 ; 3640
-         dta $73,$7A,$00,$22,$32,$25,$21,$2B,$00,$61,$62,$79,$00,$77,$72,$3F ; 3650
-         dta $63,$69,$3B,$00,$00,$00,$00,$00,$00,$64,$6F,$00,$32,$6F,$62,$62 ; 3660
-         dta $6F,$00,$2B,$6F,$6E,$73,$74,$72,$75,$6B,$74,$6F,$72,$61,$00,$00 ; 3670
-         dta $00,$00,$00                              ; 3680
-L3683
+         dta $41,$D0,$35                              ; 3600
+;   Ta gra powstała  przy pomocy
+         dta d'  Ta gra powsta]a  przy pomocy  '      ; 3603
+; Robbo Konstruktora  /1990 Avalon
+         dta d'Robbo Konstruktora  /1990 Avalon'      ; 3623
+; wciśnij klawisz BREAK aby wrócić
+         dta d'wci{nij klawisz BREAK aby wr_ci['      ; 3643
+;       do Robbo Konstruktora
+         dta d'      do Robbo Konstruktora     '      ; 3663
+
+* title page: start text; fire / START plays, OPTION or a pause starts the demo; then the congratulation text ---
+TP_LOOP
          lda  #$3A                 ; 3683
          sta  $35EA                ; 3685
 L3688
-         jsr  sub_3776             ; 3688
-         jsr  sub_373C             ; 368B
+         jsr  TP_FRAME             ; 3688
+         jsr  TP_KEY               ; 368B
          bcc  L3695                ; 368E
-         jsr  sub_375B             ; 3690
+         jsr  TP_DEMO              ; 3690
          bcs  L3688                ; 3693
 L3695
-         jsr  sub_36BC             ; 3695
+         jsr  TP_PLAY              ; 3695
          bcc  L369D                ; 3698
 L369A
-         jmp  L35C0                ; 369A
+         jmp  TP_START             ; 369A
 L369D
-         lda  $395C                ; 369D
+         lda  TP_DEMOFLAG          ; 369D
          bne  L369A                ; 36A0
          lda  #$3B                 ; 36A2
-         jsr  sub_3880             ; 36A4
+         jsr  TP_PAGE              ; 36A4
 L36A7
-         jsr  sub_3776             ; 36A7
-         jsr  sub_373C             ; 36AA
+         jsr  TP_FRAME             ; 36A7
+         jsr  TP_KEY               ; 36AA
          bcs  L36A7                ; 36AD
          lda  #$00                 ; 36AF
-         sta  $395A                ; 36B1
-         sta  $395B                ; 36B4
+         sta  TP_RNUM              ; 36B1
+         sta  TP_RPOS              ; 36B4
          sta  $E9                  ; 36B7
-         jmp  L3683                ; 36B9
-sub_36BC
+         jmp  TP_LOOP              ; 36B9
+
+* play the planets in the order $39E0 with ENGINE_PLAY, 8 lives; every 4th planet is the restart point; carry set = game over ---
+TP_PLAY
          jsr  ENGINE_INIT          ; 36BC
-         ldx  $395B                ; 36BF
+         ldx  TP_RPOS              ; 36BF
          dex                       ; 36C2
          stx  $EC                  ; 36C3
-         lda  $395A                ; 36C5
+         lda  TP_RNUM              ; 36C5
          sta  $EA                  ; 36C8
          lda  #$08                 ; 36CA
          sta  $EB                  ; 36CC
 L36CE
          inc  $EC                  ; 36CE
          ldx  $EC                  ; 36D0
-         cpx  $35C2                ; 36D2
+         cpx  TP_LAST              ; 36D2
          beq  L36DB                ; 36D5
          bcc  L36DB                ; 36D7
          clc                       ; 36D9
@@ -96,15 +102,15 @@ L3707
          lda  $EA                  ; 3707
          and  #$03                 ; 3709
          bne  L371C                ; 370B
-         lda  $395C                ; 370D
+         lda  TP_DEMOFLAG          ; 370D
          bne  L371C                ; 3710
          lda  $EA                  ; 3712
-         sta  $395A                ; 3714
+         sta  TP_RNUM              ; 3714
          lda  $EC                  ; 3717
-         sta  $395B                ; 3719
+         sta  TP_RPOS              ; 3719
 L371C
          dec  $E3                  ; 371C
-         lda  $395C                ; 371E
+         lda  TP_DEMOFLAG          ; 371E
          clc                       ; 3721
          beq  L3725                ; 3722
          sec                       ; 3724
@@ -123,7 +129,9 @@ L3725
          sec                       ; 3739
          rts                       ; 373A
          dta $00                                      ; 373B
-sub_373C
+
+* fire / START / SHIFT pressed: carry clear on a new press ---
+TP_KEY
          lda  SKCTL                ; 373C
          lsr                       ; 373F
          lsr                       ; 3740
@@ -141,7 +149,9 @@ sub_373C
          clc                       ; 3759
 L375A
          rts                       ; 375A
-sub_375B
+
+* OPTION pressed or a long pause: demo (TP_DEMOFLAG = $80), carry clear ---
+TP_DEMO
          lda  CONSOL               ; 375B
          and  #$04                 ; 375E
          beq  L376F                ; 3760
@@ -149,25 +159,27 @@ sub_375B
          cmp  #$08                 ; 3764
          bcs  L376F                ; 3766
          lda  #$00                 ; 3768
-         sta  $395C                ; 376A
+         sta  TP_DEMOFLAG          ; 376A
          sec                       ; 376D
          rts                       ; 376E
 L376F
          lda  #$80                 ; 376F
-         sta  $395C                ; 3771
+         sta  TP_DEMOFLAG          ; 3771
          clc                       ; 3774
          rts                       ; 3775
-sub_3776
+
+* title page frame: timer, BREAK back to the Konstruktor, colour bars of the logo and the texts ---
+TP_FRAME
          inc  $E8                  ; 3776
          bne  L377C                ; 3778
          inc  $E9                  ; 377A
 L377C
          lsr  $4D                  ; 377C
-         lda  $35C1                ; 377E
+         lda  TP_TEST              ; 377E
          beq  L378A                ; 3781
          lda  $11                  ; 3783
          bne  L378A                ; 3785
-         jmp  L388A                ; 3787
+         jmp  TP_EXIT              ; 3787
 L378A
          lda  $E8                  ; 378A
          bne  L3795                ; 378C
@@ -246,7 +258,9 @@ L37FF
          lda  #$00                 ; 3810
          sta  COLPF2               ; 3812
          rts                       ; 3815
-sub_3816
+
+* draw the "ROBBO" logo into the title screen $B600 (bitmap $391F, pixels doubled) ---
+TP_LOGO
          lda  #$00                 ; 3816
          tay                       ; 3818
 L3819
@@ -313,17 +327,21 @@ L386B
          dex                       ; 387C
          bpl  L386B                ; 387D
          rts                       ; 387F
-sub_3880
+
+* show the title page with the text page A ($3A start / $3B congratulation) ---
+TP_PAGE
          pha                       ; 3880
-         lda  $35C1                ; 3881
+         lda  TP_TEST              ; 3881
          beq  L38A5                ; 3884
          lda  $11                  ; 3886
          bne  L38A5                ; 3888
-L388A
+
+* back to the Konstruktor ("BREAK aby wrocic"): texts back to normal video, JMP START ---
+TP_EXIT
          lda  #$00                 ; 388A
          sta  SDMCTL               ; 388C
          sta  DMACTL               ; 388F
-         jsr  sub_3913             ; 3892
+         jsr  TP_HALT              ; 3892
          ldy  #$00                 ; 3895
 L3897
          lda  $3B00,y              ; 3897
@@ -333,7 +351,7 @@ L3897
          bne  L3897                ; 38A0
          jmp  START                ; 38A2
 L38A5
-         jsr  sub_3913             ; 38A5
+         jsr  TP_HALT              ; 38A5
          ldy  #$00                 ; 38A8
 L38AA
          lda  $3B00,y              ; 38AA
@@ -362,7 +380,7 @@ L38B9
          sta  SDLSTH               ; 38DC
          ldx  #$03                 ; 38DF
          ldy  #$36                 ; 38E1
-         lda  $35C1                ; 38E3
+         lda  TP_TEST              ; 38E3
          beq  L38EC                ; 38E6
          ldx  #$43                 ; 38E8
          ldy  #$36                 ; 38EA
@@ -376,16 +394,18 @@ L38F7
          sta  IRQEN                ; 38F7
          beq  L3904                ; 38FA
          lda  #$00                 ; 38FC
-         sta  $395A                ; 38FE
-         sta  $395B                ; 3901
+         sta  TP_RNUM              ; 38FE
+         sta  TP_RPOS              ; 3901
 L3904
-         jsr  sub_3816             ; 3904
+         jsr  TP_LOGO              ; 3904
          pla                       ; 3907
          sta  $35EA                ; 3908
          lda  #$21                 ; 390B
          sta  SDMCTL               ; 390D
-         jsr  sub_373C             ; 3910
-sub_3913
+         jsr  TP_KEY               ; 3910
+
+* wait for the next frame (copy of HALT) -------------------
+TP_HALT
          lda  RTCLOK+2             ; 3913
 L3915
          cmp  RTCLOK+2             ; 3915
@@ -395,4 +415,6 @@ L3915
          dta $E3,$E3,$E3,$E3,$7E,$E0,$FC,$E6,$E3,$E3,$E3,$E3,$FE,$04,$06,$08 ; 392A
          dta $0A,$0A,$0C,$0E,$0E,$0C,$0A,$0A,$08,$08,$06,$06,$04,$04,$06,$08 ; 393A
          dta $0A,$0C,$0E,$0C,$0A,$08,$00,$04,$06,$08,$0A,$0A,$08,$06,$04,$0E ; 394A
-         dta $00,$00,$00                              ; 395A
+TP_RNUM          dta $00                              ; 395A restart point: planet number shown
+TP_RPOS          dta $00                              ; 395B restart point: position in the planet order
+TP_DEMOFLAG      dta $00                              ; 395C title page: $80 = demo

@@ -41,6 +41,12 @@ data)*.
 - **Keep and share**: save / load sets of planets on tape or disk (5 slots on the Konstruktor disk), and save a
   stand-alone Robbo game ("zapisz Robbo") – on disk this formats the disk first.
 
+The saved game starts with a **title page**: a large "ROBBO" logo, the designer's start text and the line "Ta gra
+powstała przy pomocy Robbo Konstruktora" (this game was made with Robbo Konstruktor). Fire or START plays the
+planets in the chosen order with 8 lives, every 4th planet becomes a restart point, OPTION or waiting starts a
+demo, and the congratulation text follows the last planet. "test Robbo" runs the same title page from the
+Konstruktor; then BREAK returns to the editor ("wciśnij klawisz BREAK aby wrócić…").
+
 ## Users
 
 - **The player-designer**: the person using the Konstruktor to build planets – the help addresses them directly
@@ -85,18 +91,18 @@ Codes are Robbo's level characters (README "Palette").
 | klucz | key | `$3D` | opens doors |
 | amunicja | ammunition | `$21` | bullets for Robbo's gun |
 | gruz | rubble | `$25` | |
-| bomba | bomb | `$40` | |
+| bomba | bomb | `$40` | when hit it becomes `$60` and explodes the 3 × 3 cells around it (Robbo `WYBO`, `BOMB`) |
 | magnes | magnet | `$28`, `$29` | pulls Robbo in and destroys him (Robbo's `PRZY`) |
-| oczy | eyes | `$26` | a creature |
+| oczy | eyes | `$26` | a creature that follows Robbo (Robbo's comment "sledz" – follow) |
 | murek | (brick) wall | `$00` | |
 | nicość | void / nothingness | `$13` | |
 | gumka | eraser | `$20` | the empty cell – erases |
-| stworek leworęczny / praworęczny | left-handed / right-handed creature | `$41` / `$45` | creatures following the wall on their left / right *(interpretation)* |
+| stworek leworęczny / praworęczny | left-handed / right-handed creature | `$41` / `$45` | creatures following the wall on their left / right (Robbo's comments "leworecz" / "praworeczne"; turning rule from `STWA`-`STWH`) |
 | niespodzianka | surprise | `$3F` | turns into a random object (Robbo's `NIES`) |
 | działko obrotowe | rotating gun | `$2E` | |
 | działko ruchome | moving gun | `$0E` | |
 | zmiana dział, nietoperzy i teleportacji | change of guns, bats and teleports | `$A0` | a palette switch, not an element |
-| nietoperz (strzelający) | bat (shooting) | | variants chosen with the switch |
+| nietoperz (strzelający) | bat (shooting) | | variants chosen with the switch; the shooting bat flies left / right and fires down at random (Robbo "toperze pif-pafy", `TOPL` / `TOPR`) |
 | działko, laser, blaster | gun, laser, blaster | | gun variants (Robbo's `DZ1`, `DZ2`, `DZ3`) |
 | teleportacja | teleport | | |
 
@@ -173,6 +179,21 @@ Codes are Robbo's level characters (README "Palette").
 | WFAC | pojawiaj | appear | Robbo's comment |
 | ASCO | dodaj punkty | add points | Robbo's comment |
 | PUTW | put wybuch / spacja | put explosion / space | Robbo's comment |
+| WYBC | wybuch komnaty ("wybu komnate") | the chamber (planet) explodes | Robbo's comment, code |
+| ZABJ | zabij | kill | code (puts an explosion at Robbo) *(expansion is a guess)* |
+| TFAC | test faca ("czy obok jest fac?") | is Robbo ("fac") next to it? | Robbo's comment |
+| LEDZ | śledź ("sledz") | follow | Robbo's comment |
+| TOPL / TOPR | (nie)toperze w lewo / prawo | bats left / right | Robbo's comment "toperze pif-pafy" |
+| STWA … STWL | stworki | creatures | Robbo's comment |
+| WYZA / WYOT | wyjście zamknięte / otwarte? | exit (capsule) closed / open? | code (closed → open when all screws are collected) *(expansion is a guess)* |
+| ENTCV / CHNGCV / NXCV | enter / change / next cave | | Robbo's comments ("wejscie", "chng cave", "nxtcv") |
+| KEJO | key to joy | keys as a joystick | Robbo's comment |
+| ZAPO | zapora | barrier | Robbo's comment |
+| SUP1 / SUP2 | super! | a rare surprise that blows up all creatures | Robbo's comment |
+| KIES | kierunek strzału? | shot direction? | code *(expansion is a guess)* |
+| SKAC | skacz? | jump? | code: eyes step in a random direction *(expansion is a guess)* |
+| WHAT: zas / wyb | zastrzelić? / wybuch | can be shot / can be blown up | Robbo's legend, code *(expansions are guesses)* |
+| CVBL | cave VBL | the game's VBI | Robbo's comment "czekaj na VBLK" *(expansion is a guess)* |
 | ZEBR, NABO, LIVS, SCOR | zebrane, naboje, (lives), (score) | collected, ammunition, lives, score | from the names *(interpretation)* |
 
 ## Sources

@@ -402,7 +402,7 @@ L97A7
          jmp  L962F                ; 97AB
 L97AE
          lda  #$80                 ; 97AE
-         sta  $35C1                ; 97B0
+         sta  TP_TEST              ; 97B0
          sta  IRQEN                ; 97B3
          jsr  ENGINE_INIT          ; 97B6
          lda  PLANET               ; 97B9
@@ -1084,9 +1084,9 @@ L9C38
 M_TESTALL
          jsr  ALL_EMPTY            ; 9C3E
          lda  #$80                 ; 9C41
-         sta  $35C1                ; 9C43
+         sta  TP_TEST              ; 9C43
          sta  $11                  ; 9C46
-         jmp  L35C0                ; 9C48
+         jmp  TP_START             ; 9C48
 
 * all planets empty? -> message "wszystkie planety są puste!" ---
 ALL_EMPTY
@@ -1313,11 +1313,11 @@ L9D97
          ldx  #$00                 ; 9DA1
          stx  $BC00                ; 9DA3
          stx  PANEL_ST             ; 9DA6
-         stx  $35C1                ; 9DA8
+         stx  TP_TEST              ; 9DA8
          dex                       ; 9DAB
          stx  CUR_MSG              ; 9DAC
          lda  #$1F                 ; 9DAF
-         sta  $35C2                ; 9DB1
+         sta  TP_LAST              ; 9DB1
          lda  #$00                 ; 9DB4
          jsr  MESSAGE              ; 9DB6
          jmp  PANEL                ; 9DB9
