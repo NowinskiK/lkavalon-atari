@@ -115,7 +115,7 @@ class Lister:
     listed range is written in place as `NAME dta ... ; comment`; operands use NAME / NAME+n.
     pokes: {address: count} – tables of (address lo, hi, value) entries, written as `dta a(NAME),$vv`.
     comments: {address: text} – group comment `* text ---` written above that address.
-    texts: {first: (last, format)} – data written as strings; format 'help' (ATASCII, bit 7 = a space follows,
+    texts: {first: (last, format)} – data written as strings; format 'help' (ATASCII, bit 7 = last character of a screen line,
     `$00 nn` = page marker, Polish letters) or 'screen' (ANTIC screen codes)."""
 
     def __init__(s, mem, code, labels, variables=(), pokes=None, comments=None, texts=None):
@@ -163,10 +163,13 @@ class Lister:
                 out += ['; ' + text, '         dta %s ; %04X' % (','.join(items), st)]
                 a += 1 if term else 0
             return out
+        # help text (HLP_LINE $0A7A): one dta per screen line - a character with bit 7 ends its line, $A0 alone
+        # is an empty line, $B1-$B9 = 1-9 spaces, $14 toggles inverse, $80 ends the last page
         a, line, text = lo, [], ''
         def flush(at):
             if line:
-                out.extend(['; ' + text.rstrip(), '         dta %s ; %04X' % (','.join(text_items(line, 'c')), at)])
+                out.extend(['; ' + text.rstrip() if text.strip() else ';',
+                            '         dta %s ; %04X' % (','.join(text_items(line, 'c')), at)])
         start = a
         while a <= hi:
             b = mem[a]
@@ -177,9 +180,10 @@ class Lister:
                 continue
             line.append(b)
             c = b & 0x7F
-            text += POLISH.get(c, chr(c) if 0x20 <= c < 0x7F else '?') + (' ' if b & 0x80 else '')
+            if 0xB1 <= b <= 0xB9: text += ' ' * (b - 0xB0)           # indentation, the line goes on
+            elif c not in (0x00, 0x14): text += POLISH.get(c, chr(c) if 0x20 <= c < 0x7F else '?')
             a += 1
-            if len(text) >= 56 and text.endswith(' '):
+            if b & 0x80 and not 0xB1 <= b <= 0xB9 or b == 0:           # end of the screen line (or of the help)
                 flush(start); line, text, start = [], '', a
         flush(start)
         return out

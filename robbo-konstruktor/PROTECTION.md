@@ -194,8 +194,11 @@ The 6502 emulator in this repository (`util/emu.py`) ran `PROT_BOOT` on this ima
     `COUNT_ELEM_` is never patched.
 
   `util/mkatr.py` writes the result onto a copy of the disk (`bin/build.atr`); it differs from the original image in
-  exactly these 4 bytes. In VS Code: task "Robbo Konstruktor: run build (protection off)". The emulator run above
-  confirms the second patch (`$ACB3` stays `RTS`).
+  these 4 bytes and in help page 15, which the same file replaces: Avalon's notice "Jeżeli Twoja wersja wykazuje
+  błędy uniemożliwiające jej używanie, jest nielegalną kopią!" (if your version shows errors that make it unusable,
+  it is an illegal copy) – the errors were these two protections – becomes a note that they were removed. In VS
+  Code: task "Robbo Konstruktor: run build (protection off)". The emulator run above confirms the second patch
+  (`$ACB3` stays `RTS`).
 - Smaller alternatives for the first protection: `$60` (`RTS`) at `$9F4D`, so `PROT_KEY` never runs and `PROT_SUM`
   keeps its initial 0; or `$D2` at `$A804` (an inverse "R") – both rely on `PROT_SUM` staying 0. For a program that
   is already locked in memory: put `$60` back at `$ACB3`.

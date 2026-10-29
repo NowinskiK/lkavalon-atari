@@ -11,7 +11,7 @@
          icl "src/HOOK.ASM"         ; $0480-$0482 restart hook: JMP $A810
          icl "src/BOOT.ASM"         ; $0500-$067F boot sectors 1-3: boot record and binary-file loader (cracked)
          icl "src/HELPVIEW.ASM"     ; $0800-$0C6C help viewer: screen (display list, credits panel), paging, line unpacking
-         icl "src/HELPTEXT.ASM"     ; $0C6D-$1DD0 help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space
+         icl "src/HELPTEXT.ASM"     ; $0C6D-$1DD0 help text: 16 pages in Polish (HELP key), one screen line per dta: bit 7 = last character of the line
          icl "src/ENG_PLAY.ASM"     ; $1E00-$22CF engine: jump table, display list, info-line texts, DLIs, set-up, play loop, planet start (Robbo R1)
          icl "src/ENG_BOARD.ASM"    ; $22D0-$23FC engine: board primitives - step, test, read / write a cell, score, frame wait
          icl "src/ENG_SCRN.ASM"     ; $243D-$2581 engine: CHNMON - BREAK test, Robbo's step, animated shapes, board to screen

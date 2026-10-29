@@ -16,7 +16,7 @@ BLOCKS = [
     ('BOOT.ASM',     0x0500, 0x067F, 'boot sectors 1-3: boot record and binary-file loader (cracked)'),
     # help
     ('HELPVIEW.ASM', 0x0800, 0x0C6C, 'help viewer: screen (display list, credits panel), paging, line unpacking'),
-    ('HELPTEXT.ASM', 0x0C6D, 0x1DD0, 'help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space'),
+    ('HELPTEXT.ASM', 0x0C6D, 0x1DD0, 'help text: 16 pages in Polish (HELP key), one screen line per dta: bit 7 = last character of the line'),
     # game engine (Robbo's, reworked)
     ('ENG_PLAY.ASM', 0x1E00, 0x22CF, 'engine: jump table, display list, info-line texts, DLIs, set-up, play loop, planet start (Robbo R1)'),
     ('ENG_BOARD.ASM', 0x22D0, 0x23FC, 'engine: board primitives - step, test, read / write a cell, score, frame wait'),
@@ -76,7 +76,7 @@ def entries(mem):
 
 # Variables, names and comments taken from the original Robbo sources where the engine code matches them
 # (instruction-shape match, NOTES.md section 5); the rest is added as it is understood.
-# data written as strings: first -> (last, format); 'help' = ATASCII, bit 7 = a space follows, $00 nn = page
+# data written as strings: first -> (last, format); 'help' = ATASCII, bit 7 = end of a screen line, $00 nn = page
 # marker, Polish letters as CONTROL codes; 'screen' = ANTIC screen codes (dta d'...')
 TEXTS = {
     0x083E: (0x0865, 'screen-pl'),  # help screen, bottom panel (40 characters per line): title with icons

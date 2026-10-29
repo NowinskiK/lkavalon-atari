@@ -74,7 +74,7 @@ Restart VS Code afterwards. Tasks (Terminal → Run Task; Ctrl+Shift+B runs the 
 | Robbo Konstruktor: run original | boots the original disk in Altirra |
 | Robbo Konstruktor: build + verify | MADS build, compared with `game.bin` byte for byte |
 | Robbo Konstruktor: run build | builds, writes the build into a copy of the disk (`bin/build.atr`, ignored by git) and boots it |
-| Robbo Konstruktor: run build (protection off) | the same with `nocopyprot.asm`: the copy-protection trap removed (`robbo-konstruktor/PROTECTION.md`) |
+| Robbo Konstruktor: run build (protection off) | the same with `nocopyprot.asm`: both copy protections removed, help page 15 replaced (`robbo-konstruktor/PROTECTION.md`) |
 
 Altirra is started with `/singleinstance`, so a running Altirra window is reused.
 

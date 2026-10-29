@@ -20,6 +20,7 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [util/emu.py](util/emu.py) | 6502 emulator (from Jaskiniowiec) with an SIO hook serving disk sectors from the ATR |
 | [util/planets.py](util/planets.py) | loads the saved planet sets by running the program's own loader in the emulator |
 | [util/render.py](util/render.py) | renders the palette and planets the way the editor draws them (XFormer palette) |
+| [util/helppage.py](util/helppage.py) | shows a help page as the program draws it (runs `HLP_PAGE` in the emulator) |
 | [util/mkatr.py](util/mkatr.py) | writes a build into a copy of the original disk (`bin/build.atr`) to boot it in an emulator |
 | [util/split.py](util/split.py) | splits `game.bin` into `src/` and writes `main.asm`; tables `BLOCKS`, `ENTRIES` (+ dispatch tables), `NOFOLLOW`, `VARIABLES`, `COMMENTS`, `NAMES`, `POKES` |
 | `util/xex.py`, `rdis.py`, `asm.py`, `verify.py` | from [../jaskiniowiec/util/](../jaskiniowiec/util/); `rdis.py` here also finds entries written into self-modified jumps and VBIs installed with SETVBV |
@@ -35,7 +36,7 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [src/HOOK.ASM](src/HOOK.ASM) | $0480-$0482 | restart hook: JMP $A810 |
 | [src/BOOT.ASM](src/BOOT.ASM) | $0500-$067F | boot sectors 1-3: boot record and binary-file loader (cracked) |
 | [src/HELPVIEW.ASM](src/HELPVIEW.ASM) | $0800-$0C6C | help viewer: screen (display list, credits panel), paging, line unpacking |
-| [src/HELPTEXT.ASM](src/HELPTEXT.ASM) | $0C6D-$1DD0 | help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space; written as `dta c'…'` strings with the decoded text in comments – see "Help text" below |
+| [src/HELPTEXT.ASM](src/HELPTEXT.ASM) | $0C6D-$1DD0 | help text: 16 pages in Polish (HELP key), one screen line per dta: bit 7 = last character of the line; written as `dta c'…'` strings with the decoded text in comments – see "Help text" below |
 | [src/ENG_PLAY.ASM](src/ENG_PLAY.ASM) | $1E00-$22CF | engine: jump table, display list, info-line texts, DLIs, set-up, play loop, planet start (Robbo R1) |
 | [src/ENG_BOARD.ASM](src/ENG_BOARD.ASM) | $22D0-$23FC | engine: board primitives - step, test, read / write a cell, score, frame wait |
 | [src/ENG_SCRN.ASM](src/ENG_SCRN.ASM) | $243D-$2581 | engine: CHNMON - BREAK test, Robbo's step, animated shapes, board to screen |
@@ -142,7 +143,9 @@ original label names from `robbo/d1/*.ASM` can be used.
 ## Help text ($0C77-$1DD0)
 
 The program's manual, shown with the HELP key. Format: `$00 nn` starts page *nn* (the text before marker 1 is
-page 0); a character with **bit 7 set is followed by a space** (simple compression); Polish letters use low codes:
+page 0); the text is laid out line by line: a character with **bit 7 set is the last one of its screen line**,
+`$A0` alone is an empty line, lines are up to 37 characters, 16 per page (`HLP_LINE` $0A7A; `util/helppage.py` shows a
+page as the program draws it); Polish letters use low codes:
 they are typed as CONTROL + a, c, e, l, n, o, s, z (help page 8 lists them in that order), so `$01` ą, `$03` ć,
 `$05` ę, `$0C` ł, `$0E` ń, `$0F` ó, `$13` ś, `$1A` ż – only one z, so ż and ź share it;
 `$1C-$1F` = arrows ↑↓←→. Control codes for the viewer: **`$14` toggles inverse video** (titles), inverse digits
@@ -291,8 +294,9 @@ of NTSC mattered. Whether `SERIN` then ends as `$19` with this ATR (which cannot
 the original) is not checked yet.
 
 **Patched build**: [nocopyprot.asm](nocopyprot.asm) = `main.asm` + `jsr PLANET_CLR` at $9CF7 replaced by three
-`NOP`s, and the one-shot flag $B47E of the second check set; VS Code task "run build (protection off)" writes it to
-`bin/build.atr` (4 bytes differ from the original).
+`NOP`s, and the one-shot flag $B47E of the second check set; it also replaces help page 15 (Avalon's notice that a
+faulty copy is illegal) with a note about this version. VS Code task "run build (protection off)" writes it to
+`bin/build.atr`.
 
 **Second protection**: "błąd - za dużo robocików!" after the first yes/no question – `PROT_BOOT` ($B47D, in
 `ASK_YESNO_`, runs once) XORs the boot loader in memory ($0501-$05FF) and compares the result with `DFLAGS`; the
