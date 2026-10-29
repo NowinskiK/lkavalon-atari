@@ -1,5 +1,9 @@
 # Jaskiniowiec (1995, StanBit) – XEX reverse engineering
 
+![Jaskiniowiec](img/jaskiniowiec.png)
+
+*Start screen, running in the XFormer emulator – the reference used to verify the renders (NOTES.md section 13).*
+
 Analysis of `Jaskiniowiec (1995)(StanBit)(PL)[h CAMOsoft][t +1 CAMOsoft].xex`
 (original location: `x:\ATARI\GryKamil\`, 35,286 bytes).
 
@@ -70,7 +74,7 @@ Data:
 | [src/MAP62.DTA](src/MAP62.DTA) | $6470-$6BFF | level 2 map (rest, see TRAINER.ASM) |
 | [src/FONT6C.FNT](src/FONT6C.FNT) | $6C00-$6FFF | status line font |
 | [src/TILES.DTA](src/TILES.DTA) | $7000-$70FF | tile attributes (solid, hazard, exit, treasure bits) |
-| [src/PICTURE.DTA](src/PICTURE.DTA) | $7100-$7BFF | mode E picture above the playfield |
+| [src/PICTURE.DTA](src/PICTURE.DTA) | $7100-$7BFF | title logo "JASKINIOWIEC" (mode E, 40 bytes per line; colours $10/$24/$3A on $76) above the playfield |
 | [src/TEXTS.DTA](src/TEXTS.DTA) | $9FDB-$A4E8 | cave room screen ($9FE3), status line ($A0AB, "JEDZENIE", "ZYCIA"), text pages and scroller ($A1A1) |
 | [src/LEVELDAT.DTA](src/LEVELDAT.DTA) | $A4E9-$AB7C | per-level tables: treasures ($A4E9), enemies per screen ($A4FD/$A50A), enemy sets ($A517…), cave rooms ($A9F7…) |
 | [src/MUSCOPY.DTA](src/MUSCOPY.DTA) | $B4EE-$BBFF | unused copy of `MUSIC.CMC` with XEX header (loader leftover) |

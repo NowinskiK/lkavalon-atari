@@ -44,6 +44,8 @@ Sources of LK Avalon (and related) games for 8-bit Atari, assembled with MADS. O
   `"$MADS"` (Git Bash) / `& $env:MADS` (PowerShell), never by a hard-coded path. If the variable is empty,
   tell the user and point to "MADS location" in the root `README.md` (example value on this machine:
   `x:\ATARI\Tools\Mad-Assembler-2.1.5\mads.exe`, MADS 2.1.5).
+- Atari colours → RGB: use `util/palette/XFormer.act` (default; matches the reference screenshot) or
+  `jakub.act` – 256 × RGB from Atari800, see `util/palette/README.md`. Never an approximation.
 - GNU make is **not installed** – run the Makefile commands directly. `md5sum` is available (Git Bash).
 
 ## jaskiniowiec/ (reverse-engineered, not original source)

@@ -27,7 +27,7 @@ BLOCKS = [
     ('MAP62.DTA',   0x6470, 0x6BFF, 'level 2 map (rest)'),
     ('FONT6C.FNT',  0x6C00, 0x6FFF, 'status line font'),
     ('TILES.DTA',   0x7000, 0x70FF, 'tile attributes (read by $8DF0)'),
-    ('PICTURE.DTA', 0x7100, 0x7BFF, 'mode E picture above the playfield'),
+    ('PICTURE.DTA', 0x7100, 0x7BFF, 'title logo "JASKINIOWIEC" (mode E) above the playfield'),
     ('SPRITE.ASM',  0x7C00, 0x8873, 'software sprite engine, double-buffered screen'),
     ('DLI.ASM',     0x8874, 0x8A4C, 'DLI chain ($8874), display lists ($8974, $89D8)'),
     ('PLAYER.ASM',  0x8A4D, 0x8DEF, 'player control (deferred VBI $8A8F), music on/off'),

@@ -25,7 +25,7 @@
          ins "src/MAP62.DTA"        ; $6470-$6BFF level 2 map (rest)
          ins "src/FONT6C.FNT"       ; $6C00-$6FFF status line font
          ins "src/TILES.DTA"        ; $7000-$70FF tile attributes (read by $8DF0)
-         ins "src/PICTURE.DTA"      ; $7100-$7BFF mode E picture above the playfield
+         ins "src/PICTURE.DTA"      ; $7100-$7BFF title logo "JASKINIOWIEC" (mode E) above the playfield
 
          opt h+
          icl "src/SPRITE.ASM"       ; $7C00-$8873 software sprite engine, double-buffered screen

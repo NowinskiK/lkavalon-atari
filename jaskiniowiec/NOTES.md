@@ -16,6 +16,10 @@ and **why** things are the way they are.
 | 2026-10-29 | Local MADS checked against the 2.1.5 tag on GitHub; docs reviewed (section 8) |
 | 2026-10-29 | Python tools moved to `util/` (section 9) |
 | 2026-10-29 | `MADS` env var set-up instructions tested and corrected (section 10) |
+| 2026-10-29 | Level rendering to PNG proven with a prototype (section 11) |
+| 2026-10-29 | Atari palette `util/palette/jakub.act` added; prototype renders with real colours (section 12) |
+| 2026-10-29 | Renders verified against a real start-screen screenshot; XFormer palette, black playfield, logo (section 13) |
+| 2026-10-29 | Reference screenshot saved as `img/jaskiniowiec.png` (section 14) |
 
 ## 1. From XEX to memory image
 
@@ -243,10 +247,104 @@ The README's `SetEnvironmentVariable(..., 'User')` line was tested with a throw-
 Lesson: test set-up instructions before documenting them – "new terminal" is a common but wrong assumption
 for terminals hosted inside an IDE.
 
+## 11. Rendering levels to images – feasibility (2026-10-29)
+
+Question: can the levels be extracted to images? **Yes** – a prototype (scratch script, not in the repo yet)
+rendered all 6 levels to PNG from `game.bin`; level 1 shows clouds, trees, ladder, rock platforms correctly.
+
+How a level is displayed (evidence):
+
+- Map: 10 rows × 256 tiles; tile byte `b` → characters `2b` and `2b+1` side by side (`$8FC7`: `asl` / `+1`),
+  so `asl` moves bit 6 of `b` into character bit 7.
+- **A tile is 2×2 characters**: the game display list ($8974) shows every screen row twice
+  (`C4 00 BC C4 00 BC …`, mode 4 + LMS + DLI), and the DLIs alternate CHBASE between `$83` (`$88B2`) and
+  `$83 | 4` (`$8931`). So a 2 KB level font = 1 KB of top halves + 1 KB of bottom halves; a tile is
+  8 × 16 mode-4 pixels, a screen 20 tiles wide.
+- ANTIC mode 4: 2 bits per pixel; value 3 uses COLPF3 instead of COLPF2 when character bit 7 is set.
+- Fonts and colours per level (level loaders):
+
+  | Levels (maps) | Font | Tile attributes | PF0 PF1 PF2 PF3 |
+  |---|---|---|---|
+  | 1, 3, 5 ($3000, $3A00, $4400) | A $0800 (`$9221`) | $7000 | B6 F4 FA 8C (`$9A79`) |
+  | 2, 4, 6 ($6200, $4E00, $5800) | B $1000 (`$9239`) | $7080 | 76 F4 0C 7E (`$9B16`) |
+
+  Background is `$86` (=$76 from the init table); the attribute table pointer is written to `$8DF5/$8DF6`.
+  This answers the open question "which levels use font A / B".
+
+Limits of the prototype: approximate Atari palette (no real palette file), per-row DLI colours (sky gradient
+$935D…, status line) and the mode-E picture above the playfield are not drawn; enemies/treasures are not
+part of the map (they come from `LEVELDAT.DTA`).
+
+Level 2 render confirms the crack damage visually: map rows 0-2 ($6200-$646F) show the trainer's code and
+text as garbage tiles (in `game.bin` the trainer is still there; the game zeroes it before starting), while
+the level's ceiling in row 3 is intact – the lost tiles are the decoration above it.
+
+## 12. Atari palette and correct background colour (2026-10-29)
+
+- Palette: [`../util/palette/jakub.act`](../util/palette/jakub.act) (repo-wide, see its README) – Jakub Bogusz's
+  palette from the Atari800 emulator (`act/jakub.act`, built in since 1.3.6), 768 bytes = 256 × RGB, index =
+  Atari colour value. Chosen because it is the emulator's own built-in palette; `Real.act` (Zdenek Eisenhammer)
+  is the alternative in the same folder. Sanity check: grey ramp $00-$0F, 16 distinct hues.
+- With it the level 1 render looks right (green trees, yellow-brown rocks, white-blue clouds).
+- **Background colour fix**: the prototype took COLBK from `$86` in `game.bin` = `$A4` (green) – that is the
+  trainer's leftover. In the game the init table ($929B) sets `$86` = **`$76`** (sky blue), and the DLI row
+  colours at $935D (`76 74 76 74 … 72`) are a blue gradient. Rendering with `$76` gives a blue sky.
+  *(Corrected in section 13: `$76` is only the logo area; the playfield is black below map row 1.)*
+
+Lesson: values in `game.bin` are a snapshot from the trainer, not the game's own initial state – take initial
+values from the game's init tables ($929B, $930A) instead.
+
+## 13. Verification against a real screenshot (2026-10-29)
+
+The user provided an emulator screenshot of the start screen (1083×736, logo, level 1 first screen, player,
+status line "StanBit 1995", "JEDZENIE", "ZYCIA 3").
+
+**Colours.** The screenshot has only 24 distinct colours, so it is an exact emulator palette. Matching them
+against all five Atari800 palettes: **XFormer.act** average distance 1.3 RGB units (each colour within 1-2),
+jakub 22.6, Real 23.5, default 26.8. Translating each colour back to an Atari value through XFormer gives
+exactly the values found in the code:
+
+- level 1 colours PF0-PF3 `$B6 $F4 $FA $8C` (`$9A79`) – all present;
+- logo colours `$10 $24 $3A` on `$76` = COLOR0-2 / COLOR4 from the init table ($929B: $2C4-$2C6, $2C8);
+- sky bands `$76 $74 $72` = DLI row colour table $935D;
+- playfield background `$00`; status line colours `$94 $86 …` (table $936D).
+
+So the colour analysis was right; only the palette (jakub) was not what the reference uses →
+`util/palette/XFormer.act` added and made the default (jakub kept as alternative).
+
+**Background correction** (section 12 was wrong): `$86` = `$76` is the background of the **logo area**
+(DLI $8874 runs at the end of the picture). On the playfield, the DLIs ($88AA / $8929) set COLBK only for
+map rows 0-1: row `r`, half `h`, first 4 scanlines from `$935D + r*8 + h*4 + line`; the last value written is
+`$00`, so rows 2-9 are **black**. Rendering with this rule gives the blue bands with the top-right cloud in
+them, exactly as in the screenshot.
+
+**Layout.** The first screen (tiles 0-19 of map $3000) matches the screenshot tile for tile: ground from
+tile 6, the sign at tiles 6-7, plant at 11, three trees + one, bushes, the two clouds. The player is not in
+the map (P/M graphics), as expected.
+
+**Logo.** Rendering `PICTURE.DTA` ($7100, mode E, 40 bytes per line) with colours `$76/$10/$24/$3A` shows the
+"JASKINIOWIEC" title exactly as on the screenshot → block description updated (`split.py`, README); sources
+regenerated and verified with MADS.
+
+Lessons: a reference screenshot is the best test – exact palette colours can be traced back to Atari colour
+values and compared with the code; and "background" on the Atari is per scanline (DLIs), not one value.
+
+## 14. Reference screenshot in the repo (2026-10-29)
+
+The start-screen screenshot from section 13 is now [`img/jaskiniowiec.png`](img/jaskiniowiec.png)
+(1083×736, MD5 `181d3b5e3ea2ab6c1d85376f6b77ca09`), following the repo convention (`misja/img/misja.png`)
+and shown at the top of the README.
+
+Source confirmed by the user: the game was running in the **XFormer emulator**. That explains why
+`XFormer.act` matched its 24 colours within 1-2 RGB steps – it is the same emulator's palette (the small
+differences are rounding between XFormer and the `.act` file).
+
+Use it as the reference for any future rendering (levels, logo, status line, sprites): compare layout and
+trace exact colours back to Atari values with `util/palette/XFormer.act`.
+
 ## Open questions
 
 - `D0500.DTA` ($0500-$07FF) and `D2800.DTA` ($2800-$2BFF, $2F00-$2FFF) – unknown.
-- Which levels use font A ($0800) and which font B ($1000)?
 - `CMC.ASM`: `JMP $5968` ($F372) and `JSR $5B73` ($F654) point into the maps – probably player tables taken as code.
 - `$7788` / `$7879` are patched per level from $9E49 (inside the picture) – meaning unknown.
 - Runnable XEX: needs a loader for the blocks under the OS ROM and the hardware state.
