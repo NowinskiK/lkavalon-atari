@@ -2,7 +2,8 @@
 
 Level editor for [Robbo](../robbo). Analysis of the disk image
 `bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr` (133,136 bytes), following
-[DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). Process and findings: [NOTES.md](NOTES.md).
+[DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). Process and findings: [NOTES.md](NOTES.md). What the program is
+about, its users and a Polish–English glossary: [ABOUT.md](ABOUT.md).
 
 Status: steps 1-4 of the guide done – the program is split into sources (`src/`, `main.asm`) that reassemble
 **byte for byte** with MADS (12.5 KB of code found). Step 5 in progress: the game engine carries the **original

@@ -26,6 +26,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 5.3 | Palette and elements | element → board cell; do the 27 names follow the object codes; variables $A317, $A7D6 | [~] codes and glyphs known; switch entry 21 (variants) open |
 | 5.4 | Tape and disk | save / load of planet sets → planet format; the extra disk sectors (saved sets) decoded and rendered | [x] |
 | 5.5 | Engine leftovers | the 26 engine routines still `sub_XXXX` (Konstruktor's changes to Robbo's engine) | [ ] |
+| 5.6 | What it is about | ABOUT.md: overview, goal, users, how it is used, elements, glossary Polish–English (suggested by the user) | [x] |
 
 Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from XFormer is requested from the user.
 
@@ -44,6 +45,7 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Editor analysed and named (5.1-5.2, parts of 5.3-5.4): 144 routines, editor variables, planet format, disk slots (section 10) |
 | 2026-10-29 | Saved planet sets loaded by emulating the program's own loader: erased slots with test boards only (section 11) |
 | 2026-10-29 | Palette codes and glyphs; rendering like the editor (`util/render.py`), palette sheet and test boards in `img/` (section 12) |
+| 2026-10-29 | ABOUT.md: what the program is about, users, usage, elements, Polish–English glossary (section 13) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -433,6 +435,22 @@ exactly as the data says – confirming code → glyph → 2 × 2 characters →
 
 `util/render.py` sets its stdout to UTF-8 (Polish element names) – printing failed with the Windows code page when
 the output was redirected.
+
+## 13. ABOUT.md – understanding the application (2026-10-29)
+
+Suggested by the user: besides the code, step 5 should produce an understanding of what the program is about, in a
+separate file with sections (overview, goal, users, glossary) and the mapping of terms between the languages.
+
+`ABOUT.md` is built only from evidence and marks interpretations: the help pages (purpose, functions, controls), the
+editor texts (menu, messages, element names), the code (planet format, test rules, palette codes) and Robbo's own
+instruction text (`../robbo/d1/TITLE.ASM`, label `INST`) for the game's story – Robbo escapes a hostile planetary
+system; on each planet a capsule waits, but it is incomplete, so Robbo collects its parts (the screws) while evil
+creatures try to stop him. Sections: overview, the game it builds, goal of the program, users (the player-designer
+and the players of the saved game), how it is used (menu function table), elements (palette with roles), glossary
+(program terms, messages, tape/disk, engine label abbreviations with who confirmed them).
+
+The convention is now general: `CLAUDE.md` and `DISASSEMBLY-GUIDE.md` (step 5, plan template, definition of done) ask
+for an `ABOUT.md` in every game folder.
 
 ## Open questions
 

@@ -110,7 +110,13 @@ Work top-down; the order below finds the structure fastest.
    (if not → interrupt).
 7. Write every finding with addresses into `NOTES.md` as you go.
 
-- **Gate:** every routine has a one-line description (`COMMENTS`), the main loop and interrupts are explained.
+8. **Understand the application, not only the code** – write `ABOUT.md`: overview, goal, players / users, how it
+   is played or used, elements / objects, and a **glossary** mapping the game's terms to English (when it uses
+   another language) – from the code, the texts (help, messages, title screens), the manual and related sources;
+   mark interpretations. Example: `robbo-konstruktor/ABOUT.md`.
+
+- **Gate:** every routine has a one-line description (`COMMENTS`), the main loop and interrupts are explained,
+  `ABOUT.md` describes what the game is about.
 
 ### Step 6 – Regroup blocks into modules
 
@@ -163,7 +169,7 @@ Copy into the game's `NOTES.md` as the first section and tick off.
 | 2 | Memory image | game.bin, boot chain | odd regions explained | [ ] |
 | 3 | Entry points + disassembly | entry list, code ranges | gaps looked at | [ ] |
 | 4 | Blocks + byte-exact build | src/, main.asm, Makefile | MADS: byte for byte | [ ] |
-| 5 | Understand code | call graph, main loop, interrupts, init tables | every routine described | [ ] |
+| 5 | Understand code and application | call graph, main loop, interrupts, init tables; ABOUT.md with glossary | every routine described, ABOUT.md | [ ] |
 | 6 | Modules | BLOCKS regrouped, data named | byte-exact, README block table | [ ] |
 | 7 | Names + comments | VARIABLES, NAMES, COMMENTS, POKES | no sub_XXXX, byte-exact | [ ] |
 | 8 | Graphics + verification | renders, screenshot in img/ | renders match screenshot | [ ] |
@@ -285,6 +291,7 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
 - [ ] Sources reassemble byte for byte with MADS (`make test` or the documented commands).
 - [ ] Every block, routine and variable has a name and a comment; no generated `sub_XXXX` labels.
 - [ ] README: files, blocks, boot chain, memory map, game structure, known addresses, images.
+- [ ] ABOUT.md: what the game is about, players, elements, glossary (other language → English).
 - [ ] NOTES: dated sections with evidence, Timeline, Open questions; damage/oddities explained.
 - [ ] Renders verified against a real screenshot (`img/<game>.png`).
 - [ ] Root README lists the game; repo clean; changes committed.
