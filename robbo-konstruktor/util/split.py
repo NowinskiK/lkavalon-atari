@@ -25,7 +25,7 @@ BLOCKS = [
     ('FONT4C.FNT',  0x4C00, 0x4FFF, 'font (modified Robbo I.FNT)'),
     ('EDIT90.ASM',  0x9000, 0x9430, 'editor code'),
     ('EDITOR.ASM',  0x94E0, 0x9F7A, 'editor: menu dispatch, cursor, commands'),
-    ('TEXTS.DTA',   0x9F7B, 0xA808, 'editor tables and texts (menu table $9F8E)'),
+    ('TEXTS.ASM',   0x9F7B, 0xA808, 'editor tables (menu table $9F8E) and texts: screens, messages, element names'),
     ('EDITOR2.ASM', 0xA810, 0xB5FF, 'editor: jump table $A810, main loop, screen, DLI, text input'),
     ('LOADSCR.ASM', 0xBC40, 0xBC67, 'loading screen line "Robbo Konstruktor (C) 1990 Avalon"'),
 ]
@@ -63,8 +63,12 @@ def entries(mem):
 # data written as strings: first -> (last, format); 'help' = ATASCII, bit 7 = a space follows, $00 nn = page
 # marker, Polish letters as CONTROL codes; 'screen' = ANTIC screen codes (dta d'...')
 TEXTS = {
-    0x0C7B: (0x1DD0, 'help'),     # help pages 0-15 (after the preamble $0C6D-$0C7A)
-    0xBC40: (0xBC67, 'screen'),   # loading screen line, inverse video
+    0x0C7B: (0x1DD0, 'help'),       # help pages 0-15 (after the preamble $0C6D-$0C7A)
+    0x9FBB: (0xA316, 'screen-pl'),  # editor screens: main menu, title, planet legend, disk panel, save hints
+    0xA318: (0xA7D5, 'strings'),    # editor messages, errors, element names ($A317 is a variable)
+    0xA7D8: (0xA7F7, 'strings'),    # tape/disk labels, 8 characters each (read with lda $A7D8,x)
+    0xA804: (0xA808, 'strings'),    # "Robbo"
+    0xBC40: (0xBC67, 'screen'),     # loading screen line, inverse video
 }
 
 VARIABLES = [

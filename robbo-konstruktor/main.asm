@@ -25,10 +25,6 @@
          opt h+
          icl "src/EDIT90.ASM"       ; $9000-$9430 editor code
          icl "src/EDITOR.ASM"       ; $94E0-$9F7A editor: menu dispatch, cursor, commands
-
-         opt h-
-         ins "src/TEXTS.DTA"        ; $9F7B-$A808 editor tables and texts (menu table $9F8E)
-
-         opt h+
+         icl "src/TEXTS.ASM"        ; $9F7B-$A808 editor tables (menu table $9F8E) and texts: screens, messages, element names
          icl "src/EDITOR2.ASM"      ; $A810-$B5FF editor: jump table $A810, main loop, screen, DLI, text input
          icl "src/LOADSCR.ASM"      ; $BC40-$BC67 loading screen line "Robbo Konstruktor (C) 1990 Avalon"

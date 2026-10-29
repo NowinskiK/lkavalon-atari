@@ -40,7 +40,7 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [src/FONT4C.FNT](src/FONT4C.FNT) | $4C00-$4FFF | font (modified Robbo I.FNT) |
 | [src/EDIT90.ASM](src/EDIT90.ASM) | $9000-$9430 | editor code |
 | [src/EDITOR.ASM](src/EDITOR.ASM) | $94E0-$9F7A | editor: menu dispatch, cursor, commands |
-| [src/TEXTS.DTA](src/TEXTS.DTA) | $9F7B-$A808 | editor tables and texts (menu table $9F8E) |
+| [src/TEXTS.ASM](src/TEXTS.ASM) | $9F7B-$A808 | editor tables (menu table $9F8E) and texts as strings: screens, messages, element names – see "Editor texts" below |
 | [src/EDITOR2.ASM](src/EDITOR2.ASM) | $A810-$B5FF | editor: jump table $A810, main loop, screen, DLI, text input |
 | [src/LOADSCR.ASM](src/LOADSCR.ASM) | $BC40-$BC67 | loading screen line, `dta d'  Robbo Konstruktor    (C) 1990 Avalon  '*` (screen codes, inverse) |
 
@@ -142,3 +142,20 @@ they are typed as CONTROL + a, c, e, l, n, o, s, z (help page 8 lists them in th
 | 13 | Zbiór elementów składowych planety | the element palette, in the right part of the screen |
 | 14 | Edytor planety | put the selected element at the cursor (fire) |
 | 15 | – | anti-piracy notice: a version with errors "is an illegal copy" |
+
+## Editor texts ($9F7B-$A808)
+
+Two encodings in one block (written as `dta d'…'` / `dta c'…'` strings in `src/TEXTS.ASM`):
+
+| Range | Encoding | Content |
+|---|---|---|
+| $9F7B-$9FBA | – | tables: menu dispatch $9F8E (10 handlers), $9FA2 / $9FAC (10 bytes each), menu column offsets $9FB6 (20, 60, 100, 140, 180) |
+| $9FBB-$A316 | screen code, `$00` = space; Polish letters on the glyphs `@ \ [ ] _ { ^ \|` (as in Robbo's TITLE.ASM) | editor screens: main menu (5 rows × 2 columns of 20: basic functions left, additional right), title "Robbo Konstruktor /1990 by Avalon", planet legend ("planety: – zła – dobra – pusta", "K:", "R:"), disk panel ("zawartość dysku", "pusty", "wczytaj", "zapisz", "skasuj", sets 01-05, "pełny"), save hints for disk and tape |
+| $A317 | – | variable (used by $968F, $9CE4, $9D07, $9DAC) |
+| $A318-$A7D5 | ATASCII, `$00`-terminated, bit 7 = inverse highlight, Polish letters as CONTROL codes | messages: key hints, errors ("błąd: brak robocika!", "…za dużo śrubek! – max: 99", "błąd numer 100!"), questions ("wyczyścić planetę? tak nie"), tape/disk messages, and the **names of the 27 palette elements** (Robbo, śrubka, kapsuła, skrzynka, drzwi, … nietoperz, działko, laser, blaster, teleportacja) |
+| $A7D6 | – | variable (used by $9CDF, $9CE7, $9F52) |
+| $A7D8-$A7F7 | ATASCII | four 8-character labels: " wczytać", " zapisać", "skasować", "kasetowe" |
+| $A7F8-$A803 | – | two small tables (read at $9B57, $9B5C, $9B62) |
+| $A804-$A808 | ATASCII | "Robbo" |
+
+The menu text has a typo in the original: "funcje podstawowe" (for "funkcje").

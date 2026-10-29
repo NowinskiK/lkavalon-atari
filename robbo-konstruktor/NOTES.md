@@ -28,6 +28,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 2026-10-29 | Abbreviations translated by the user; comments corrected (section 6) |
 | 2026-10-29 | `$0C6D-$1DD0` = help text, 16 pages decoded – the program's full feature list (section 7) |
 | 2026-10-29 | Texts written as `dta c'…'` / `d'…'` strings in the sources; Polish letter codes confirmed (section 8) |
+| 2026-10-29 | `TEXTS.DTA` analysed: two encodings, editor screens, messages, element names → `TEXTS.ASM` (section 9) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -274,6 +275,40 @@ Example (`src/HELP.ASM`):
 Lesson: generating Python code from a shell here-document mangled `\2` into the byte `$02` (twice) – avoid
 backslash-digit sequences in generated code (use named groups) and check for control characters after scripted edits.
 
+## 9. The editor's texts (2026-10-29)
+
+`$9F7B-$A808` printed side by side as ATASCII and as screen code reads correctly in *different* places – the block
+mixes two encodings:
+
+- **Screen code** (`$9FBB-$A316`): `$00` is the space character there, so the zero bytes are spaces and blank screen
+  areas, not separators – this is laid-out screen text. Printed as 40-character rows it shows the editor's screens:
+  the **main menu** (5 rows × 2 columns of 20: left the basic functions "test planety, czyść planetę, zmiana kolorów,
+  operacje dyskowe, funkcje dodatkowe", right the additional ones "strona tytułowa, kolejność planet, test Robbo,
+  zapisz Robbo, funcje podstawowe" – the table `$9FB6` = 20, 60, 100, 140, 180 are the right column's offsets), the
+  title, the planet legend, the disk panel and the save hints. Polish letters on the glyphs `@ \ [ ] _ { ^ |` – the
+  same trick as Robbo's TITLE.ASM (the help text and messages use the CONTROL codes instead). "funcje podstawowe" is a
+  typo in the original.
+- **ATASCII** (`$A318-$A7D5`): `$00`-terminated strings, spaces are `$20`, bit 7 = **inverse highlight** (e.g.
+  "**błąd:**", "**Uwaga:**") – unlike the help text, where bit 7 means "a space follows". Contents: key hints, error
+  messages of the test functions ("brak robocika", "brak kapsuły", "za dużo robocików / kapsuł / śrubek – max: 99",
+  "planeta jest pusta"), questions, tape/disk messages ("szukanie początku zestawu planet", "ten zestaw planet jest
+  zniszczony", "dyskietka jest uszkodzona", "błąd numer 100"), and the **27 element names** of the palette.
+- Two bytes inside the block are **variables**, found because code reads/writes them: `$A317` (by `$968F` – a menu
+  handler – and `$9CE4`, `$9D07`, `$9DAC`) and `$A7D6` (`$9CDF`, `$9CE7`, `$9F52`). Meanings still open.
+- `$A7D8-$A7F7`: four 8-character labels read with `lda $A7D8,x` (" wczytać", " zapisać", "skasować", "kasetowe");
+  `$A7F8-$A803`: two small tables; `$A804-$A808`: "Robbo".
+
+Method: classify each string by which decoding gives plausible Polish – but lowercase letters are identical in both
+codings (`$61-$7A`), so the decisive clue was the meaning of `$00` (space in screen code). Confirmed by the readers:
+code that indexes the texts and writes the two variables.
+
+Implementation: two new `TEXTS` formats in `util/rdis.py` – `screen-pl` (screen code, 40-character rows, comment with
+the glyph-mapped Polish letters) and `strings` (ATASCII, one string per line incl. its `$00`, inverse runs as `…'*`);
+`TEXTS.DTA` → `TEXTS.ASM`; strings may now contain `{ | } ~` too. MADS and `asm.py` builds byte-exact.
+
+Lesson: write analysis scripts to a file (Write tool) instead of passing them through a shell here-document – the
+shell layer collapses backslashes (`'\\'` arrived as `'\'`).
+
 ## Open questions
 
 
@@ -282,7 +317,9 @@ backslash-digit sequences in generated code (use named groups) and check for con
 - Boot record init address $19DD – the program has no code there at boot time; what is it for?
 - `JMP $F556` in the jump table – an OS ROM routine or RAM under the OS?
 - Data to classify: `$0803-$09A5` (display list + tables), `$3142-$3333`, `$35D0-$3682` (display list),
-  `$4000-$47FF`, `$9F7B-$A808` (editor tables and texts); help-text preamble `$0C77`: `79 0C 80 01`.
+  `$4000-$47FF`; help-text preamble `$0C77`: `79 0C 80 01`; tables in `TEXTS.ASM` ($9FA2, $9FAC, $A7F8, $A7FE).
+- Variables `$A317` and `$A7D6` inside the text block – meaning?
+- Is the order of the 27 element names the order of the palette / the object codes?
 - Editor screen layout: is it a 16-column board window + palette (cursor X 0-19 skipping 16)?
 - The 26 remaining `sub_XXXX` in the engine and the editor code (no source): analyse and name.
 - Engine data tables: compare with Robbo's (e.g. `$33CC` = Robbo `R1.ASM` 1624 ff.).

@@ -75,6 +75,8 @@ VECTORS = (0x0200, 0x0222, 0x0224)   # OS vectors: the high byte is written as N
 # z stands for both ż and ź. $14 is a quotation mark, $1C-$1F the arrow characters.
 POLISH = {0x01: 'ą', 0x03: 'ć', 0x05: 'ę', 0x0C: 'ł', 0x0E: 'ń', 0x0F: 'ó', 0x13: 'ś', 0x1A: 'ż',
           0x14: '"', 0x1C: '↑', 0x1D: '↓', 0x1E: '←', 0x1F: '→'}
+# Polish letters on the glyphs of rarely used characters (screen-code texts, like Robbo's TITLE.ASM)
+POLISH_GLYPHS = {'@': 'ą', chr(92): 'ę', '[': 'ć', ']': 'ł', '_': 'ó', '{': 'ś', '^': 'ń', '|': 'ż'}
 
 
 def internal_to_atascii(c):
@@ -84,7 +86,7 @@ def internal_to_atascii(c):
 
 def plain(c):
     """Can ATASCII character c stand inside a MADS '...' string?"""
-    return 0x20 <= c < 0x7B and c not in (0x27, 0x22)
+    return 0x20 <= c < 0x7F and c not in (0x27, 0x22)
 
 
 def text_items(codes, kind):
@@ -138,11 +140,28 @@ class Lister:
     def text_lines(s, lo, hi, fmt):
         """Strings with the decoded text as a comment above each dta line (about 56 characters each)."""
         mem, out = s.mem, []
-        if fmt == 'screen':
+        if fmt in ('screen', 'screen-pl'):                          # screen codes, 40-character rows
+            glyphs = POLISH_GLYPHS if fmt == 'screen-pl' else {}
             for a in range(lo, hi + 1, 40):
                 codes = mem[a:min(a + 40, hi + 1)]
-                text = ''.join(chr(internal_to_atascii(b & 0x7F)) for b in codes)
+                text = ''
+                for b in codes:
+                    ch = internal_to_atascii(b & 0x7F)
+                    ch = glyphs.get(chr(ch), chr(ch)) if 0x20 <= ch < 0x7F else '·'
+                    text += ch
                 out += ['; ' + text.rstrip(), '         dta %-40s ; %04X' % (','.join(text_items(codes, 'd')), a)]
+            return out
+        if fmt == 'strings':                                        # ATASCII, $00-terminated, bit 7 = inverse
+            a = lo
+            while a <= hi:
+                st = a
+                while a <= hi and mem[a] != 0: a += 1
+                codes = mem[st:a]
+                term = a <= hi                                      # include the $00 terminator
+                text = ''.join(POLISH.get(b & 0x7F, chr(b & 0x7F) if 0x20 <= b & 0x7F < 0x7F else '·') for b in codes)
+                items = text_items(codes, 'c') + (['$00'] if term else [])
+                out += ['; ' + text, '         dta %s ; %04X' % (','.join(items), st)]
+                a += 1 if term else 0
             return out
         a, line, text = lo, [], ''
         def flush(at):
