@@ -54,6 +54,7 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Step 6: 17 segment blocks regrouped into 29 modules, fonts named by use (section 19) |
 | 2026-10-29 | `$F556`: OS ROM (no `PORTB` writes); the XL/XE OS buzzer – `BELL` / `OS_BELL`; written for the XL/XE OS (section 20) |
 | 2026-10-29 | Copy protection found from a forum report: `PROT_KEY` / `PROT_SUM` / check in `ELEM_MSG_`; boot init $19DD = the key (section 21) |
+| 2026-10-29 | Patched build without the trap: `nocopyprot.asm`, VS Code task (section 22) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -732,6 +733,23 @@ three parts with listings, why emulators trigger it, workaround and a one-byte p
 
 Lesson (guide): when a forum or a user reports odd behaviour, search for the addresses they name, and when a value
 is written but never read by its address, look for indexed reads whose base + index reach it.
+
+## 22. A build without the protection (2026-10-29)
+
+Asked by the user: make the program ignore the protection all the time. Options weighed (PROTECTION.md, "What to
+do"): `RTS` at `PROT_KEY` $9F4D or an inverse "R" at $A804 keep `PROT_SUM` at its initial 0, but only as long as
+nothing else writes it; **removing the trap** – `jsr PLANET_CLR` at $9CF7 → `NOP NOP NOP` – works whatever the
+value is, so that was chosen. The editor alone is affected; "zapisz Robbo" saves only the engine and fonts.
+
+**How, without touching the sources**: `src/` is generated and `main.asm` must stay byte-exact, so the patch is a
+separate file, **`nocopyprot.asm`**: `icl "main.asm"`, then `opt h+ / org $9CF7 / nop ×3` – a later segment, so
+both the Atari loader and `util/mkatr.py` (which builds memory from the segments in order) let it override the
+3 bytes. Checks: `verify.py bin/nocopyprot.obx` → "DIFFERENT: 3 bytes, first at $9CF7"; the disk copy written by
+`mkatr.py` differs from the original image in exactly 3 bytes (`20 DB 97` → `EA EA EA`); `main.asm` still
+byte-exact. VS Code task "Robbo Konstruktor: run build (protection off)" runs it and starts Altirra (started fine).
+
+To test in Altirra with the disk SIO patch **on**: draw on a planet, move the cursor onto the wall in the palette –
+the planet must stay (the original erases it).
 
 ## Open questions
 

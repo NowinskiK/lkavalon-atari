@@ -29,6 +29,13 @@
       "type": "shell",
       "command": "if (-not $env:MADS) { throw 'MADS is not set - see README.md, MADS location' }; if (-not $env:ALTIRRA) { throw 'ALTIRRA is not set - see README.md, Altirra location' }; & $env:MADS main.asm -o:bin/game.obx; if ($LASTEXITCODE) { exit $LASTEXITCODE }; py -3 util/mkatr.py bin/game.obx 'bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr' bin/build.atr; if ($LASTEXITCODE) { exit $LASTEXITCODE }; Start-Process $env:ALTIRRA -ArgumentList '/singleinstance', '\"bin\\build.atr\"'",
       "problemMatcher": []
+    },
+    {
+      "label": "Robbo Konstruktor: run build (protection off)",
+      "detail": "build nocopyprot.asm (main.asm + the trap at $9CF7 replaced by NOPs), write bin/build.atr, boot it",
+      "type": "shell",
+      "command": "if (-not $env:MADS) { throw 'MADS is not set - see README.md, MADS location' }; if (-not $env:ALTIRRA) { throw 'ALTIRRA is not set - see README.md, Altirra location' }; & $env:MADS nocopyprot.asm -o:bin/nocopyprot.obx; if ($LASTEXITCODE) { exit $LASTEXITCODE }; py -3 util/mkatr.py bin/nocopyprot.obx 'bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr' bin/build.atr; if ($LASTEXITCODE) { exit $LASTEXITCODE }; Start-Process $env:ALTIRRA -ArgumentList '/singleinstance', '\"bin\\build.atr\"'",
+      "problemMatcher": []
     }
   ]
 }

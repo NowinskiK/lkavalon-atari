@@ -290,5 +290,8 @@ version used in the thread), so that the serial port is emulated byte by byte; t
 of NTSC mattered. Whether `SERIN` then ends as `$19` with this ATR (which cannot store the unreadable sector 989 of
 the original) is not checked yet.
 
+**Patched build**: [nocopyprot.asm](nocopyprot.asm) = `main.asm` + `jsr PLANET_CLR` at $9CF7 replaced by three
+`NOP`s; VS Code task "run build (protection off)" writes it to `bin/build.atr` (3 bytes differ from the original).
+
 Not found in this image: the second error from the thread, "błąd - za dużo robocików!" after using the disk menu
 on a copied disk (the addresses named there, $0C75 and $0513, are the help viewer's variable and the boot loader here).

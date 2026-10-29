@@ -122,10 +122,13 @@ then ends as `$19` with this image has not been checked yet.
 ## What to do
 
 - **Emulator**: switch off the disk SIO acceleration and use PAL (forum, posts 9–15).
-- **Patch** *(idea, not tested)*: one byte would disarm it. Put `$60` (`RTS`) at `$9F4D`, so `PROT_KEY` never
-  runs and `PROT_SUM` stays 0; or `$80` at `$A804`, which makes the routine skip itself (but shows an inverse "R" in
-  the text "Robbo", if that text is displayed). In this repository `util/mkatr.py` writes builds onto a copy of the
-  disk, so such a patch would not touch the original image.
+- **Patch**: remove the trap. [nocopyprot.asm](nocopyprot.asm) builds the program from the unchanged sources and
+  adds one segment that replaces `jsr PLANET_CLR` at `$9CF7` (`20 DB 97`) with three `NOP`s (`EA EA EA`): the
+  value is still computed and read, but nothing is erased any more, whatever `SERIN` held. `util/mkatr.py` writes it
+  onto a copy of the disk (`bin/build.atr`); the result differs from the original image in exactly these 3 bytes.
+  In VS Code: task "Robbo Konstruktor: run build (protection off)".
+  Smaller alternatives: `$60` (`RTS`) at `$9F4D`, so `PROT_KEY` never runs and `PROT_SUM` keeps its initial 0; or
+  `$D2` at `$A804` (an inverse "R"), which makes the routine skip itself – both rely on `PROT_SUM` staying 0.
 
 ## Still open
 
