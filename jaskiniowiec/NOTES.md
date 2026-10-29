@@ -13,6 +13,7 @@ and **why** things are the way they are.
 | 2026-10-29 | Code analysed (call graph + reading + emulation), blocks regrouped into logical modules, new entry points found |
 | 2026-10-29 | MADS 2.1.5 provided; real MADS build verified byte for byte (section 6) |
 | 2026-10-29 | MADS path moved to the `MADS` environment variable (section 7) |
+| 2026-10-29 | Local MADS checked against the 2.1.5 tag on GitHub; docs reviewed (section 8) |
 
 ## 1. From XEX to memory image
 
@@ -180,6 +181,33 @@ when set and falls back to `mads` on `PATH`.
   `[Environment]::SetEnvironmentVariable('MADS', '<path>', 'User')` (new terminal needed afterwards).
 - Commands: PowerShell `& $env:MADS main.asm -o:bin/game.obx`, Git Bash `"$MADS" main.asm -o:bin/game.obx`.
 - CLAUDE.md: always call `$MADS`; if it is empty, tell the user and point to the README.
+
+## 8. MADS 2.1.5 sources and documentation (2026-10-29)
+
+Upstream: <https://github.com/tebe6502/Mad-Assembler/tree/2.1.5> (docs in `doc/`).
+
+**Is the local copy the real 2.1.5?** Yes. Compared `x:\ATARI\Tools\Mad-Assembler-2.1.5` with files downloaded
+from the `2.1.5` tag: `mads.exe`, `mads.pas`, `CHANGELOG`, `README.md`, `doc/mads.html`, `doc/mads_eng.html` are
+byte-identical. (A first comparison of `mads_eng.html` failed only because `gh api` changed the downloaded
+bytes; a plain raw download matched. Lesson: compare with a raw download before concluding a file differs.)
+`mads.exe` reports "mads 2.1.5 build 3 (21 Feb 22)", matching the last CHANGELOG entry (2022-02-21).
+
+**What the documentation confirms about our generated sources** (`doc/mads_eng.html`):
+
+- MADS picks zero page automatically when the operand value is < $100 ("Assembling into zero page").
+  Forcing absolute with a mnemonic extension (`lda.w $80` → `AD 80 00`) works **only for LDA, LDX, LDY,
+  STA, STX, STY**. So `split.py`'s fallback `dta $op,a($00xx)` is the right general solution (it also covers
+  `adc`, `cmp`, `inc` …), not just a workaround.
+- Labels are case-insensitive by default (`-c` makes them case-sensitive) – our generated names are unique
+  either way, and `asm.py` also treats them case-insensitively.
+- `opt h+` (default) writes `$FFFF` headers, `opt h-` omits them – used for `ins` of headered data files.
+  `opt h-f+` writes one RAW block – could produce a flat memory image directly if ever needed.
+- `ins 'file'[,+offset[,length]]` can skip bytes at the start or take a part of a file – an alternative if we
+  ever want headerless data files.
+
+**Switches worth using during annotation:** `-l` (listing with addresses and bytes), `-t` (label table),
+`-u` (warn about unused labels – shows generated labels that annotation made obsolete), `-bc` (branch out of
+range / page-crossing warnings – useful after editing code).
 
 ## Open questions
 

@@ -21,6 +21,22 @@ Sources of LK Avalon (and related) games for 8-bit Atari, assembled with MADS. O
 - Project instructions and memory live in this file (it travels with the repository), not in local
   Claude memory – add new standing preferences here.
 
+## MADS reference
+
+- Version used: **2.1.5** – source and docs: <https://github.com/tebe6502/Mad-Assembler/tree/2.1.5>,
+  documentation: <https://github.com/tebe6502/Mad-Assembler/tree/2.1.5/doc>
+  (`mads_eng.html` English, `mads.html` Polish).
+- The local copy next to `$MADS` (`doc/mads_eng.html` in the same folder) is identical to the tag
+  (checked 2026-10-29) – read it locally instead of fetching, and check syntax questions there before guessing.
+- Facts this repo relies on (from the docs):
+  - zero page vs absolute is chosen automatically; forcing absolute with `.w`/`.a` works **only** for
+    LDA/LDX/LDY/STA/STX/STY – for other instructions emit bytes (`dta $op,a(addr)`), as `split.py` does;
+  - labels are case-insensitive unless `-c`;
+  - `opt h+` (default) writes `$FFFF` headers, `opt h-` omits them; `opt f+` emits a single block (RAW with `h-f+`);
+  - `ins 'file'[,+offset[,length]]` – can skip a header or take part of a file;
+  - useful switches: `-l` listing (`.lst`), `-t` label table (`.lab`), `-u` warn about unused labels,
+    `-bc` warn about branches out of range / crossing a page.
+
 ## Environment
 
 - Windows; use `py -3` for Python.
