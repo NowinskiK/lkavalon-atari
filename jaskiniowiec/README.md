@@ -5,7 +5,9 @@
 *Start screen, running in the XFormer emulator – the reference used to verify the renders (NOTES.md section 13).*
 
 Analysis of `Jaskiniowiec (1995)(StanBit)(PL)[h CAMOsoft][t +1 CAMOsoft].xex`
-(original location: `x:\ATARI\GryKamil\`, 35,286 bytes).
+(original location: `x:\ATARI\GryKamil\`, 35,286 bytes). The regenerate steps expect it in `bin/`; it is
+**not tracked in git** (the root `.gitignore` rule `*.XEX` also matches `.xex`), so put it there yourself.
+Everything after `game.bin` (sources, build, level pictures) works without it.
 
 Goal: unpack the cracked XEX, get the real game code into memory and disassemble it,
 then (later) annotate it the same way as Dangerous City's `DC.ASM`.

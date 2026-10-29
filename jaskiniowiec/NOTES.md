@@ -21,6 +21,7 @@ and **why** things are the way they are.
 | 2026-10-29 | Renders verified against a real start-screen screenshot; XFormer palette, black playfield, logo (section 13) |
 | 2026-10-29 | Reference screenshot saved as `img/jaskiniowiec.png` (section 14) |
 | 2026-10-29 | `util/levels.py` added; level maps and logo rendered to `img/levels/` (section 15) |
+| 2026-10-29 | Stale block files from the first split removed, repo cleaned (section 16) |
 
 ## 1. From XEX to memory image
 
@@ -367,10 +368,32 @@ py -3 util/levels.py game.bin img/levels
 
 Not drawn: enemies, treasures and cave rooms (`LEVELDAT.DTA`), the player, the status line.
 
+## 16. Stale files removed, repo cleaned (2026-10-29)
+
+**Stale sources.** Eight files from the first split (section 2) were still in `src/` and tracked in git,
+although `main.asm` had not included them since the regrouping (section 3): `CODE7C.ASM` (now
+`SPRITE.ASM`, `DLI.ASM`, `PLAYER.ASM`), `CODEA0.ASM`, `START.ASM` (now `SCREEN.ASM`), `D1800.DTA`, `D2500.DTA`,
+`D6470.DTA`, `D7000.DTA`, `LEVELS.DTA`. They were older and less complete (generated before the player/DLI
+entry points were known, so that code was only `dta`). Found by listing `src/` files not referenced by
+`main.asm`; removed with `git rm` (exact paths). `src/` now has exactly the 37 blocks + `JOINT.ASM`.
+MADS build re-verified byte for byte; no document referred to the removed names.
+
+How it happened: an earlier `git status` was clean and was taken as "the files are gone" – but clean only means
+unchanged. Lesson (now in CLAUDE.md): check the file list itself, not the status.
+
+**Clean-up.** Removed regenerable leftovers: `mem.bin` (intermediate from `emu.py`), `bin/game.obx` (build
+output), `__pycache__/` in `jaskiniowiec/` (stale, from before the `util/` move) and in `util/`.
+New standing rule in CLAUDE.md: clean the repo after changes (obsolete files, build/intermediate/cache files),
+check with `git status --short --ignored`, delete exact paths only.
+
+**Found while cleaning:** the original XEX in `bin/` is **not tracked** – the root `.gitignore` rule `*.XEX`
+matches `.xex` too (case-insensitive file system). It is needed only to regenerate `game.bin`; README and
+CLAUDE.md now say so. Committing it (a cracked commercial file) is left to the user.
+
 ## Open questions
 
+- Commit the original XEX to `bin/` (needs an exception in `.gitignore`)? User's decision.
 - Draw enemy start positions, treasures and cave-room entrances onto the level maps (`LEVELDAT.DTA`).
-
 - `D0500.DTA` ($0500-$07FF) and `D2800.DTA` ($2800-$2BFF, $2F00-$2FFF) – unknown.
 - `CMC.ASM`: `JMP $5968` ($F372) and `JSR $5B73` ($F654) point into the maps – probably player tables taken as code.
 - `$7788` / `$7879` are patched per level from $9E49 (inside the picture) – meaning unknown.

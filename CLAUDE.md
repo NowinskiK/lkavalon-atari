@@ -20,6 +20,12 @@ Sources of LK Avalon (and related) games for 8-bit Atari, assembled with MADS. O
   what was learnt.
 - Project instructions and memory live in this file (it travels with the repository), not in local
   Claude memory – add new standing preferences here.
+- **Clean the repo after changes**: remove what the change made obsolete (stale sources no longer referenced,
+  old generated files) and the leftovers of the work (build outputs like `bin/*.obx`, intermediate files like
+  `mem.bin`, `__pycache__/`, scratch files). Check with `git status --short --ignored`, delete exact paths
+  (`git rm` for tracked files), never wildcards over source folders. Then verify the build still works and that
+  no documentation refers to deleted files.
+- A clean `git status` does not prove a file is gone – it only means it is unchanged. Check the file list itself.
 
 ## MADS reference
 
@@ -67,8 +73,12 @@ Read `jaskiniowiec/README.md` (reference) and `jaskiniowiec/NOTES.md` (process, 
   where MADS is unavailable.
 - Blocks must start/end on instruction boundaries (`split.py` asserts it); code reached only via data
   (interrupt vectors, poke tables, DLI chains) must be added as an entry point.
-- `split.py` does not delete files: when blocks are renamed, stale files stay in `src/` – list them for the user
-  to delete (deleting `src/*` is blocked by the safety check).
+- `split.py` does not delete files: when blocks are renamed, stale files stay in `src/`. Find them (files in
+  `src/` not referenced by `main.asm`, except `JOINT.ASM`), remove them with `git rm <exact paths>`
+  (a wildcard delete of `src/*` is blocked by the safety check) and re-verify.
+- The original XEX in `bin/` is **not tracked**: the root `.gitignore` rule `*.XEX` also matches `.xex`
+  (case-insensitive on Windows). It must be present locally to regenerate `game.bin`; whether to commit it is
+  the user's decision.
 - **Always** add a new dated section to `NOTES.md` whenever you work further on the code or files: what was
   done, how, findings (with addresses as evidence) and lessons. Also update its Timeline and Open questions,
   and keep the README block table in sync.
