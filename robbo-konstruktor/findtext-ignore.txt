@@ -1,0 +1,6 @@
+29D3-29F2  surprise outcomes (Robbo NSPS): object codes, not a text
+2AA8-2AB6  explosion offsets and phases (Robbo WBPO, "ababcbaba" are object codes written as letters)
+31D5-31EE  next object in an animation (Robbo NEXT, codes written as letters)
+3440-3460  table of pointers (sound data)
+93D9-93F0  code not yet disassembled (DISKIO: jsr $93FD, sta ($B8),y ...)
+B550-B5FF  palette codes $B51C and glyph table $B55A

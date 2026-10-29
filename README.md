@@ -1,5 +1,7 @@
 # LK Avalon sources
 
+[![Robbo Konstruktor](https://github.com/NowinskiK/lkavalon-atari/actions/workflows/robbo-konstruktor.yml/badge.svg)](https://github.com/NowinskiK/lkavalon-atari/actions/workflows/robbo-konstruktor.yml)
+
 Repository contains sources of the LK Avalon games for 8-bit Atari, released around 1990.
 
 Sources were downloaded from [Atari XL/XE Source Archive](http://sources.pigwa.net/), transformed from ATASCII to ASCII with [convert-atascii.go](util/convert-atascii.go) and manually cleaned up. Now they can be compiled with [MADS](https://mads.atari8.info/).
@@ -15,6 +17,8 @@ Sources were downloaded from [Atari XL/XE Source Archive](http://sources.pigwa.n
 Reverse-engineered from the binary (no original source):
 
 * [Jaskiniowiec](jaskiniowiec) (StanBit, 1995)
+* [Robbo Konstruktor](robbo-konstruktor) (L.K. Avalon, 1990) – with a fixed version without the copy protection
+  ([PROTECTION.md](robbo-konstruktor/PROTECTION.md))
 
 How to do this for another game: [DISASSEMBLY-GUIDE.md](DISASSEMBLY-GUIDE.md).
 
@@ -57,6 +61,27 @@ it inherits that application's old environment – close and reopen the applicat
 export MADS="$HOME/tools/mads/mads"
 ```
 
+### Altirra location (running from VS Code)
+
+The VS Code tasks in [.vscode/tasks.json](.vscode/tasks.json) start the
+[Altirra](https://www.virtualdub.org/altirra.html) emulator from the `ALTIRRA` environment variable (full path to
+`Altirra64.exe`), set the same way as `MADS` (example path – use your own Altirra folder):
+
+```powershell
+[Environment]::SetEnvironmentVariable('ALTIRRA', 'C:\Users\kamil\OneDrive\ATARI\Altirra-4.40\Altirra64.exe', 'User')
+```
+
+Restart VS Code afterwards. Tasks (Terminal → Run Task; Ctrl+Shift+B runs the build):
+
+| Task | What it does |
+|---|---|
+| Robbo Konstruktor: run original | boots the original disk in Altirra |
+| Robbo Konstruktor: build + verify | MADS build, compared with `game.bin` byte for byte |
+| Robbo Konstruktor: run build | builds, writes the build into a copy of the disk (`bin/build.atr`, ignored by git) and boots it |
+| Robbo Konstruktor: run build (protection off) | builds `nocopyprot.asm` (both copy protections removed, help page 15 replaced, keyboard of the title-page editor fixed – `robbo-konstruktor/PROTECTION.md`) into `robbo-konstruktor/bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr` and boots it |
+
+Altirra is started with `/singleinstance`, so a running Altirra window is reused.
+
 Windows environment variables are also visible in Git Bash (under the same restart rule); the Windows path
 works there as is: `"$MADS" main.asm -o:game.xex`.
 
@@ -78,3 +103,16 @@ Checksums can be validated with:
 ```bash
 make test
 ```
+
+## Continuous integration
+
+[.github/workflows/robbo-konstruktor.yml](.github/workflows/robbo-konstruktor.yml) (GitHub Actions, on pushes and
+pull requests that touch `robbo-konstruktor/`, or started by hand) builds MADS 2.1.5 from its official source with
+Free Pascal and then two versions of Robbo Konstruktor:
+
+| Version | Checks | Artifact |
+|---|---|---|
+| original (`main.asm`) | byte for byte equal to `game.bin`; no texts left in data bytes (`util/findtext.py`); the rebuilt disk's data equals the original image | `robbo-konstruktor-original`: `Robbo Konstruktor (1990)(L.K. Avalon)(PL)[rebuilt].atr` |
+| fixed (`nocopyprot.asm`) | builds; help page 15 printed in the log | `robbo-konstruktor-fixed`: `Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr` |
+
+The disk images are made by `util/mkatr.py` from the original image in the repository (writable copies).

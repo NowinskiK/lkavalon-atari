@@ -1,3 +1,6 @@
 *.obx
 *.XEX
 .idea
+build.atr
+__pycache__/
+out/
