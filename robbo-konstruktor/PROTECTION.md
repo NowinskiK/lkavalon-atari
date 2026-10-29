@@ -193,8 +193,9 @@ The 6502 emulator in this repository (`util/emu.py`) ran `PROT_BOOT` on this ima
   - `$B47E`: the one-shot flag `$00` → `$80` – `PROT_BOOT` believes it has already run and skips the check, so
     `COUNT_ELEM_` is never patched.
 
-  `util/mkatr.py` writes the result onto a copy of the disk (`bin/build.atr`); it differs from the original image in
-  these 4 bytes and in help page 15, which the same file replaces: Avalon's notice "Jeżeli Twoja wersja wykazuje
+  `util/mkatr.py` writes the result onto a copy of the disk, `bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr`; it differs from the
+  original image in these 4 bytes, in the keyboard fix of the title-page editor (6 bytes, NOTES.md section 27) and in
+  help page 15, which the same file replaces: Avalon's notice "Jeżeli Twoja wersja wykazuje
   błędy uniemożliwiające jej używanie, jest nielegalną kopią!" (if your version shows errors that make it unusable,
   it is an illegal copy) – the errors were these two protections – becomes a note that they were removed. In VS
   Code: task "Robbo Konstruktor: run build (protection off)". The emulator run above confirms the second patch

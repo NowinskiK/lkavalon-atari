@@ -295,8 +295,10 @@ the original) is not checked yet.
 
 **Patched build**: [nocopyprot.asm](nocopyprot.asm) = `main.asm` + `jsr PLANET_CLR` at $9CF7 replaced by three
 `NOP`s, and the one-shot flag $B47E of the second check set; it also replaces help page 15 (Avalon's notice that a
-faulty copy is illegal) with a note about this version. VS Code task "run build (protection off)" writes it to
-`bin/build.atr`.
+faulty copy is illegal) with a note about this version, and makes the title-page text editor read keys through
+the OS pointer `KEYDEF` instead of the XL ROM address $FB51 (wrong letters under AltirraOS). VS Code task "run build (protection off)" writes it to
+`bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr` – the fixed version, a disk of its own ("run
+build" keeps `bin/build.atr` for the unchanged build).
 
 **Second protection**: "błąd - za dużo robocików!" after the first yes/no question – `PROT_BOOT` ($B47D, in
 `ASK_YESNO_`, runs once) XORs the boot loader in memory ($0501-$05FF) and compares the result with `DFLAGS`; the

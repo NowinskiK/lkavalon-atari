@@ -59,6 +59,8 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Help format corrected (bit 7 = end of line), `util/helppage.py`, `HELPTEXT.ASM` one line per dta; new help page 15 in `nocopyprot.asm` (section 24) |
 | 2026-10-29 | Page 15 fixed after a manual edit (bit 7 only on the last character of a line), padded to $1DD0 (section 25) |
 | 2026-10-29 | Saving planet sets failed (error 139): OS-B's `DSKINV` sends `P` as a read – use the XL/XE OS; `mkatr.py` also clears the ATR write-protect flag and keeps saved sets (section 26) |
+| 2026-10-29 | Title-page editor typed wrong letters: XL ROM keyboard table read at a fixed address; fixed build uses `KEYDEF` (section 27) |
+| 2026-10-29 | The fixed version gets its own disk: `bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr` (section 28) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -866,6 +868,38 @@ flag of the ATR header may not have mattered; clearing it and keeping saved sets
 
 Lesson (guide): when an OS call fails only on one machine type, disassemble the call in each OS ROM – OS-B and XL
 differ in details such as `DSKINV` knowing only `W` as a write.
+
+## 27. Wrong letters in the title-page text editor (2026-10-29)
+
+The user: editing "tekst początkowy" / "tekst gratulacyjny", A gives "T", Z nothing, G "8", B "L".
+
+**Cause**: `TITLE_ED_` ($B210-$B21F) takes the key from `CH` and converts it with **`lda $FB51,x`** – the keyboard
+table of the **XL ROM** at a fixed address. Checked in the ROMs: XL (`ATARIXL.ROM`) gives a z g b for those key codes
+($3F $17 $3D $15); OS-B gives other bytes ($B0, "e", $C4, $F1) – also wrong, but not the reported letters, so the
+user was most likely running **AltirraOS** (suggested for saving, section 26), whose table is elsewhere *(inferred;
+AltirraOS is not available here to check)*. Same flaw as `$F556` (section 20): a fixed address inside one OS ROM.
+
+**Fix** (in `nocopyprot.asm`): use **`KEYDEF`** ($79/$7A), the XL OS pointer to its keyboard table – the XL ROM sets
+it to $FB51 itself (`$EF7F`: `lda #$51 / sta $79 / lda #$FB / sta $7A`), so the original machine behaves exactly as
+before. 6 bytes: `ldx CH` → `ldy CH`, `cpx #$FF` → `cpy #$FF`, `lda $FB51,x` → `lda ($79),y` + `nop` (Y is free
+there: the no-key path `LB1C3` sets its own registers, after the lookup `ldx #$00` restarts the key-table search).
+The program does not use $79/$7A. Emulated: XL ROM table → "a" for key A; a table placed elsewhere with `KEYDEF`
+pointing to it → the byte from that table. Patched build: only the intended bytes differ; `main.asm` byte-exact;
+`bin/build.atr` updated in place.
+
+## 28. A disk of its own for the fixed version (2026-10-29)
+
+Asked by the user: the task "RUN BUILD (PROTECTION OFF)" (the user renamed the task labels to capitals) writes
+**`bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr`** – the name follows the TOSEC style of the original
+(`[cr …]` = cracked by) – instead of `bin/build.atr`, which "RUN BUILD" keeps for the unchanged build. The new disk
+was seeded from `bin/build.atr`, where the user's planet sets saved with the fixed version were, so `mkatr.py`
+updated it in place and they carried over; header byte 15 = 0 (writable). Unlike `build.atr` the new disk is not
+ignored by git – whether to commit it is the user's decision.
+
+Also prepared for the user to edit: the credits lines 4-5 of the help screen panel ($08B6 "©1990 Laboratorium
+Komputerowe", $08DE "Avalon") copied into `nocopyprot.asm` as a segment, unchanged for now (0 bytes differ);
+40 screen codes per line, `ert *<>$08DE` / `ert *<>$0906` stop the build when a line is not 40 characters (tested:
+one character short → "ERROR: User error").
 
 ## Open questions
 
