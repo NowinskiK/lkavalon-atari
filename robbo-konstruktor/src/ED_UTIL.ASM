@@ -108,6 +108,9 @@ LB474
          lda  #$00                 ; B475
          sta  $B3F4                ; B477
          jsr  CLICK                ; B47A
+
+* copy protection 2, run at the first yes / no question (one-shot: the operand of lda #$00 gets bit 7 by ror $B47E): "eor $0A00,x" / "cmp $0440" are halved to $0500 / $0240 - the XOR of $FF and the boot loader $0501-$05FF must equal DFLAGS; else $4C (opcode of START) is written to $ACB3 ---
+PROT_BOOT
          lda  #$00                 ; B47D
          bmi  LB49B                ; B47F
          lsr  $B48C                ; B481

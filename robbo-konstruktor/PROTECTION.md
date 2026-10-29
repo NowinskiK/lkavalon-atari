@@ -4,7 +4,8 @@ Robbo Konstruktor (L.K. Avalon, 1990) is the level editor for Robbo. On a disk i
 sometimes empties itself while you edit. The forum thread
 [Dyskowy Robbo Konstruktor na emulatorze](https://atarionline.pl/forum/comments.php?DiscussionID=3815)
 (atarionline.pl, 2016–2019) reported this and found the cause by experiment: copy protection that reacts to the
-emulator's disk acceleration. This article shows the code behind it, taken from the disassembly in this repository.
+emulator's disk acceleration. A second protection makes copied disks fail with "błąd - za dużo robocików!". This
+article shows the code behind both, taken from the disassembly in this repository.
 
 Addresses refer to the disk image `Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr` ("fast hack by Mr.Bacardi") and to
 the sources in [src/](src/), which rebuild that program byte for byte. Statements marked *(inferred)* follow from
@@ -119,24 +120,89 @@ The thread also says the original disk has an unreadable sector (989, "Record No
 store such a sector, so in this image sector 989 is just a normal sector. Whether, with the SIO patch off, `SERIN`
 then ends as `$19` with this image has not been checked yet.
 
+## The second protection: "błąd - za dużo robocików!"
+
+The thread also reports a second fault on copied disks: after the first yes/no question (the forum found it in the
+disk menu, "zapisać zestaw 01? tak nie"; yes or no does not matter), every test or save of a planet that is not
+empty fails with "błąd - za dużo robocików!" (error – too many robots). The SIO patch has nothing to do with it, and
+once it has happened, putting the right bytes back does not help: the program has already changed its own code.
+
+### The check: `PROT_BOOT` ($B47D, at the end of `ASK_YESNO_`)
+
+`ASK_YESNO_` ($B3F5) runs every "tak / nie" question. After the answer it does this:
+
+```
+PROT_BOOT
+         lda  #$00                 ; B47D  one-shot flag: the operand $B47E gets bit 7 below
+         bmi  LB49B                ; B47F  already done -> skip
+         lsr  $B48C                ; B481  "eor $0A00,x" -> "eor $0500,x"  (the real address, halved)
+         lsr  $B492                ; B484  "cmp $0440"   -> "cmp $0240"
+         ldx  #$FF                 ; B487
+         txa                       ; B489  A = $FF
+LB48A
+         eor  $0500,x              ; B48A  XOR of the bytes $05FF ... $0501: the boot loader in memory
+         dex                       ; B48D
+         bne  LB48A                ; B48E
+         cmp  $0240                ; B490  DFLAGS: the boot record's first byte, $AE
+         beq  LB49B                ; B493  equal -> the disk is the original
+         lda  START                ; B495  $4C, the JMP opcode at $A810
+         sta  $ACB3                ; B498  -> written into COUNT_ELEM_: the lock
+LB49B
+         sec                       ; B49B
+         ror  $B47E                ; B49C  set the one-shot flag
+```
+
+In the program as loaded, the two addresses are stored doubled (`$0A00`, `$0440`), so a search for `$0500` or
+`DFLAGS` finds nothing; the first run halves them with `lsr`, then sets the flag so the check never runs again –
+which is why changing the bytes afterwards has no effect.
+
+What is checked: the XOR of `$FF` and the boot sectors as they are in memory (`$0501-$05FF`, the boot loader) must
+equal the boot record's flag byte, which the OS keeps in `DFLAGS` ($0240). In this image the boot loader is the
+cracker's ("fast hack by Mr.Bacardi") and gives **`$C1`** instead of **`$AE`**. With `30 12 A2` at `$0513` – the bytes
+named in the thread – instead of the cracked `4C A6 05`, the result is exactly `$AE`: the original loader passes, a
+modified one fails.
+
+### The lock: `COUNT_ELEM_` ($AC8B)
+
+`COUNT_ELEM_` counts the cells of the planet holding an element; `PLANET_TEST` uses it before a test or a save:
+exactly one Robbo (`$2A`), exactly one capsule, fewer than 100 screws. Its last instruction is followed by two
+bytes that look like leftover data:
+
+```
+         lda  $B6                  ; ACB1  the count
+         rts                       ; ACB3  $60 - after the failed check: $4C
+         dta $03,$B0               ; ACB4
+```
+
+With `$4C` at `$ACB3` the routine ends with **`JMP $B003`** – `WAIT_VBL`, which returns with A = `RTCLOK+2`, the
+frame counter. Every count is then a random number, almost never exactly 1, so the first test (Robbos) reports
+"za dużo robocików!" (error 6). An empty planet is still accepted, because `PLANET_TEST` checks for "empty" before it
+counts – which is why the error appears only after adding any element.
+
+The 6502 emulator in this repository (`util/emu.py`) ran `PROT_BOOT` on this image: with the cracked loader
+`$ACB3` becomes `$4C` (locked); with `30 12 A2` at `$0513` it stays `$60`.
+
 ## What to do
 
-- **Emulator**: switch off the disk SIO acceleration and use PAL (forum, posts 9–15).
-- **Patch**: remove the trap. [nocopyprot.asm](nocopyprot.asm) builds the program from the unchanged sources and
-  adds one segment that replaces `jsr PLANET_CLR` at `$9CF7` (`20 DB 97`) with three `NOP`s (`EA EA EA`): the
-  value is still computed and read, but nothing is erased any more, whatever `SERIN` held. `util/mkatr.py` writes it
-  onto a copy of the disk (`bin/build.atr`); the result differs from the original image in exactly these 3 bytes.
-  In VS Code: task "Robbo Konstruktor: run build (protection off)".
-  Smaller alternatives: `$60` (`RTS`) at `$9F4D`, so `PROT_KEY` never runs and `PROT_SUM` keeps its initial 0; or
-  `$D2` at `$A804` (an inverse "R"), which makes the routine skip itself – both rely on `PROT_SUM` staying 0.
+- **First protection, emulator**: switch off the disk SIO acceleration and use PAL (forum, posts 9–15). This does
+  not help against the second one on a copied or cracked disk.
+- **Patch both**: [nocopyprot.asm](nocopyprot.asm) builds the program from the unchanged sources and adds two
+  segments:
+  - `$9CF7`: `jsr PLANET_CLR` (`20 DB 97`) → `NOP NOP NOP` (`EA EA EA`) – the planet is never erased, whatever
+    `SERIN` held;
+  - `$B47E`: the one-shot flag `$00` → `$80` – `PROT_BOOT` believes it has already run and skips the check, so
+    `COUNT_ELEM_` is never patched.
 
-## Still open
-
-The thread reports a second error on copied disks, "błąd - za dużo robocików!" (error – too many robots), after
-using the disk menu. The addresses named there (`$0C75`, `$0513`) are something else in this image (a variable of
-the help viewer, and the boot loader), so it has not been found here yet. See [NOTES.md](NOTES.md), open questions.
+  `util/mkatr.py` writes the result onto a copy of the disk (`bin/build.atr`); it differs from the original image in
+  exactly these 4 bytes. In VS Code: task "Robbo Konstruktor: run build (protection off)". The emulator run above
+  confirms the second patch (`$ACB3` stays `RTS`).
+- Smaller alternatives for the first protection: `$60` (`RTS`) at `$9F4D`, so `PROT_KEY` never runs and `PROT_SUM`
+  keeps its initial 0; or `$D2` at `$A804` (an inverse "R") – both rely on `PROT_SUM` staying 0. For a program that
+  is already locked in memory: put `$60` back at `$ACB3`.
 
 ## Credits
 
 The problem and the experiments: MDW, voy, miker, QTZ and Krótki in the atarionline.pl thread (2016–2019); QTZ located
-the stored value at `$9F8B`, Krótki identified `SERIN` and `DOSINI`. The code analysis here: NOTES.md section 21.
+the stored value at `$9F8B`, Krótki identified `SERIN` and `DOSINI`; the reproduction of the second error and the
+memory comparisons (`$0513` = `30 12 A2`, the changes around `$B47E`) pointed to the second check. The code analysis
+here: NOTES.md sections 21-23.

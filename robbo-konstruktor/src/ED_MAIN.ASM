@@ -517,6 +517,8 @@ LACAA
          dec  $B7                  ; ACAD
          bpl  LAC95                ; ACAF
          lda  $B6                  ; ACB1
+
+* copy protection 2 lock: this RTS becomes JMP $B003 (WAIT_VBL) when PROT_BOOT fails - the count is then RTCLOK+2 and PLANET_TEST reports "za duzo robocikow!" ---
          rts                       ; ACB3
          dta $03,$B0                                  ; ACB4
 

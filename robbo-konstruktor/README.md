@@ -291,7 +291,11 @@ of NTSC mattered. Whether `SERIN` then ends as `$19` with this ATR (which cannot
 the original) is not checked yet.
 
 **Patched build**: [nocopyprot.asm](nocopyprot.asm) = `main.asm` + `jsr PLANET_CLR` at $9CF7 replaced by three
-`NOP`s; VS Code task "run build (protection off)" writes it to `bin/build.atr` (3 bytes differ from the original).
+`NOP`s, and the one-shot flag $B47E of the second check set; VS Code task "run build (protection off)" writes it to
+`bin/build.atr` (4 bytes differ from the original).
 
-Not found in this image: the second error from the thread, "błąd - za dużo robocików!" after using the disk menu
-on a copied disk (the addresses named there, $0C75 and $0513, are the help viewer's variable and the boot loader here).
+**Second protection**: "błąd - za dużo robocików!" after the first yes/no question – `PROT_BOOT` ($B47D, in
+`ASK_YESNO_`, runs once) XORs the boot loader in memory ($0501-$05FF) and compares the result with `DFLAGS`; the
+cracked loader of this image fails ($C1 instead of $AE), and the program writes `$4C` over the `RTS` of
+`COUNT_ELEM_` at $ACB3 (→ `JMP WAIT_VBL`: every count becomes the frame counter). Details:
+[PROTECTION.md](PROTECTION.md).

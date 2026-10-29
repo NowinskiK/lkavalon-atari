@@ -277,6 +277,10 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
   indexed access whose base + index reach it (Robbo Konstruktor: `lda HDR_BUF+4,x` with X = 12); pointers can be
   built by arithmetic so no address appears in the code. Find the check from its effect (who calls the routine
   that does the damage). User reports and forum threads give the symptoms and often the addresses.
+- Protections also lock by **patching code**: one stored opcode turns an `RTS` followed by innocent-looking bytes
+  into a `JMP` (Robbo Konstruktor: `$4C` at `$ACB3` → `JMP WAIT_VBL`), and hide addresses as operands fixed up on
+  the first run (`lsr` halves `$0A00` to `$0500`). Compare memory before and after the trigger; look for stores
+  into code.
 - A jump into the OS ROM at an undocumented address: disassemble it in each candidate ROM (400/800 OS-B, XL/XE) –
   only one has a routine *start* there (check the instruction before it ends a routine); that names the routine and
   tells which OS the game was written for (Robbo Konstruktor's `$F556` = the XL/XE buzzer). AltirraOS keeps only the

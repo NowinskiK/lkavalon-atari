@@ -55,6 +55,7 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | `$F556`: OS ROM (no `PORTB` writes); the XL/XE OS buzzer – `BELL` / `OS_BELL`; written for the XL/XE OS (section 20) |
 | 2026-10-29 | Copy protection found from a forum report: `PROT_KEY` / `PROT_SUM` / check in `ELEM_MSG_`; boot init $19DD = the key (section 21) |
 | 2026-10-29 | Patched build without the trap: `nocopyprot.asm`, VS Code task (section 22) |
+| 2026-10-29 | Second protection ("za dużo robocików!"): `PROT_BOOT` checksum of the boot loader, lock at $ACB3; patched (section 23) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -751,6 +752,43 @@ byte-exact. VS Code task "Robbo Konstruktor: run build (protection off)" runs it
 To test in Altirra with the disk SIO patch **on**: draw on a planet, move the cursor onto the wall in the palette –
 the planet must stay (the original erases it).
 
+## 23. The second protection – "błąd - za dużo robocików!" (2026-10-29)
+
+The user brought a reproduction (Polish): start from a non-original disk, open "operacje dyskowe", choose any active
+option and answer the question either way – afterwards adding any element to a planet makes the test or the save
+fail with "błąd - za dużo robocików!"; with the modified .pro and the SIO patch on it does not happen. Clues from
+memory dumps: `$0513` must hold `30 12 A2`; the values are read only at the first "zapisać zestaw 01? tak nie";
+changing `$0513` later does not unlock; differences after unlocking at `$B47E $B48C $B492 $B4C9 $B4CB`; `$0C75` = 1
+when bad (setting it to 0 does not unlock).
+
+**Found**: `$B47E`, `$B48C`, `$B492` are inside `ASK_YESNO_` ($B3F5), the routine of every yes/no question
+(`$B4C9`, `$B4CB` are the self-modified operands of `ATA2SCR_` – ordinary, not part of it). Its tail **`PROT_BOOT`**
+($B47D-$B49E): `lda #$00 / bmi` – one-shot flag in the operand $B47E (`sec / ror $B47E` at the end); `lsr $B48C`,
+`lsr $B492` halve the disguised operands `eor $0A00,x` / `cmp $0440` to **`$0500` / `$0240`**; `A = $FF XOR
+$0501…$05FF` is compared with **`DFLAGS`** (boot record byte 0, $AE); not equal → `lda START / sta $ACB3`.
+
+**Lock**: `$ACB3` is the `RTS` of `COUNT_ELEM_`, followed by `03 B0`; `$4C` makes it **`JMP $B003`** (`WAIT_VBL`,
+returns A = `RTCLOK+2`). `PLANET_TEST` ($AC15): empty → "pusta" without counting; else the Robbo count must be 1 →
+with the frame counter it is not → error 6 "za dużo robocików!". This is the "third somewhere" of the report – a code
+patch, so restoring `$0513` or the flag no longer helps; `$60` at `$ACB3` does.
+
+**This image**: the checksum is **$C1** (cracked loader, `$0513` = `4C A6 05`); with `30 12 A2` it is exactly **$AE**
+– so this disk image locks itself at the first yes/no question, SIO patch or not. Confirmed with `util/emu.py`
+(`CPU.call($B47D, stop=$B49F)`, `DFLAGS` set from the boot record): original + cracked loader → `$ACB3` = $4C;
+original + `30 12 A2` → $60; patched build → $60 in both cases.
+
+`$0C75` here is the help viewer's variable (section 21); the flag the report saw there belongs to its own build.
+
+**Patch**: `nocopyprot.asm` got a second segment, `org $B47E / dta $80` – the check believes it already ran. The
+patched disk copy differs in 4 bytes (`$9CF7-$9CF9`, `$B47E`). Names: `PROT_BOOT`, comments at $B47D and $ACB3 in
+`util/split.py`; `main.asm` byte-exact. Article: PROTECTION.md "The second protection".
+
+Correction: section 21 said `$0513` was "boot-loader code no one reads" – it is read, as part of this checksum.
+
+Lesson (guide): a protection can lock by **patching code** (one opcode turns an `RTS` with "data" behind it into a
+`JMP`) and hide its addresses as halved operands fixed up on the first run; compare memory before and after the
+trigger and look for stores into code.
+
 ## Open questions
 
 
@@ -760,8 +798,7 @@ the planet must stay (the original erases it).
   table in `PALETTE.ASM` – who reads it), `$3155-$31EE` (shape table of `DRAW_ROW`, `NEXT` $31D5),
   `$32B1-$3333` (Robbo `WHAT`), `$3937-$395B` (title page colours), `$391F` (logo bitmap),
   `$4000-$47FF`; help-text preamble `$0C77`: `79 0C 80 01`; tables in `TEXTS.ASM` ($9FA2, $9FAC, $A7F8, $A7FE).
-- "błąd - za dużo robocików!" on copied disks (forum thread, section 21) – reproduce in Altirra; is there a second
-  check (disk menu)? And does `SERIN` end as $19 with this ATR when the SIO patch is off?
+- `SERIN` with this ATR and the SIO patch off: does it end as $19 (first protection, section 21)?
 - Palette entry 21 (switch) and the placeholders 22-29: which codes do bats, gun, laser, blaster and teleport use?
 - Robbo's abbreviations to confirm (user): `WHAT` legend "zas" / "wyb" (shot / blown up?), `KIES` (kierunek
   strzału – shot direction?), `SKAC` (skacz – jump?), `WYZA` / `WYOT`, `ZABJ`, `CVBL`.
