@@ -12,18 +12,60 @@ Sources were downloaded from [Atari XL/XE Source Archive](http://sources.pigwa.n
 * [Misja](misja)
 * [Robbo](robbo)
 
+Reverse-engineered from the binary (no original source):
+
+* [Jaskiniowiec](jaskiniowiec) (StanBit, 1995)
+
+How to do this for another game: [DISASSEMBLY-GUIDE.md](DISASSEMBLY-GUIDE.md).
+
 ## Requirements
 
 * MADS assembler
 * GNU make
 * golang - optionally, for running extra tools
+* Python 3 - for the [Jaskiniowiec](jaskiniowiec) reverse-engineering tools
+
+### MADS location
+
+The build expects the full path to the MADS executable in the `MADS` environment variable
+(the [Jaskiniowiec](jaskiniowiec) Makefile uses it and falls back to `mads` on `PATH`; the other Makefiles
+still call `mads` from `PATH`). Check whether it exists:
+
+```powershell
+$env:MADS                                              # PowerShell
+```
+
+```bash
+echo "$MADS"                                           # Git Bash / Linux / macOS
+```
+
+If it is empty, set it once (example path – use your own MADS folder):
+
+```powershell
+# Windows, permanently for the current user
+[Environment]::SetEnvironmentVariable('MADS', 'x:\ATARI\Tools\Mad-Assembler-2.1.5\mads.exe', 'User')
+# ...and for the current session too (the line above does not change already running processes)
+$env:MADS = 'x:\ATARI\Tools\Mad-Assembler-2.1.5\mads.exe'
+```
+
+The permanent value is only seen by programs started **after** it was set. A new terminal tab is not
+enough when the terminal runs inside an application that was already open (VS Code, Windows Terminal):
+it inherits that application's old environment – close and reopen the application (all its windows).
+
+```bash
+# Linux / macOS (add to ~/.bashrc or ~/.zshrc)
+export MADS="$HOME/tools/mads/mads"
+```
+
+Windows environment variables are also visible in Git Bash (under the same restart rule); the Windows path
+works there as is: `"$MADS" main.asm -o:game.xex`.
 
 ## Compilation
 
 Each game can be compiled with:
 
 ```bash
-mads main.asm -o:game.xex
+"$MADS" main.asm -o:game.xex
 ```
 
 Or with make:
