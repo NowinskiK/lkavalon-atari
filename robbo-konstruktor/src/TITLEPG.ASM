@@ -1,4 +1,4 @@
-; ENGINE3.ASM - title page of the saved Robbo game (also "test Robbo"): display list, texts, logo, planet sequence
+; TITLEPG.ASM - title page of the saved Robbo game (also "test Robbo"): display list, texts, logo, planet sequence
 ; $35C0-$395C
 
          org $35C0

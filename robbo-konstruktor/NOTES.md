@@ -11,7 +11,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 3 | Entry points + disassembly | entry list, code ranges | gaps looked at | [x] 12.5 KB |
 | 4 | Blocks + byte-exact build | src/, main.asm, Makefile | MADS: byte for byte | [x] |
 | 5 | Understand code | call graph, main loop, interrupts, init tables; map shared code to Robbo labels | every routine described | [~] engine and editor named (5.1, 5.2, 5.4-5.6); 5.3 open |
-| 6 | Modules | BLOCKS regrouped, data named | byte-exact, README block table | [ ] |
+| 6 | Modules | BLOCKS regrouped, data named | byte-exact, README block table | [x] |
 | 7 | Names + comments | VARIABLES, NAMES, COMMENTS, POKES (Robbo names where code matches) | no sub_XXXX, byte-exact | [ ] |
 | 8 | Graphics + verification | renders, screenshot in img/ | renders match screenshot | [ ] |
 | 9 | Docs, clean, commit | README, NOTES, root README entry | clean tree, verified build | [ ] |
@@ -51,6 +51,7 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | Running in Altirra from VS Code: tasks, `util/mkatr.py` (section 16) |
 | 2026-10-29 | Help screen credits found ("autor: Janusz Pelc", "Laboratorium Komputerowe Avalon") and written as strings (section 17) |
 | 2026-10-29 | Hidden-text scan (`util/findtext.py`): two more texts as strings, `HDR_BUF`, reviewed ranges; 0 candidates (section 18) |
+| 2026-10-29 | Step 6: 17 segment blocks regrouped into 29 modules, fonts named by use (section 19) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -615,6 +616,51 @@ Result: `py -3 util/findtext.py robbo-konstruktor/src` → 0 candidates. MADS bu
 Tool lesson (again): a Python heredoc turned the regex `\b` into a backspace byte – edit Python code with the editor,
 not with shell-quoted strings.
 
+## 19. Modules (step 6) (2026-10-29)
+
+**Method**: listed every named routine and data label in address order (scratch script over `src/`), then cut
+`BLOCKS` in `util/split.py` where the purpose changes – always between routines, so the instruction-boundary check
+passes. The gaps between modules ($23FD-$243C board row tables, $35A4-$35BF, $395D-$3BFF, $9431-$94DF, $A809-$A80F,
+$B600-$BC3F) were checked: all zero in the image, filled at run time.
+
+**Engine** (follows Robbo's own order): `ENG_PLAY` $1E00-$22CF (jump table … `ENTCV`), `ENG_BOARD` $22D0-$23FC
+(`RT_` … `TST_W`), `ENG_SCRN` $243D-$2581 (`CHNMON` … `CM3`), `ENG_ROBBO` $2582-$28EB (`TFAC` … `TBEZ`), `ENG_OBJ`
+$28EC-$2F52 (`TELE_CODE`/`TELE_IN` … `WYOT`), `ENG_VBI` $2F53-$3141 (`BDEC`, `CVBL` … `GET_KEY`), `ENG_TAB`
+$3142-$3333 (input variables, shapes, `NEXT`, object table, `WHAT`), `ENG_SND` $3334-$35A3, `TITLEPG` $35C0-$395C.
+Compromises: `ENG_PLAY` keeps the display list and info texts with the main loop (the jump table comes first);
+`BDEC` goes with the VBI that uses it; `TELE_CODE` with `TELE_IN`.
+
+**Fonts** named by use: `GAME.FNT` ($3C00, play screen, Robbo F.FNT), `BOARD_T.FNT` / `BOARD_B.FNT` (the former
+`D4000.DTA` split into the two CHBASE halves $40 / $44 of the editor board, section 12), `SHAPES.FNT` ($4800, source of
+`ANIM`, Robbo S.FNT), `INFO.FNT` ($4C00, info line, help panel and title page, icons and ©, Robbo I.FNT).
+
+**Editor**: `HELPVIEW` / `HELPTEXT`, `DISKIO` ($9000), `ED_MENU` $94E0-$9CDC (services jump table, menu, functions,
+disk sub-menu) and `ED_SERV` $9CDD-$9F7A (from `ELEM_MSG_`: the service bodies), `ED_TEXTS`, `ED_MAIN` $A810-$AF3D
+(module jump table, input variables, display lists, start, main loop, `EDIT` … `PUT_CELL`), `ED_SCRN` $AF3E-$B188,
+`TITLE_ED` $B189-$B3BD (`TITLE_ED_`, `TX_*`), `ED_UTIL` $B3BE-$B4F8, `PALETTE` $B4F9-$B5FF (character table $B4F9 –
+its use is still to read –, palette codes, glyphs).
+
+Old → new files (removed with `git rm` – files in `src/` not referenced by `main.asm`):
+
+| Old | New |
+|---|---|
+| EDIT08.ASM | HELPVIEW.ASM |
+| HELP.ASM | HELPTEXT.ASM |
+| ENGINE1.ASM | ENG_PLAY.ASM + ENG_BOARD.ASM |
+| ENGINE2.ASM | ENG_SCRN ENG_ROBBO ENG_OBJ ENG_VBI ENG_TAB ENG_SND (.ASM) |
+| ENGINE3.ASM | TITLEPG.ASM |
+| FONT3C.FNT | GAME.FNT |
+| D4000.DTA | BOARD_T.FNT + BOARD_B.FNT |
+| FONT48.FNT | SHAPES.FNT |
+| FONT4C.FNT | INFO.FNT |
+| EDIT90.ASM | DISKIO.ASM |
+| EDITOR.ASM | ED_MENU.ASM + ED_SERV.ASM |
+| TEXTS.ASM | ED_TEXTS.ASM |
+| EDITOR2.ASM | ED_MAIN ED_SCRN TITLE_ED ED_UTIL PALETTE (.ASM) |
+
+Checks: MADS and `asm.py` builds byte-exact (the MADS output grew to 27,671 bytes – more segment headers, same memory
+image); `util/findtext.py` still 0 candidates; README block table generated from `BLOCKS`.
+
 ## Open questions
 
 
@@ -622,7 +668,8 @@ not with shell-quoted strings.
   The singles 256, 388, 520, 652, 784 are 132 sectors apart.
 - Boot record init address $19DD – the program has no code there at boot time; what is it for?
 - `JMP $F556` in the jump table – an OS ROM routine or RAM under the OS?
-- Data to classify: `$092E-$09A5` (frame lines of the help screen – which characters), `$3155-$31EE` (shape table of `DRAW_ROW`, `NEXT` $31D5),
+- Data to classify: `$092E-$09A5` (frame lines of the help screen – which characters), `$B4F9-$B51B` (character
+  table in `PALETTE.ASM` – who reads it), `$3155-$31EE` (shape table of `DRAW_ROW`, `NEXT` $31D5),
   `$32B1-$3333` (Robbo `WHAT`), `$3937-$395B` (title page colours), `$391F` (logo bitmap),
   `$4000-$47FF`; help-text preamble `$0C77`: `79 0C 80 01`; tables in `TEXTS.ASM` ($9FA2, $9FAC, $A7F8, $A7FE).
 - Palette entry 21 (switch) and the placeholders 22-29: which codes do bats, gun, laser, blaster and teleport use?

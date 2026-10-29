@@ -1,7 +1,7 @@
 # Robbo Konstruktor – what it is
 
 What the program is about, for whom, how it is used, and the terms it uses – derived from its help text
-(`src/HELP.ASM`), its screens and messages (`src/TEXTS.ASM`), its code (`NOTES.md`) and the instructions of the game
+(`src/HELPTEXT.ASM`), its screens and messages (`src/ED_TEXTS.ASM`), its code (`NOTES.md`) and the instructions of the game
 it edits (`../robbo/d1/TITLE.ASM`). Statements are marked *(interpretation)* where they are not read directly from
 those sources.
 
@@ -202,7 +202,7 @@ Codes are Robbo's level characters (README "Palette").
 
 ## Sources
 
-- Help text: `src/HELP.ASM` (16 pages), decoded in README "Help text".
-- Screens and messages: `src/TEXTS.ASM`, README "Editor texts".
+- Help text: `src/HELPTEXT.ASM` (16 pages), decoded in README "Help text".
+- Screens and messages: `src/ED_TEXTS.ASM`, README "Editor texts".
 - Code: `NOTES.md` sections 3-12.
 - Robbo's instructions: `../robbo/d1/TITLE.ASM` (label `INST`).

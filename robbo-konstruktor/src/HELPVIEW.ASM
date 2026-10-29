@@ -1,4 +1,4 @@
-; EDIT08.ASM - code: JMP $09A6 at $0800, tables, routines
+; HELPVIEW.ASM - help viewer: screen (display list, credits panel), paging, line unpacking
 ; $0800-$0C6C
 
          org $0800

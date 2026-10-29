@@ -1,4 +1,4 @@
-; EDIT90.ASM - editor code
+; DISKIO.ASM - tape / disk: planet sets in 5 slots, format, saving the stand-alone game
 ; $9000-$9430
 
          org $9000

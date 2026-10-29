@@ -11,23 +11,39 @@ from rdis import analyze, Lister, hw
 
 # (file, first, last, description) - .ASM files are disassembled, everything else is written as binary
 BLOCKS = [
-    ('RUNAD.DTA',   0x02E0, 0x02E1, 'RUNAD = $A810'),
-    ('HOOK.ASM',    0x0480, 0x0482, 'restart hook: JMP $A810'),
-    ('BOOT.ASM',    0x0500, 0x067F, 'boot sectors 1-3: boot record and binary-file loader (cracked)'),
-    ('EDIT08.ASM',  0x0800, 0x0C6C, 'code: JMP $09A6 at $0800, tables, routines'),
-    ('HELP.ASM',    0x0C6D, 0x1DD0, 'help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space'),
-    ('ENGINE1.ASM', 0x1E00, 0x23FC, 'game engine: jump table $1E00, display list, info-line texts, DLIs, main loop (Robbo R1 reworked)'),
-    ('ENGINE2.ASM', 0x243D, 0x35A3, 'game engine: board drawing (CHNMON), Robbo, object behaviour (table $31EF), VBI CVBL, input KEJO, sound'),
-    ('ENGINE3.ASM', 0x35C0, 0x395C, 'title page of the saved Robbo game (also "test Robbo"): display list, texts, logo, planet sequence'),
-    ('FONT3C.FNT',  0x3C00, 0x3FFF, 'font (modified Robbo F.FNT)'),
-    ('D4000.DTA',   0x4000, 0x47FF, 'data'),
-    ('FONT48.FNT',  0x4800, 0x4BFF, 'font (modified Robbo S.FNT)'),
-    ('FONT4C.FNT',  0x4C00, 0x4FFF, 'font (modified Robbo I.FNT)'),
-    ('EDIT90.ASM',  0x9000, 0x9430, 'editor code'),
-    ('EDITOR.ASM',  0x94E0, 0x9F7A, 'editor: menu dispatch, cursor, commands'),
-    ('TEXTS.ASM',   0x9F7B, 0xA808, 'editor tables (menu table $9F8E) and texts: screens, messages, element names'),
-    ('EDITOR2.ASM', 0xA810, 0xB5FF, 'editor: jump table $A810, main loop, screen, DLI, text input'),
-    ('LOADSCR.ASM', 0xBC40, 0xBC67, 'loading screen line "Robbo Konstruktor (C) 1990 Avalon"'),
+    ('RUNAD.DTA',    0x02E0, 0x02E1, 'RUNAD = $A810'),
+    ('HOOK.ASM',     0x0480, 0x0482, 'restart hook: JMP $A810'),
+    ('BOOT.ASM',     0x0500, 0x067F, 'boot sectors 1-3: boot record and binary-file loader (cracked)'),
+    # help
+    ('HELPVIEW.ASM', 0x0800, 0x0C6C, 'help viewer: screen (display list, credits panel), paging, line unpacking'),
+    ('HELPTEXT.ASM', 0x0C6D, 0x1DD0, 'help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space'),
+    # game engine (Robbo's, reworked)
+    ('ENG_PLAY.ASM', 0x1E00, 0x22CF, 'engine: jump table, display list, info-line texts, DLIs, set-up, play loop, planet start (Robbo R1)'),
+    ('ENG_BOARD.ASM', 0x22D0, 0x23FC, 'engine: board primitives - step, test, read / write a cell, score, frame wait'),
+    ('ENG_SCRN.ASM', 0x243D, 0x2581, "engine: CHNMON - BREAK test, Robbo's step, animated shapes, board to screen"),
+    ('ENG_ROBBO.ASM', 0x2582, 0x28EB, 'engine: Robbo - creatures and magnets next to him, move, shoot, push, door / screw / exit'),
+    ('ENG_OBJ.ASM',  0x28EC, 0x2F52, 'engine: object behaviours (table $31EF) - teleports, surprise, boxes, bomb, magnets, guns, bullets, creatures, bats, eyes, capsule'),
+    ('ENG_VBI.ASM',  0x2F53, 0x3141, 'engine: VBI CVBL - info line, scrolling; input KEJO'),
+    ('ENG_TAB.ASM',  0x3142, 0x3333, 'engine: input variables, shape table, NEXT, object table $31EF, WHAT'),
+    ('ENG_SND.ASM',  0x3334, 0x35A3, 'engine: sound effects and their data'),
+    ('TITLEPG.ASM',  0x35C0, 0x395C, 'title page of the saved Robbo game (also "test Robbo"): display list, texts, logo, planet sequence'),
+    # fonts
+    ('GAME.FNT',     0x3C00, 0x3FFF, 'play-screen font (modified Robbo F.FNT; animated characters copied in by ANIM)'),
+    ('BOARD_T.FNT',  0x4000, 0x43FF, 'editor board font, top halves of the 2 x 2 cells (CHBASE $40)'),
+    ('BOARD_B.FNT',  0x4400, 0x47FF, 'editor board font, bottom halves (CHBASE $44)'),
+    ('SHAPES.FNT',   0x4800, 0x4BFF, 'element shapes, two animation phases (modified Robbo S.FNT; source for ANIM)'),
+    ('INFO.FNT',     0x4C00, 0x4FFF, 'info-line, help and title font with icons and (c) (modified Robbo I.FNT)'),
+    # editor
+    ('DISKIO.ASM',   0x9000, 0x9430, 'tape / disk: planet sets in 5 slots, format, saving the stand-alone game'),
+    ('ED_MENU.ASM',  0x94E0, 0x9CDC, 'editor: services jump table, main menu and its 10 functions, disk sub-menu'),
+    ('ED_SERV.ASM',  0x9CDD, 0x9F7A, 'editor services: messages, set-up, colours, lower panel, digits, planet tables, display list'),
+    ('ED_TEXTS.ASM', 0x9F7B, 0xA808, 'editor tables (header buffer, menu table $9F8E) and texts: screens, messages, element names'),
+    ('ED_MAIN.ASM',  0xA810, 0xAF3D, 'editor: jump table $A810, input variables, display lists, start, main loop, board editing, planet test, redraw'),
+    ('ED_SCRN.ASM',  0xAF3E, 0xB188, 'editor: screen set-up, frame wait, click, keys, DLI, joystick / keyboard input'),
+    ('TITLE_ED.ASM', 0xB189, 0xB3BD, 'title-page text editor (start / congratulation texts)'),
+    ('ED_UTIL.ASM',  0xB3BE, 0xB4F8, 'editor helpers: display list switch, yes / no question, ATASCII to screen code, digits'),
+    ('PALETTE.ASM',  0xB4F9, 0xB5FF, 'tables: character codes $B4F9, palette codes $B51C, element glyphs $B55A'),
+    ('LOADSCR.ASM',  0xBC40, 0xBC67, 'loading screen line "Robbo Konstruktor (C) 1990 Avalon"'),
 ]
 
 # fixed entry points (the dispatch-table entries are added by entries())

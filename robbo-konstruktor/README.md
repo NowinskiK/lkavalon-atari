@@ -30,26 +30,38 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 
 | File | Address | Content |
 |---|---|---|
-| [src/JOINT.ASM](src/JOINT.ASM) | – | common labels (Atari OS/hardware, labels outside the blocks) |
+| [src/JOINT.ASM](src/JOINT.ASM) | – | common labels (Atari OS/hardware, variables outside the blocks) |
 | [src/RUNAD.DTA](src/RUNAD.DTA) | $02E0-$02E1 | RUNAD = $A810 |
 | [src/HOOK.ASM](src/HOOK.ASM) | $0480-$0482 | restart hook: JMP $A810 |
 | [src/BOOT.ASM](src/BOOT.ASM) | $0500-$067F | boot sectors 1-3: boot record and binary-file loader (cracked) |
-| [src/EDIT08.ASM](src/EDIT08.ASM) | $0800-$0C6C | code: JMP $09A6 at $0800, tables, routines |
-| [src/HELP.ASM](src/HELP.ASM) | $0C6D-$1DD0 | help text: 16 pages in Polish (HELP key) as `dta c'…'` strings with the decoded text in comments – see "Help text" below |
-| [src/ENGINE1.ASM](src/ENGINE1.ASM) | $1E00-$23FC | game engine: jump table $1E00, display list, info-line texts, DLIs, main loop (Robbo R1 reworked) |
-| [src/ENGINE2.ASM](src/ENGINE2.ASM) | $243D-$35A3 | game engine: board drawing (CHNMON), Robbo, object behaviour (table $31EF), VBI CVBL, input KEJO, sound |
-| [src/ENGINE3.ASM](src/ENGINE3.ASM) | $35C0-$395C | title page of the saved Robbo game (also "test Robbo"): display list, texts, logo, planet sequence |
-| [src/FONT3C.FNT](src/FONT3C.FNT) | $3C00-$3FFF | font (modified Robbo F.FNT) |
-| [src/D4000.DTA](src/D4000.DTA) | $4000-$47FF | data |
-| [src/FONT48.FNT](src/FONT48.FNT) | $4800-$4BFF | font (modified Robbo S.FNT) |
-| [src/FONT4C.FNT](src/FONT4C.FNT) | $4C00-$4FFF | font (modified Robbo I.FNT) |
-| [src/EDIT90.ASM](src/EDIT90.ASM) | $9000-$9430 | editor code |
-| [src/EDITOR.ASM](src/EDITOR.ASM) | $94E0-$9F7A | editor: menu dispatch, cursor, commands |
-| [src/TEXTS.ASM](src/TEXTS.ASM) | $9F7B-$A808 | editor tables (menu table $9F8E) and texts as strings: screens, messages, element names – see "Editor texts" below |
-| [src/EDITOR2.ASM](src/EDITOR2.ASM) | $A810-$B5FF | editor: jump table $A810, main loop, screen, DLI, text input |
-| [src/LOADSCR.ASM](src/LOADSCR.ASM) | $BC40-$BC67 | loading screen line, `dta d'  Robbo Konstruktor    (C) 1990 Avalon  '*` (screen codes, inverse) |
+| [src/HELPVIEW.ASM](src/HELPVIEW.ASM) | $0800-$0C6C | help viewer: screen (display list, credits panel), paging, line unpacking |
+| [src/HELPTEXT.ASM](src/HELPTEXT.ASM) | $0C6D-$1DD0 | help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space; written as `dta c'…'` strings with the decoded text in comments – see "Help text" below |
+| [src/ENG_PLAY.ASM](src/ENG_PLAY.ASM) | $1E00-$22CF | engine: jump table, display list, info-line texts, DLIs, set-up, play loop, planet start (Robbo R1) |
+| [src/ENG_BOARD.ASM](src/ENG_BOARD.ASM) | $22D0-$23FC | engine: board primitives - step, test, read / write a cell, score, frame wait |
+| [src/ENG_SCRN.ASM](src/ENG_SCRN.ASM) | $243D-$2581 | engine: CHNMON - BREAK test, Robbo's step, animated shapes, board to screen |
+| [src/ENG_ROBBO.ASM](src/ENG_ROBBO.ASM) | $2582-$28EB | engine: Robbo - creatures and magnets next to him, move, shoot, push, door / screw / exit |
+| [src/ENG_OBJ.ASM](src/ENG_OBJ.ASM) | $28EC-$2F52 | engine: object behaviours (table $31EF) - teleports, surprise, boxes, bomb, magnets, guns, bullets, creatures, bats, eyes, capsule |
+| [src/ENG_VBI.ASM](src/ENG_VBI.ASM) | $2F53-$3141 | engine: VBI CVBL - info line, scrolling; input KEJO |
+| [src/ENG_TAB.ASM](src/ENG_TAB.ASM) | $3142-$3333 | engine: input variables, shape table, NEXT, object table $31EF, WHAT |
+| [src/ENG_SND.ASM](src/ENG_SND.ASM) | $3334-$35A3 | engine: sound effects and their data |
+| [src/TITLEPG.ASM](src/TITLEPG.ASM) | $35C0-$395C | title page of the saved Robbo game (also "test Robbo"): display list, texts, logo, planet sequence |
+| [src/GAME.FNT](src/GAME.FNT) | $3C00-$3FFF | play-screen font (modified Robbo F.FNT; animated characters copied in by ANIM) |
+| [src/BOARD_T.FNT](src/BOARD_T.FNT) | $4000-$43FF | editor board font, top halves of the 2 x 2 cells (CHBASE $40) |
+| [src/BOARD_B.FNT](src/BOARD_B.FNT) | $4400-$47FF | editor board font, bottom halves (CHBASE $44) |
+| [src/SHAPES.FNT](src/SHAPES.FNT) | $4800-$4BFF | element shapes, two animation phases (modified Robbo S.FNT; source for ANIM) |
+| [src/INFO.FNT](src/INFO.FNT) | $4C00-$4FFF | info-line, help and title font with icons and (c) (modified Robbo I.FNT) |
+| [src/DISKIO.ASM](src/DISKIO.ASM) | $9000-$9430 | tape / disk: planet sets in 5 slots, format, saving the stand-alone game |
+| [src/ED_MENU.ASM](src/ED_MENU.ASM) | $94E0-$9CDC | editor: services jump table, main menu and its 10 functions, disk sub-menu |
+| [src/ED_SERV.ASM](src/ED_SERV.ASM) | $9CDD-$9F7A | editor services: messages, set-up, colours, lower panel, digits, planet tables, display list |
+| [src/ED_TEXTS.ASM](src/ED_TEXTS.ASM) | $9F7B-$A808 | editor tables (header buffer, menu table $9F8E) and texts: screens, messages, element names – strings, see "Editor texts" below |
+| [src/ED_MAIN.ASM](src/ED_MAIN.ASM) | $A810-$AF3D | editor: jump table $A810, input variables, display lists, start, main loop, board editing, planet test, redraw |
+| [src/ED_SCRN.ASM](src/ED_SCRN.ASM) | $AF3E-$B188 | editor: screen set-up, frame wait, click, keys, DLI, joystick / keyboard input |
+| [src/TITLE_ED.ASM](src/TITLE_ED.ASM) | $B189-$B3BD | title-page text editor (start / congratulation texts) |
+| [src/ED_UTIL.ASM](src/ED_UTIL.ASM) | $B3BE-$B4F8 | editor helpers: display list switch, yes / no question, ATASCII to screen code, digits |
+| [src/PALETTE.ASM](src/PALETTE.ASM) | $B4F9-$B5FF | tables: character codes $B4F9, palette codes $B51C, element glyphs $B55A |
+| [src/LOADSCR.ASM](src/LOADSCR.ASM) | $BC40-$BC67 | loading screen line "Robbo Konstruktor (C) 1990 Avalon", `dta d'  Robbo Konstruktor    (C) 1990 Avalon  '*` (screen codes, inverse) |
 
-A first cut by segments; blocks will be regrouped into modules once the code is understood (step 6).
+Modules (step 6): each file is one contiguous range with one purpose; the engine follows Robbo's structure, the editor its functions. Fonts are named by use. NOTES.md section 19.
 
 ## Program structure (first look)
 
@@ -136,7 +148,7 @@ they are typed as CONTROL + a, c, e, l, n, o, s, z (help page 8 lists them in th
 `$1C-$1F` = arrows ↑↓←→. Control codes for the viewer: **`$14` toggles inverse video** (titles), inverse digits
 `$B1-$B9` = indentation.
 
-The help screen (display list $0803) frames the page and shows a bottom panel from `EDIT08.ASM`, screen codes,
+The help screen (display list $0803) frames the page and shows a bottom panel from `HELPVIEW.ASM`, screen codes,
 40 characters per line, font $4C00:
 
 | Address | Text | English |
@@ -168,15 +180,15 @@ Icons are characters `$45-$48` (planet) and `$49-$4C` (Robbo), the arrows `$5E $
 
 ## Editor texts ($9F7B-$A808)
 
-Two encodings in one block (written as `dta d'…'` / `dta c'…'` strings in `src/TEXTS.ASM`):
+Two encodings in one block (written as `dta d'…'` / `dta c'…'` strings in `src/ED_TEXTS.ASM`, plus the few listed with their file):
 
 | Range | Encoding | Content |
 |---|---|---|
 | $9F7B-$9FBA | – | tables: menu dispatch $9F8E (10 handlers), $9FA2 / $9FAC (10 bytes each), menu column offsets $9FB6 (20, 60, 100, 140, 180) |
 | $9FBB-$A316 | screen code, `$00` = space; Polish letters on the glyphs `@ \ [ ] _ { ^ \|` (as in Robbo's TITLE.ASM) | editor screens: main menu (5 rows × 2 columns of 20: basic functions left, additional right), title "Robbo Konstruktor /1990 by Avalon", planet legend ("planety: – zła – dobra – pusta", "K:", "R:"), disk panel ("zawartość dysku", "pusty", "wczytaj", "zapisz", "skasuj", sets 01-05, "pełny"), save hints for disk and tape |
 | $A317 | – | variable (used by $968F, $9CE4, $9D07, $9DAC) |
-| $9043-$9053 | ATASCII, `$00`-terminated | disk slot signatures " RKdata " (inverse, used) and " unused " (erased) – `EDIT90.ASM` |
-| $A957-$A9A6 | screen code, inverse | title-page editor headers "tekst początkowy:" (start text) and "tekst gratulacyjny:" (congratulation text), 40 characters each – `EDITOR2.ASM` |
+| $9043-$9053 | ATASCII, `$00`-terminated | disk slot signatures " RKdata " (inverse, used) and " unused " (erased) – `DISKIO.ASM` |
+| $A957-$A9A6 | screen code, inverse | title-page editor headers "tekst początkowy:" (start text) and "tekst gratulacyjny:" (congratulation text), 40 characters each – `ED_MAIN.ASM` |
 | $A318-$A7D5 | ATASCII, `$00`-terminated, bit 7 = inverse highlight, Polish letters as CONTROL codes | messages: key hints, errors ("błąd: brak robocika!", "…za dużo śrubek! – max: 99", "błąd numer 100!"), questions ("wyczyścić planetę? tak nie"), tape/disk messages, and the **names of the 27 palette elements** (Robbo, śrubka, kapsuła, skrzynka, drzwi, … nietoperz, działko, laser, blaster, teleportacja) |
 | $A7D6 | – | variable (used by $9CDF, $9CE7, $9F52) |
 | $A7D8-$A7F7 | ATASCII | four 8-character labels: " wczytać", " zapisać", "skasować", "kasetowe" |

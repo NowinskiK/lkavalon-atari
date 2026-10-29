@@ -1,4 +1,4 @@
-; TEXTS.ASM - editor tables (menu table $9F8E) and texts: screens, messages, element names
+; ED_TEXTS.ASM - editor tables (header buffer, menu table $9F8E) and texts: screens, messages, element names
 ; $9F7B-$A808
 
          org $9F7B

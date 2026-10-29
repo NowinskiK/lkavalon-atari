@@ -1,4 +1,4 @@
-; HELP.ASM - help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space
+; HELPTEXT.ASM - help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space
 ; $0C6D-$1DD0
 
          org $0C6D
