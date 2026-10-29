@@ -80,42 +80,42 @@ L1F46
          lda  #$00                 ; 1F49
          sta  SDMCTL               ; 1F4B
          sta  DMACTL               ; 1F4E
-         sta  $99                  ; 1F51
+         sta  VSF                  ; 1F51
          sta  $D405                ; 1F53
-         sta  $A4                  ; 1F56
-         sta  $A5                  ; 1F58
-         sta  $A6                  ; 1F5A
-         sta  $9E                  ; 1F5C
-         sta  $A2                  ; 1F5E
-         sta  $A8                  ; 1F60
-         sta  $A8                  ; 1F62
+         sta  SCOR                 ; 1F56
+         sta  SCOR+1               ; 1F58
+         sta  SCOR+2               ; 1F5A
+         sta  KEYS                 ; 1F5C
+         sta  NABO                 ; 1F5E
+         sta  RUCH                 ; 1F60
+         sta  RUCH                 ; 1F62
          lda  #$FF                 ; 1F64
-         sta  $A1                  ; 1F66
+         sta  LSTE                 ; 1F66
          sta  $11                  ; 1F68
          lda  #$00                 ; 1F6A
          sta  $1E13                ; 1F6C
-         sta  $86                  ; 1F6F
+         sta  FADR                 ; 1F6F
          sta  $2491                ; 1F71
          lda  #$B6                 ; 1F74
          sta  $1E14                ; 1F76
-         sta  $87                  ; 1F79
+         sta  FADR+1               ; 1F79
          sta  $2495                ; 1F7B
          lda  #$00                 ; 1F7E
-         sta  $80                  ; 1F80
+         sta  ADDR                 ; 1F80
          lda  #$BE                 ; 1F82
-         sta  $81                  ; 1F84
+         sta  ADDR+1               ; 1F84
          ldx  #$00                 ; 1F86
 L1F88
-         lda  $80                  ; 1F88
+         lda  ADDR                 ; 1F88
          sta  $23FD,x              ; 1F8A
-         lda  $81                  ; 1F8D
+         lda  ADDR+1               ; 1F8D
          sta  $241D,x              ; 1F8F
          clc                       ; 1F92
-         lda  $80                  ; 1F93
+         lda  ADDR                 ; 1F93
          adc  #$10                 ; 1F95
-         sta  $80                  ; 1F97
+         sta  ADDR                 ; 1F97
          bcc  L1F9D                ; 1F99
-         inc  $81                  ; 1F9B
+         inc  ADDR+1               ; 1F9B
 L1F9D
          inx                       ; 1F9D
          cpx  #$20                 ; 1F9E
@@ -134,21 +134,21 @@ L1F9D
          lda  #$C0                 ; 1FBE
          sta  NMIEN                ; 1FC0
          lda  #$FF                 ; 1FC3
-         jmp  sub_3334             ; 1FC5
+         jmp  SOUND_               ; 1FC5
 L1FC8
-         sta  $9D                  ; 1FC8
+         sta  CNUM                 ; 1FC8
          stx  $A9                  ; 1FCA
          lda  #$00                 ; 1FCC
          bcc  L1FD2                ; 1FCE
          lda  #$80                 ; 1FD0
 L1FD2
-         sta  $A3                  ; 1FD2
+         sta  DEMO                 ; 1FD2
          sty  $207D                ; 1FD4
          cpy  #$FF                 ; 1FD7
          bne  L1FDC                ; 1FD9
          iny                       ; 1FDB
 L1FDC
-         sty  $9F                  ; 1FDC
+         sty  LIVS                 ; 1FDC
          lda  VVBLKD               ; 1FDE
          sta  $3332                ; 1FE1
          lda  VVBLKD+1             ; 1FE4
@@ -164,7 +164,7 @@ L1FF7
          sta  $BF00,y              ; 1FFA
          dey                       ; 1FFD
          bne  L1FF7                ; 1FFE
-         jsr  sub_243D             ; 2000
+         jsr  CHNMON               ; 2000
 L2003
          jsr  sub_219F             ; 2003
          jsr  sub_2247             ; 2006
@@ -173,9 +173,9 @@ L2003
 L200E
          lsr  $4D                  ; 200E
          lda  #$00                 ; 2010
-         sta  $9C                  ; 2012
+         sta  FAC                  ; 2012
          jsr  sub_210B             ; 2014
-         lda  $A3                  ; 2017
+         lda  DEMO                 ; 2017
          beq  L2057                ; 2019
          lda  $3145                ; 201B
          beq  L2027                ; 201E
@@ -200,7 +200,7 @@ L2034
          lda  #$07                 ; 203E
          jsr  SETVBV               ; 2040
          lda  #$FF                 ; 2043
-         jsr  sub_3334             ; 2045
+         jsr  SOUND_               ; 2045
          ldx  #$03                 ; 2048
          lda  #$00                 ; 204A
 L204C
@@ -216,23 +216,23 @@ L2057
          lda  $3154                ; 2057
          bne  L206C                ; 205A
 L205C
-         lda  $9C                  ; 205C
-         bmi  L2092                ; 205E
+         lda  FAC                  ; 205C
+         bmi  NXCV                 ; 205E
          bne  L200E                ; 2060
 L2062
          lda  #$00                 ; 2062
-         sta  $A8                  ; 2064
+         sta  RUCH                 ; 2064
          sta  $021F                ; 2066
          jsr  sub_20FC             ; 2069
 L206C
          jsr  sub_20C4             ; 206C
-         lda  $A3                  ; 206F
-         bne  L2092                ; 2071
+         lda  DEMO                 ; 206F
+         bne  NXCV                 ; 2071
          sed                       ; 2073
          sec                       ; 2074
-         lda  $9F                  ; 2075
+         lda  LIVS                 ; 2075
          sbc  #$01                 ; 2077
-         sta  $9F                  ; 2079
+         sta  LIVS                 ; 2079
          cld                       ; 207B
          ldx  #$00                 ; 207C
          inx                       ; 207E
@@ -240,53 +240,55 @@ L206C
          bcs  L2003                ; 2081
 L2083
          lda  #$00                 ; 2083
-         sta  $9F                  ; 2085
+         sta  LIVS                 ; 2085
          ldy  #$99                 ; 2087
          bne  L208D                ; 2089
 L208B
-         ldy  $9F                  ; 208B
+         ldy  LIVS                 ; 208B
 L208D
          ldx  $A9                  ; 208D
          jmp  L2034                ; 208F
-L2092
+
+* next cave (Robbo: "nxtcv") -------------------------------
+NXCV
          lda  #$0F                 ; 2092
-         sta  $92                  ; 2094
+         sta  X                    ; 2094
 L2096
          lda  #$00                 ; 2096
-         sta  $A8                  ; 2098
+         sta  RUCH                 ; 2098
          lda  #$1F                 ; 209A
-         sta  $93                  ; 209C
+         sta  Y                    ; 209C
 L209E
          lda  #$13                 ; 209E
-         jsr  L23C6                ; 20A0
-         dec  $93                  ; 20A3
+         jsr  PUT_                 ; 20A0
+         dec  Y                    ; 20A3
          bpl  L209E                ; 20A5
-         jsr  sub_243D             ; 20A7
-         lda  $92                  ; 20AA
+         jsr  CHNMON               ; 20A7
+         lda  X                    ; 20AA
          and  #$03                 ; 20AC
          bne  L20B3                ; 20AE
          inc  $210A                ; 20B0
 L20B3
          jsr  sub_23A6             ; 20B3
-         dec  $92                  ; 20B6
+         dec  X                    ; 20B6
          bpl  L2096                ; 20B8
          inc  $A9                  ; 20BA
          sec                       ; 20BC
-         lda  $A3                  ; 20BD
+         lda  DEMO                 ; 20BD
          bne  L208B                ; 20BF
          clc                       ; 20C1
          bcc  L208B                ; 20C2
 sub_20C4
          lda  #$00                 ; 20C4
-         sta  $A8                  ; 20C6
-         jsr  sub_3334             ; 20C8
+         sta  RUCH                 ; 20C6
+         jsr  SOUND_               ; 20C8
          lda  #$1E                 ; 20CB
-         sta  $93                  ; 20CD
+         sta  Y                    ; 20CD
 L20CF
          lda  #$0F                 ; 20CF
-         sta  $92                  ; 20D1
+         sta  X                    ; 20D1
 L20D3
-         jsr  sub_23DB             ; 20D3
+         jsr  TST_                 ; 20D3
          cmp  #$20                 ; 20D6
          beq  L20F4                ; 20D8
          cmp  #$00                 ; 20DA
@@ -301,11 +303,11 @@ L20D3
          lda  RANDOM               ; 20EB
          and  #$03                 ; 20EE
          adc  #$61                 ; 20F0
-         sta  ($80),y              ; 20F2
+         sta  (ADDR),y             ; 20F2
 L20F4
-         dec  $92                  ; 20F4
+         dec  X                    ; 20F4
          bpl  L20D3                ; 20F6
-         dec  $93                  ; 20F8
+         dec  Y                    ; 20F8
          bpl  L20CF                ; 20FA
 sub_20FC
          lda  #$30                 ; 20FC
@@ -320,22 +322,22 @@ sub_210B
          inc  $210A                ; 210B
          jsr  sub_2582             ; 210E
          ldy  #$00                 ; 2111
-         sty  $95                  ; 2113
+         sty  Y1                   ; 2113
 L2115
          ldx  #$00                 ; 2115
-         stx  $94                  ; 2117
+         stx  X1                   ; 2117
 L2119
-         lda  $95                  ; 2119
-         sta  $93                  ; 211B
-         lda  $94                  ; 211D
-         sta  $92                  ; 211F
-         ldy  $93                  ; 2121
+         lda  Y1                   ; 2119
+         sta  Y                    ; 211B
+         lda  X1                   ; 211D
+         sta  X                    ; 211F
+         ldy  Y                    ; 2121
          ora  $23FD,y              ; 2123
-         sta  $80                  ; 2126
+         sta  ADDR                 ; 2126
          lda  $241D,y              ; 2128
-         sta  $81                  ; 212B
+         sta  ADDR+1               ; 212B
          ldy  #$00                 ; 212D
-         lda  ($80),y              ; 212F
+         lda  (ADDR),y             ; 212F
          tay                       ; 2131
          asl                       ; 2132
          bcs  L216B                ; 2133
@@ -349,12 +351,12 @@ L2119
          stx  $214A                ; 2145
          jsr  $2148                ; 2148
 L214B
-         inc  $94                  ; 214B
-         lda  $94                  ; 214D
+         inc  X1                   ; 214B
+         lda  X1                   ; 214D
          cmp  #$10                 ; 214F
          bcc  L2119                ; 2151
-         inc  $95                  ; 2153
-         lda  $95                  ; 2155
+         inc  Y1                   ; 2153
+         lda  Y1                   ; 2155
          cmp  #$1F                 ; 2157
          bcc  L2115                ; 2159
          jsr  sub_2582             ; 215B
@@ -363,12 +365,12 @@ L215E
          bne  L215E                ; 2161
          lda  #$07                 ; 2163
          sta  CDTMV3               ; 2165
-         jmp  sub_243D             ; 2168
+         jmp  CHNMON               ; 2168
 L216B
          tya                       ; 216B
          and  #$7F                 ; 216C
          ldy  #$00                 ; 216E
-         sta  ($80),y              ; 2170
+         sta  (ADDR),y             ; 2170
          jmp  L214B                ; 2172
 L2175
          cpy  #$7B                 ; 2175
@@ -379,23 +381,23 @@ L2175
          cmp  #$6E                 ; 217E
          bcs  L2189                ; 2180
          ldy  #$00                 ; 2182
-         sty  $9B                  ; 2184
+         sty  TELE                 ; 2184
          iny                       ; 2186
-         sty  $9C                  ; 2187
+         sty  FAC                  ; 2187
 L2189
          sec                       ; 2189
          sbc  #$61                 ; 218A
          tax                       ; 218C
          lda  $31D5,x              ; 218D
          ldy  #$00                 ; 2190
-         sta  ($80),y              ; 2192
+         sta  (ADDR),y             ; 2192
          cmp  #$2A                 ; 2194
          bne  L214B                ; 2196
          lda  #$FF                 ; 2198
          sta  $3142                ; 219A
          bmi  L214B                ; 219D
 sub_219F
-         lda  $A3                  ; 219F
+         lda  DEMO                 ; 219F
          beq  L21A8                ; 21A1
          lda  #$05                 ; 21A3
          sta  $021F                ; 21A5
@@ -411,28 +413,28 @@ L21B5
          sty  $1E30                ; 21B8
          ldx  #$3B                 ; 21BB
          ldy  #$1E                 ; 21BD
-         lda  $A3                  ; 21BF
+         lda  DEMO                 ; 21BF
          beq  L21C7                ; 21C1
          ldx  #$37                 ; 21C3
          ldy  #$1E                 ; 21C5
 L21C7
          stx  $1E35                ; 21C7
          sty  $1E36                ; 21CA
-         ldx  $9D                  ; 21CD
+         ldx  CNUM                 ; 21CD
          inx                       ; 21CF
-         stx  $83                  ; 21D0
+         stx  SCRA+1               ; 21D0
          lda  #$00                 ; 21D2
-         sta  $82                  ; 21D4
+         sta  SCRA                 ; 21D4
          ldy  #$F0                 ; 21D6
 L21D8
-         lda  ($82),y              ; 21D8
+         lda  (SCRA),y             ; 21D8
          sta  $BF00,y              ; 21DA
          iny                       ; 21DD
          bne  L21D8                ; 21DE
          lda  $BFF0                ; 21E0
          sta  $2248                ; 21E3
          lda  $BFF1                ; 21E6
-         sta  $A0                  ; 21E9
+         sta  ZEBR                 ; 21E9
          lda  #$04                 ; 21EB
          sta  GPRIOR               ; 21ED
          jsr  sub_23A6             ; 21F0
@@ -465,13 +467,13 @@ L2219
          lda  #$A0                 ; 222E
          sta  HPOSP3               ; 2230
          ldx  #$01                 ; 2233
-         stx  $9B                  ; 2235
+         stx  TELE                 ; 2235
          dex                       ; 2237
-         stx  $9E                  ; 2238
-         stx  $A2                  ; 223A
-         stx  $A8                  ; 223C
+         stx  KEYS                 ; 2238
+         stx  NABO                 ; 223A
+         stx  RUCH                 ; 223C
          lda  #$0D                 ; 223E
-         sta  $98                  ; 2240
+         sta  LM                   ; 2240
          rts                       ; 2242
          dta $2C,$2D,$2E,$2F                          ; 2243
 sub_2247
@@ -479,8 +481,8 @@ sub_2247
          lsr                       ; 2249
          pha                       ; 224A
          and  #$30                 ; 224B
-         sta  $82                  ; 224D
-         sta  $84                  ; 224F
+         sta  SCRA                 ; 224D
+         sta  CHAD                 ; 224F
          ldx  #$48                 ; 2251
          pla                       ; 2253
          and  #$40                 ; 2254
@@ -488,36 +490,36 @@ sub_2247
          inx                       ; 2258
          inx                       ; 2259
 L225A
-         stx  $85                  ; 225A
+         stx  CHAD+1               ; 225A
          inx                       ; 225C
-         stx  $83                  ; 225D
+         stx  SCRA+1               ; 225D
          ldy  #$0F                 ; 225F
 L2261
-         lda  ($84),y              ; 2261
+         lda  (CHAD),y             ; 2261
          sta  $3C00,y              ; 2263
-         lda  ($82),y              ; 2266
+         lda  (SCRA),y             ; 2266
          sta  $3D00,y              ; 2268
          dey                       ; 226B
          bpl  L2261                ; 226C
          lda  #$0F                 ; 226E
-         sta  $92                  ; 2270
+         sta  X                    ; 2270
 L2272
          lda  #$00                 ; 2272
-         sta  $93                  ; 2274
+         sta  Y                    ; 2274
 L2276
-         lda  $9D                  ; 2276
-         sta  $81                  ; 2278
-         lda  $93                  ; 227A
+         lda  CNUM                 ; 2276
+         sta  ADDR+1               ; 2278
+         lda  Y                    ; 227A
          asl                       ; 227C
          asl                       ; 227D
          asl                       ; 227E
          asl                       ; 227F
-         sta  $80                  ; 2280
+         sta  ADDR                 ; 2280
          bcc  L2286                ; 2282
-         inc  $81                  ; 2284
+         inc  ADDR+1               ; 2284
 L2286
-         ldy  $92                  ; 2286
-         lda  ($80),y              ; 2288
+         ldy  X                    ; 2286
+         lda  (ADDR),y             ; 2288
          cmp  #$2E                 ; 228A
          bne  L2297                ; 228C
          lda  RANDOM               ; 228E
@@ -527,113 +529,123 @@ L2286
 L2297
          cmp  #$2A                 ; 2297
          bne  L22A0                ; 2299
-         jsr  sub_2731             ; 229B
+         jsr  MFX1                 ; 229B
          lda  #$1B                 ; 229E
 L22A0
          cmp  #$2B                 ; 22A0
          bne  L22AC                ; 22A2
-         ldx  $9D                  ; 22A4
-         cpx  $A1                  ; 22A6
+         ldx  CNUM                 ; 22A4
+         cpx  LSTE                 ; 22A6
          bne  L22AC                ; 22A8
          lda  #$E1                 ; 22AA
 L22AC
-         jsr  L23C6                ; 22AC
-         inc  $93                  ; 22AF
-         lda  $93                  ; 22B1
+         jsr  PUT_                 ; 22AC
+         inc  Y                    ; 22AF
+         lda  Y                    ; 22B1
          cmp  #$1F                 ; 22B3
          bcc  L2276                ; 22B5
          lda  #$20                 ; 22B7
-         jsr  L23C6                ; 22B9
-         jsr  sub_243D             ; 22BC
-         lda  $92                  ; 22BF
+         jsr  PUT_                 ; 22B9
+         jsr  CHNMON               ; 22BC
+         lda  X                    ; 22BF
          and  #$03                 ; 22C1
          bne  L22C8                ; 22C3
          inc  $210A                ; 22C5
 L22C8
          jsr  sub_23A6             ; 22C8
-         dec  $92                  ; 22CB
+         dec  X                    ; 22CB
          bpl  L2272                ; 22CD
          rts                       ; 22CF
-sub_22D0
-         inc  $92                  ; 22D0
-         jsr  sub_23DB             ; 22D2
+
+* step X one cell right; carry set if the cell is free -----
+RT_
+         inc  X                    ; 22D0
+         jsr  TST_                 ; 22D2
          beq  L22DB                ; 22D5
-         dec  $92                  ; 22D7
+         dec  X                    ; 22D7
          sec                       ; 22D9
          rts                       ; 22DA
 L22DB
-         dec  $81                  ; 22DB
+         dec  ADDR+1               ; 22DB
          dey                       ; 22DD
-         lda  ($80),y              ; 22DE
+         lda  (ADDR),y             ; 22DE
          tax                       ; 22E0
          lda  #$20                 ; 22E1
-         sta  ($80),y              ; 22E3
+         sta  (ADDR),y             ; 22E3
          iny                       ; 22E5
-         inc  $81                  ; 22E6
+         inc  ADDR+1               ; 22E6
          txa                       ; 22E8
          ora  #$80                 ; 22E9
-         sta  ($80),y              ; 22EB
+         sta  (ADDR),y             ; 22EB
          clc                       ; 22ED
          rts                       ; 22EE
-sub_22EF
-         dec  $92                  ; 22EF
-         jsr  sub_23DB             ; 22F1
+
+* step X one cell left; carry set if the cell is free ------
+LT_
+         dec  X                    ; 22EF
+         jsr  TST_                 ; 22F1
          beq  L22FA                ; 22F4
-         inc  $92                  ; 22F6
+         inc  X                    ; 22F6
          sec                       ; 22F8
          rts                       ; 22F9
 L22FA
          iny                       ; 22FA
-         lda  ($80),y              ; 22FB
+         lda  (ADDR),y             ; 22FB
          tax                       ; 22FD
          lda  #$20                 ; 22FE
-         sta  ($80),y              ; 2300
+         sta  (ADDR),y             ; 2300
          dey                       ; 2302
          txa                       ; 2303
-         sta  ($80),y              ; 2304
+         sta  (ADDR),y             ; 2304
          clc                       ; 2306
          rts                       ; 2307
-sub_2308
-         inc  $93                  ; 2308
-         jsr  sub_23DB             ; 230A
+
+* step Y one cell down; carry set if the cell is free ------
+DW_
+         inc  Y                    ; 2308
+         jsr  TST_                 ; 230A
          beq  L2313                ; 230D
-         dec  $93                  ; 230F
+         dec  Y                    ; 230F
          sec                       ; 2311
          rts                       ; 2312
 L2313
-         dec  $81                  ; 2313
+         dec  ADDR+1               ; 2313
          ldy  #$F0                 ; 2315
-         lda  ($80),y              ; 2317
+         lda  (ADDR),y             ; 2317
          tax                       ; 2319
          lda  #$20                 ; 231A
-         sta  ($80),y              ; 231C
+         sta  (ADDR),y             ; 231C
          ldy  #$00                 ; 231E
-         inc  $81                  ; 2320
+         inc  ADDR+1               ; 2320
          txa                       ; 2322
          ora  #$80                 ; 2323
-         sta  ($80),y              ; 2325
+         sta  (ADDR),y             ; 2325
          clc                       ; 2327
          rts                       ; 2328
-sub_2329
-         dec  $93                  ; 2329
-         jsr  sub_23DB             ; 232B
+
+* step Y one cell up; carry set if the cell is free --------
+UP_
+         dec  Y                    ; 2329
+         jsr  TST_                 ; 232B
          beq  L2334                ; 232E
-         inc  $93                  ; 2330
+         inc  Y                    ; 2330
          sec                       ; 2332
          rts                       ; 2333
 L2334
          ldy  #$10                 ; 2334
-         lda  ($80),y              ; 2336
+         lda  (ADDR),y             ; 2336
          tax                       ; 2338
          lda  #$20                 ; 2339
-         sta  ($80),y              ; 233B
+         sta  (ADDR),y             ; 233B
          ldy  #$00                 ; 233D
          txa                       ; 233F
-         sta  ($80),y              ; 2340
+         sta  (ADDR),y             ; 2340
          clc                       ; 2342
          rts                       ; 2343
-sub_2344
-         lda  $98                  ; 2344
+
+* Robbo routine FD_, not analysed yet ----------------------
+FD_
+         lda  LM                   ; 2344
          ldx  #$FF                 ; 2346
 L2348
          inx                       ; 2348
@@ -643,43 +655,57 @@ L2348
          sta  $2359                ; 234F
          lda  $235F,x              ; 2352
          sta  $235A                ; 2355
-L2358
-         jmp  L2358                ; 2358
+
+* Robbo routine JMP1, not analysed yet ---------------------
+JMP1
+         jmp  JMP1                 ; 2358
          dta $29,$08,$EF,$D0,$23,$23,$22,$22          ; 235B
-sub_2363
-         dec  $92                  ; 2363
-         jsr  sub_23DB             ; 2365
-         inc  $92                  ; 2368
-         jmp  L2388                ; 236A
-sub_236D
-         inc  $92                  ; 236D
-         jsr  sub_23DB             ; 236F
-         dec  $92                  ; 2372
-         jmp  L2388                ; 2374
-sub_2377
-         dec  $93                  ; 2377
-         jsr  sub_23DB             ; 2379
-         inc  $93                  ; 237C
-         jmp  L2388                ; 237E
-sub_2381
-         inc  $93                  ; 2381
-         jsr  sub_23DB             ; 2383
-         dec  $93                  ; 2386
-L2388
+
+* test the cell to the left --------------------------------
+T_LT
+         dec  X                    ; 2363
+         jsr  TST_                 ; 2365
+         inc  X                    ; 2368
+         jmp  T_EX                 ; 236A
+
+* test the cell to the right -------------------------------
+T_RT
+         inc  X                    ; 236D
+         jsr  TST_                 ; 236F
+         dec  X                    ; 2372
+         jmp  T_EX                 ; 2374
+
+* test the cell above --------------------------------------
+T_UP
+         dec  Y                    ; 2377
+         jsr  TST_                 ; 2379
+         inc  Y                    ; 237C
+         jmp  T_EX                 ; 237E
+
+* test the cell below --------------------------------------
+T_DW
+         inc  Y                    ; 2381
+         jsr  TST_                 ; 2383
+         dec  Y                    ; 2386
+
+* Robbo routine T_EX, not analysed yet ---------------------
+T_EX
          tax                       ; 2388
          lda  $32B1,x              ; 2389
          rts                       ; 238C
-sub_238D
+
+* add points to the score (Robbo: "dodaj punkty") ----------
+ASCO
          sed                       ; 238D
          clc                       ; 238E
-         adc  $A6                  ; 238F
-         sta  $A6                  ; 2391
+         adc  SCOR+2               ; 238F
+         sta  SCOR+2               ; 2391
          txa                       ; 2393
-         adc  $A5                  ; 2394
-         sta  $A5                  ; 2396
+         adc  SCOR+1               ; 2394
+         sta  SCOR+1               ; 2396
          lda  #$00                 ; 2398
-         adc  $A4                  ; 239A
-         sta  $A4                  ; 239C
+         adc  SCOR                 ; 239A
+         sta  SCOR                 ; 239C
          cld                       ; 239E
          rts                       ; 239F
 sub_23A0
@@ -692,48 +718,56 @@ L23A8
          cmp  RTCLOK+2             ; 23A8
          beq  L23A8                ; 23AA
          rts                       ; 23AC
-sub_23AD
-         lda  $92                  ; 23AD
-         ldy  $93                  ; 23AF
+
+* read the board cell at X/Y -------------------------------
+GET_
+         lda  X                    ; 23AD
+         ldy  Y                    ; 23AF
          ora  $23FD,y              ; 23B1
-         sta  $80                  ; 23B4
+         sta  ADDR                 ; 23B4
          lda  $241D,y              ; 23B6
-         sta  $81                  ; 23B9
+         sta  ADDR+1               ; 23B9
          ldy  #$00                 ; 23BB
-         lda  ($80),y              ; 23BD
+         lda  (ADDR),y             ; 23BD
          pha                       ; 23BF
          lda  #$20                 ; 23C0
-         sta  ($80),y              ; 23C2
+         sta  (ADDR),y             ; 23C2
          pla                       ; 23C4
          rts                       ; 23C5
-L23C6
+
+* write object A to the board cell at X/Y ------------------
+PUT_
          pha                       ; 23C6
-         lda  $92                  ; 23C7
-         ldy  $93                  ; 23C9
+         lda  X                    ; 23C7
+         ldy  Y                    ; 23C9
          ora  $23FD,y              ; 23CB
-         sta  $80                  ; 23CE
+         sta  ADDR                 ; 23CE
          lda  $241D,y              ; 23D0
-         sta  $81                  ; 23D3
+         sta  ADDR+1               ; 23D3
          pla                       ; 23D5
          ldy  #$00                 ; 23D6
-         sta  ($80),y              ; 23D8
+         sta  (ADDR),y             ; 23D8
          rts                       ; 23DA
-sub_23DB
-         lda  $92                  ; 23DB
+
+* test the board cell --------------------------------------
+TST_
+         lda  X                    ; 23DB
          cmp  #$10                 ; 23DD
-         bcs  L23FA                ; 23DF
-         ldy  $93                  ; 23E1
+         bcs  TST_W                ; 23DF
+         ldy  Y                    ; 23E1
          cpy  #$1F                 ; 23E3
-         bcs  L23FA                ; 23E5
+         bcs  TST_W                ; 23E5
          ora  $23FD,y              ; 23E7
-         sta  $80                  ; 23EA
+         sta  ADDR                 ; 23EA
          lda  $241D,y              ; 23EC
-         sta  $81                  ; 23EF
+         sta  ADDR+1               ; 23EF
          ldy  #$00                 ; 23F1
-         lda  ($80),y              ; 23F3
+         lda  (ADDR),y             ; 23F3
          and  #$7F                 ; 23F5
          cmp  #$20                 ; 23F7
          rts                       ; 23F9
-L23FA
+
+* Robbo routine TST_W, not analysed yet --------------------
+TST_W
          lda  #$A0                 ; 23FA
          rts                       ; 23FC

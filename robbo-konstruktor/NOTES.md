@@ -10,7 +10,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 2 | Memory image | game.bin, boot chain | odd regions explained | [x] (other sectors open) |
 | 3 | Entry points + disassembly | entry list, code ranges | gaps looked at | [x] 12.5 KB |
 | 4 | Blocks + byte-exact build | src/, main.asm, Makefile | MADS: byte for byte | [x] |
-| 5 | Understand code | call graph, main loop, interrupts, init tables; map shared code to Robbo labels | every routine described | [ ] |
+| 5 | Understand code | call graph, main loop, interrupts, init tables; map shared code to Robbo labels | every routine described | [~] engine named from Robbo |
 | 6 | Modules | BLOCKS regrouped, data named | byte-exact, README block table | [ ] |
 | 7 | Names + comments | VARIABLES, NAMES, COMMENTS, POKES (Robbo names where code matches) | no sub_XXXX, byte-exact | [ ] |
 | 8 | Graphics + verification | renders, screenshot in img/ | renders match screenshot | [ ] |
@@ -24,6 +24,8 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 2026-10-29 | Disk read, boot loader understood, program file extracted, memory image built, relation to Robbo found (sections 1-2) |
 | 2026-10-29 | Entry points: jump tables, menu/editor/key dispatch, engine object table; 11.4 KB of code (section 3) |
 | 2026-10-29 | Self-modified jump targets found automatically; sources split, byte-exact MADS build (section 4) |
+| 2026-10-29 | Engine named from Robbo's sources: 110 routines + zero page (section 5) |
+| 2026-10-29 | Abbreviations translated by the user; comments corrected (section 6) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -151,7 +153,70 @@ starts there. Local OS labels added to `util/xex.py`: `DSKINV`, SIO control bloc
 27,679 bytes written); the `asm.py` fallback matches too. `Makefile` like the other games. Only one label left
 outside the blocks: `$F556` (a jump-table entry into OS ROM).
 
+## 5. Naming the engine from Robbo's original sources (2026-10-29)
+
+**Label table.** `../robbo/main.asm` needs level objects that are built first, so only the engine was assembled:
+`"$MADS" ../robbo/d1/R1.ASM -t:<scratch>/r1.lab` (R1 includes R2; output in the scratchpad, nothing written to
+`robbo/`) → 270 labels, 218 of them code in $1C00-$3FFF.
+
+**Instruction-shape match.** The engine is at other addresses in Konstruktor, so absolute operands differ. A
+signature = the next 8 instructions as (opcode, operand) where the operand is kept only for position-independent
+modes (immediate, zero page, relative); a Robbo label is mapped when its signature occurs at exactly one
+Konstruktor instruction start, and the signature is not just `BRK`s (that removed a false `$F556` = `CONG`).
+Result: **90 unique matches**, 6 ambiguous.
+
+**Call-site propagation.** Matched routine pairs are walked in parallel; where Robbo's `JSR`/`JMP` goes to a labelled
+address, Konstruktor's target at the same place gets that label – repeated until nothing changes, accepted only
+when all call sites agree. +**20 names**, no conflicts, among them the board primitives that the shape match could
+not tell apart (same shape): `LT_ RT_ UP_ DW_` (step one cell, carry set if free – from Robbo's `PO2L`:
+`jsr LT_ / bcs … / inc X`), `GET_ PUT_ TST_` (read / write / test the board cell at X/Y), `T_UP T_DW T_EX`.
+
+**Zero page.** The shape match compares zero-page operands, so 90 matches mean the engine keeps **Robbo's zero-page
+layout** ($80-$AA). Only `ENGINE*.ASM` use that range (checked), so Robbo's names were applied: `ADDR SCRA CHAD
+FADR X Y X1 Y1 FX FY LM VSF VSC TELE FAC CNUM KEYS LIVS ZEBR LSTE NABO DEMO SCOR HLP RUCH TOLE` (comments
+inferred from the Polish abbreviations where Robbo has none: `LIVS` lives, `NABO` naboje = ammunition, `ZEBR`
+zebrane = collected, `SCOR` score BCD, `VSF/VSC` vertical scroll fine/coarse).
+
+**Meaning of the families** (from Robbo's code, `R2.ASM`; *corrected in section 6*): `DZ1x/DZ2x/DZ3x` = *działko*
+(small gun) firing, 1 small gun, 2 laser, 3 blaster, x = L/R/U/D; `POnx` = *pocisk* (bullet) of that gun moving;
+`PPnx` = *pozycja pocisku* (bullet's position) – next cell, hit tests; `BEZL..BEZD` = objects moving until blocked
+(abbreviation unexplained); `PRZY` = pulled in by a magnet (Robbo destroyed);
+`PUTW` = put an explosion (*wybuch*) or empty space; `TDOR` door (needs `KEYS`), `TSKA` screw, `TWYJ` exit, `PHAJ`
+push, `NIES` surprise box, `DZRU` rotating gun, `MODL/MODR` moving gun, `SCRL..LDW` scrolling, `SOUND_..SOPL` sound.
+Comments in `COMMENTS` quote Robbo's Polish comment with a translation; routines whose purpose is not yet clear say
+"Robbo routine …, not analysed yet".
+
+**Tool change** (`util/split.py`): a name in `NAMES` also creates a label at a fall-through entry (`WFAC`, `LDW`
+had no label because Konstruktor reaches them without a jump).
+
+Result: 110 engine routines and 26 zero-page variables named; 26 engine routines still `sub_XXXX` (Konstruktor's own
+code or no match); MADS build still byte-exact.
+
+Lesson (also in the guide): with related sources, match by instruction shape (ignore absolute operands), then
+propagate names through call sites – it finds routines a direct match cannot separate.
+
+## 6. Abbreviations from the user (2026-10-29)
+
+The user (a Polish speaker) explained Robbo's label abbreviations:
+
+| Prefix | Polish | English | Was assumed |
+|---|---|---|---|
+| `DZ` | *działko* | small gun | *działo* (gun) – same meaning |
+| `PO` | *pocisk* | bullet | correct |
+| `PP` | *pozycja pocisku* | bullet's position | "place the bullet one cell further" – wrong |
+| `BEZ` | – | unknown | *bezwładne skrzynie* (sliding boxes) – my guess, not confirmed |
+
+Changes: the comments in `util/split.py` now say "small gun (działko)", "bullet (pocisk)", "bullet position (pozycja
+pocisku): next cell …, hit tests". For `BEZx` the comment describes only what the code does – the object moves in
+one direction until blocked, then continues as a bullet (`BEZL: jsr LT_ / bcc BEZX / jsr BEZS / jmp PP1L`) – and
+marks the abbreviation as unexplained (Robbo's own comment is only "bezw skrzynie"). Sources regenerated, MADS
+build byte-exact.
+
+Lesson: don't present a guessed expansion of an abbreviation as fact – describe the behaviour from the code and mark
+the name as unexplained until someone who knows confirms it.
+
 ## Open questions
+
 
 - Sectors outside the program chain (256, 260-264, 388, 392-396, 520, 524-532, 652, 784, 974, 989): saved boards?
   The singles 256, 388, 520, 652, 784 are 132 sectors apart.
@@ -161,4 +226,5 @@ outside the blocks: `$F556` (a jump-table entry into OS ROM).
   `$9C04-$9C3D`; data/text to classify: `$0803-$09A5` (display list + tables), `$0C6D-$1DD0` (4.4 KB, 88 % text-like
   – boards? texts?), `$3142-$3333`, `$35D0-$3682` (display list), `$4000-$47FF`, `$9F7B-$A808` (texts).
 - Editor screen layout: is it a 16-column board window + palette (cursor X 0-19 skipping 16)?
-- Map engine routines to Robbo's labels (assemble `../robbo/main.asm` with MADS `-t`).
+- The 26 remaining `sub_XXXX` in the engine and the editor code (no source): analyse and name.
+- Engine data tables: compare with Robbo's (e.g. `$33CC` = Robbo `R1.ASM` 1624 ff.).

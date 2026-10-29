@@ -240,6 +240,14 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
 - MADS chooses zero page automatically; forcing absolute with `.w` works only for LDA/LDX/LDY/STA/STX/STY – emit
   `dta $op,a(addr)` for the others. Check such facts in the local MADS docs (`doc/mads_eng.html`).
 
+- If related sources exist (same author/publisher), use them: assemble them with MADS `-t` for a label table,
+  match routines by **instruction shape** (opcodes + immediate/zero-page/relative operands, ignoring absolute
+  operands, which change with the address), then **propagate names through call sites** of matched pairs
+  (accept only when all call sites agree). Robbo Konstruktor got 110 original routine names and the zero-page
+  layout this way (see `robbo-konstruktor/NOTES.md` section 5).
+- Dispatch tables that copy a handler address into the operand of the next JSR/JMP are common; treat the operands
+  of such self-modified jumps as vectors – every immediate address written there is an entry point.
+
 ### 6.3 Data and the crack
 - A crack can damage the game: the trainer was loaded over level 2's map rows, and in the level 3 loader three
   bytes of the cave-room copy were NOPed (`A0 EA EA EA AA` instead of `A0 40 B9 38 AA`) – probably making level 3

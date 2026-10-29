@@ -5,7 +5,8 @@ Level editor for [Robbo](../robbo). Analysis of the disk image
 [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). Process and findings: [NOTES.md](NOTES.md).
 
 Status: steps 1-4 of the guide done – the program is split into sources (`src/`, `main.asm`) that reassemble
-**byte for byte** with MADS (12.5 KB of code found). Next: understanding the code (step 5).
+**byte for byte** with MADS (12.5 KB of code found). Step 5 in progress: the game engine carries the **original
+Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*.ASM`; the editor is next.
 
 ## Files
 

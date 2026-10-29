@@ -84,6 +84,34 @@ COLDSV   equ $E477
 
 ; game variables outside the .ASM blocks (the others are defined where they live)
 
+* zero page - engine (Robbo layout, names from robbo/d1/R1.ASM) ---
+ADDR           equ $0080  ; +01 pointer
+SCRA           equ $0082  ; +01 screen address
+CHAD           equ $0084  ; +01 pointer (Robbo CHAD)
+FADR           equ $0086  ; +01 pointer (Robbo FADR)
+X              equ $0092  ; current cell X
+Y              equ $0093  ; current cell Y
+X1             equ $0094  ; cell X (second)
+Y1             equ $0095  ; cell Y (second)
+FX             equ $0096  ; Robbo FX
+FY             equ $0097  ; Robbo FY
+LM             equ $0098  ; Robbo LM
+VSF            equ $0099  ; vertical scroll, fine
+VSC            equ $009A  ; vertical scroll, coarse
+TELE           equ $009B  ; teleport (Robbo TELE)
+FAC            equ $009C  ; Robbo FAC (facing / state)
+CNUM           equ $009D  ; cave number
+KEYS           equ $009E  ; keys collected
+LIVS           equ $009F  ; lives
+ZEBR           equ $00A0  ; collected ("zebrane") - screws
+LSTE           equ $00A1  ; Robbo LSTE
+NABO           equ $00A2  ; ammunition ("naboje")
+DEMO           equ $00A3  ; demo mode flag
+SCOR           equ $00A4  ; +02 score, BCD
+HLP            equ $00A7  ; temporary (Robbo HLP)
+RUCH           equ $00A8  ; move ("ruch")
+TOLE           equ $00AA  ; Robbo TOLE
+
 ; labels not at an instruction boundary or outside the source blocks
 
 LF556      equ $F556

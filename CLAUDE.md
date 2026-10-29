@@ -27,6 +27,8 @@ Sources of LK Avalon (and related) games for 8-bit Atari, assembled with MADS. O
   `mem.bin`, `__pycache__/`, scratch files). Check with `git status --short --ignored`, delete exact paths
   (`git rm` for tracked files), never wildcards over source folders. Then verify the build still works and that
   no documentation refers to deleted files.
+- Polish label abbreviations / texts (the games are Polish): propose an expansion with the evidence from the code
+  and **ask the user to confirm** – the user speaks Polish. Until confirmed, mark it as a guess in comments and notes.
 - A clean `git status` does not prove a file is gone – it only means it is unchanged. Check the file list itself.
 
 ## MADS reference

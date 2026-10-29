@@ -1363,7 +1363,7 @@ L9E7D
          jsr  entry_A82E           ; 9E81
          tya                       ; 9E84
          ldy  #$0B                 ; 9E85
-         jsr  sub_9EE2             ; 9E87
+         jsr  DSPB                 ; 9E87
          lda  #$00                 ; 9E8A
          ldx  $CB                  ; 9E8C
          bpl  L9E92                ; 9E8E
@@ -1412,15 +1412,19 @@ L9EDA
          tax                       ; 9EDE
          bcs  L9EAC                ; 9EDF
          rts                       ; 9EE1
-sub_9EE2
+
+* display a byte as two digits (Robbo: "display byte") -----
+DSPB
          pha                       ; 9EE2
-         jsr  sub_9EEB             ; 9EE3
+         jsr  DSPD                 ; 9EE3
          pla                       ; 9EE6
          lsr                       ; 9EE7
          lsr                       ; 9EE8
          lsr                       ; 9EE9
          lsr                       ; 9EEA
-sub_9EEB
+
+* display digits -------------------------------------------
+DSPD
          and  #$0F                 ; 9EEB
          tax                       ; 9EED
          lda  $9FA2,x              ; 9EEE
