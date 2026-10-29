@@ -12,6 +12,12 @@ Sources were downloaded from [Atari XL/XE Source Archive](http://sources.pigwa.n
 * [Misja](misja)
 * [Robbo](robbo)
 
+Reverse-engineered from the binary (no original source):
+
+* [Jaskiniowiec](jaskiniowiec) (StanBit, 1995)
+
+How to do this for another game: [DISASSEMBLY-GUIDE.md](DISASSEMBLY-GUIDE.md).
+
 ## Requirements
 
 * MADS assembler
