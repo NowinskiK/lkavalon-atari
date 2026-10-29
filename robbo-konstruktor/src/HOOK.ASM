@@ -3,5 +3,7 @@
 
          org $0480
 
-entry_0480
-         jmp  entry_A810           ; 0480
+
+* restart hook: JMP START ----------------------------------
+RESTART
+         jmp  START                ; 0480

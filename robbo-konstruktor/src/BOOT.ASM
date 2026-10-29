@@ -4,7 +4,9 @@
          org $0500
 
          dta $AE,$03,$00,$05,$DD,$19                  ; 0500
-entry_0506
+
+* boot: read the program file from sector 4 and start it ---
+BOOT
          jmp  L050B                ; 0506
          dta $4C,$05                                  ; 0509
 L050B
@@ -23,13 +25,17 @@ L0525
          nop                       ; 052D
 L052E
          jmp  (RUNAD)              ; 052E
-sub_0531
+
+* boot: JMP (INITAD) after each segment --------------------
+BOOT_INIT
          jmp  (INITAD)             ; 0531
-sub_0534
+
+* boot: next byte of the file ------------------------------
+BOOT_GETBYTE
          ldy  $48                  ; 0534
          cpy  $47                  ; 0536
          bcc  L0543                ; 0538
-         jsr  sub_05F5             ; 053A
+         jsr  BOOT_NEXTSEC         ; 053A
          bmi  L0525                ; 053D
          ldy  #$00                 ; 053F
          ldx  #$00                 ; 0541
@@ -55,16 +61,16 @@ L05B0
          sta  INITAD               ; 05B2
          lda  #$05                 ; 05B5
          sta  $02E3                ; 05B7
-         jsr  sub_0534             ; 05BA
+         jsr  BOOT_GETBYTE         ; 05BA
          sta  $43                  ; 05BD
-         jsr  sub_0534             ; 05BF
+         jsr  BOOT_GETBYTE         ; 05BF
          sta  $44                  ; 05C2
          and  $43                  ; 05C4
          cmp  #$FF                 ; 05C6
          beq  L05B0                ; 05C8
-         jsr  sub_0534             ; 05CA
+         jsr  BOOT_GETBYTE         ; 05CA
          sta  $45                  ; 05CD
-         jsr  sub_0534             ; 05CF
+         jsr  BOOT_GETBYTE         ; 05CF
          sta  $46                  ; 05D2
          ldx  #$00                 ; 05D4
          beq  L05DE                ; 05D6
@@ -73,7 +79,7 @@ L05D8
          bne  L05DE                ; 05DA
          inc  $44                  ; 05DC
 L05DE
-         jsr  sub_0534             ; 05DE
+         jsr  BOOT_GETBYTE         ; 05DE
          sta  ($43,x)              ; 05E1
          lda  $44                  ; 05E3
          cmp  $46                  ; 05E5
@@ -81,9 +87,11 @@ L05DE
          lda  $43                  ; 05E9
          cmp  $45                  ; 05EB
          bne  L05D8                ; 05ED
-         jsr  sub_0531             ; 05EF
+         jsr  BOOT_INIT            ; 05EF
          jmp  L05B0                ; 05F2
-sub_05F5
+
+* boot: read the next sector of the chain (DOS 2 link: bytes 125-127) ---
+BOOT_NEXTSEC
          lda  DAUX1                ; 05F5
          ora  DAUX2                ; 05F8
          bne  L0600                ; 05FB

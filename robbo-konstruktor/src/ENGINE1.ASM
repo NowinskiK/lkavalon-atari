@@ -3,9 +3,13 @@
 
          org $1E00
 
-entry_1E00
+
+* engine set-up: screen, display list $1E0F, DLI $1EDE, font $3C00, score / keys / ammunition cleared ---
+ENGINE_INIT
          jmp  L1F46                ; 1E00
-entry_1E03
+
+* play a planet: A = data page ($50 + 2n), X = number shown, Y = lives, carry = demo; own VBI, returns to the editor ---
+ENGINE_PLAY
          stx  $1E0B                ; 1E03
          tsx                       ; 1E06
          stx  $3331                ; 1E07

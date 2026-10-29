@@ -3,7 +3,9 @@
 
          org $9000
 
-sub_9000
+
+* tape/disk: command letter in A (r, w, e, d - table $902B), dispatch via $902F ---
+IO_CMD
          jmp  L9004                ; 9000
          dta $00                                      ; 9003
 L9004
@@ -30,14 +32,16 @@ L9011
          dta $72,$77,$65,$64,$02,$91,$BF,$91,$9C,$90,$5A,$90,$04,$00,$00,$01 ; 902B
          dta $84,$01,$08,$02,$8C,$02,$10,$03,$A0,$D2,$CB,$E4,$E1,$F4,$E1,$A0 ; 903B
          dta $20,$75,$6E,$75,$73,$65,$64,$20,$00,$00,$01,$02,$04,$08,$10 ; 904B
-entry_905A
+
+* directory: read the 5 slot headers, bit mask of used slots ---
+IO_DIR
          lda  #$00                 ; 905A
          sta  $B8                  ; 905C
          ldx  #$05                 ; 905E
          stx  $9430                ; 9060
 L9063
-         jsr  sub_9086             ; 9063
-         jsr  sub_9338             ; 9066
+         jsr  IO_SLOTSEC           ; 9063
+         jsr  IO_RDSEC             ; 9066
          bmi  L9080                ; 9069
          clc                       ; 906B
          lda  $9431                ; 906C
@@ -55,7 +59,9 @@ L9080
          lda  $9053                ; 9081
          plp                       ; 9084
          rts                       ; 9085
-sub_9086
+
+* header sector of slot $9430 -> DAUX (table $9037: sectors 4, 256, 388, 520, 652, 784) ---
+IO_SLOTSEC
          lda  $9430                ; 9086
          asl                       ; 9089
          tax                       ; 908A
@@ -66,17 +72,19 @@ sub_9086
          lda  #$08                 ; 9097
          sta  $BF                  ; 9099
          rts                       ; 909B
-entry_909C
-         jsr  sub_9353             ; 909C
+
+* erase a slot: header " unused " --------------------------
+IO_ERASE
+         jsr  IO_CHKSLOT           ; 909C
          bmi  L90D6                ; 909F
          bcc  L90B6                ; 90A1
          lda  #$0E                 ; 90A3
-         jsr  sub_94E9             ; 90A5
+         jsr  MESSAGE              ; 90A5
 L90A8
-         jsr  entry_A83D           ; 90A8
+         jsr  WAIT_KEY             ; 90A8
          bcs  L90A8                ; 90AB
-         beq  entry_909C           ; 90AD
-         jsr  entry_A813           ; 90AF
+         beq  IO_ERASE             ; 90AD
+         jsr  CLICK                ; 90AF
          ldy  #$00                 ; 90B2
          beq  L90D6                ; 90B4
 L90B6
@@ -86,7 +94,7 @@ L90B8
          sta  $9431,x              ; 90BB
          dex                       ; 90BE
          bpl  L90B8                ; 90BF
-         jsr  sub_933C             ; 90C1
+         jsr  IO_WRSEC             ; 90C1
          bmi  L90D6                ; 90C4
          ldx  $9430                ; 90C6
          lda  $9054,x              ; 90C9
@@ -99,9 +107,11 @@ L90D6
          lda  $9053                ; 90D7
          plp                       ; 90DA
          rts                       ; 90DB
-sub_90DC
-         jsr  sub_9086             ; 90DC
-         jsr  sub_9338             ; 90DF
+
+* mark a slot used: header " RKdata " ----------------------
+IO_MARK
+         jsr  IO_SLOTSEC           ; 90DC
+         jsr  IO_RDSEC             ; 90DF
          bmi  L90D6                ; 90E2
          ldx  #$07                 ; 90E4
 L90E6
@@ -109,52 +119,56 @@ L90E6
          sta  $9431,x              ; 90E9
          dex                       ; 90EC
          bpl  L90E6                ; 90ED
-         jsr  sub_933C             ; 90EF
+         jsr  IO_WRSEC             ; 90EF
          bmi  L90D6                ; 90F2
          ldx  $9430                ; 90F4
          lda  $9054,x              ; 90F7
          ora  $9053                ; 90FA
          sta  $9053                ; 90FD
          bne  L90D6                ; 9100
-entry_9102
-         jsr  sub_9353             ; 9102
+
+* read a planet set from a slot ----------------------------
+IO_READ
+         jsr  IO_CHKSLOT           ; 9102
          bmi  L912F                ; 9105
          bcc  L911C                ; 9107
          lda  #$0E                 ; 9109
-         jsr  sub_94E9             ; 910B
+         jsr  MESSAGE              ; 910B
 L910E
-         jsr  entry_A83D           ; 910E
+         jsr  WAIT_KEY             ; 910E
          bcs  L910E                ; 9111
-         beq  entry_9102           ; 9113
-         jsr  entry_A813           ; 9115
+         beq  IO_READ              ; 9113
+         jsr  CLICK                ; 9115
          ldy  #$00                 ; 9118
          beq  L912F                ; 911A
 L911C
-         jsr  sub_94EC             ; 911C
+         jsr  IO_MSG               ; 911C
          lda  #$FF                 ; 911F
          sta  $9003                ; 9121
          inc  DAUX1                ; 9124
          bne  L912C                ; 9127
          inc  DAUX2                ; 9129
 L912C
-         jsr  sub_9135             ; 912C
+         jsr  IO_LOADSET           ; 912C
 L912F
          php                       ; 912F
          lda  $9053                ; 9130
          plp                       ; 9133
          rts                       ; 9134
-sub_9135
+
+* load the planets of a set --------------------------------
+IO_LOADSET
          ldy  #$00                 ; 9135
 L9137
          sty  $9140                ; 9137
-         jsr  sub_92F5             ; 913A
+         jsr  IO_GETBYTE           ; 913A
          bmi  L912F                ; 913D
          ldy  #$3F                 ; 913F
          dta $99,a($00B8)          ; 9141 sta ,y
          iny                       ; 9144
          cpy  #$04                 ; 9145
          bcc  L9137                ; 9147
-         jsr  sub_917A             ; 9149
+         jsr  IO_CHECK             ; 9149
          bcc  L915A                ; 914C
          ldy  #$8F                 ; 914E
          lda  $B8                  ; 9150
@@ -165,7 +179,7 @@ L9158
          tya                       ; 9158
          rts                       ; 9159
 L915A
-         jsr  sub_92F5             ; 915A
+         jsr  IO_GETBYTE           ; 915A
          bmi  L912F                ; 915D
          ldy  #$00                 ; 915F
          sta  ($B8),y              ; 9161
@@ -175,14 +189,16 @@ L915A
          lda  $B8                  ; 9169
          cmp  $BA                  ; 916B
          bne  L9171                ; 916D
-         beq  sub_9135             ; 916F
+         beq  IO_LOADSET           ; 916F
 L9171
          inc  $B8                  ; 9171
          bne  L9177                ; 9173
          inc  $B9                  ; 9175
 L9177
          jmp  L915A                ; 9177
-sub_917A
+
+* check the loaded set ("ten zestaw planet jest zniszczony") ---
+IO_CHECK
          ldx  #$08                 ; 917A
 L917C
          lda  $B8                  ; 917C
@@ -215,42 +231,46 @@ L91AB
          sec                       ; 91B1
          rts                       ; 91B2
          dta $A0,$39,$E0,$39,$00,$3A,$00,$3C,$00,$50,$00,$90 ; 91B3
-entry_91BF
+
+* write a planet set to a slot -----------------------------
+IO_WRITE
          lda  $9430                ; 91BF
          bne  L91EC                ; 91C2
          lda  #$01                 ; 91C4
          sta  $9430                ; 91C6
-         jsr  sub_9353             ; 91C9
+         jsr  IO_CHKSLOT           ; 91C9
          bmi  L91D6                ; 91CC
          bcs  L91D6                ; 91CE
          lda  $9053                ; 91D0
          ldy  #$FF                 ; 91D3
          rts                       ; 91D5
 L91D6
-         jsr  sub_94EC             ; 91D6
+         jsr  IO_MSG               ; 91D6
          dec  $9430                ; 91D9
-         jsr  sub_9086             ; 91DC
+         jsr  IO_SLOTSEC           ; 91DC
          lda  DAUX1                ; 91DF
          sta  $93B0                ; 91E2
-         jsr  sub_92B1             ; 91E5
+         jsr  IO_SAVEGAME          ; 91E5
          bmi  L9201                ; 91E8
          bpl  L91F3                ; 91EA
 L91EC
-         jsr  entry_909C           ; 91EC
+         jsr  IO_ERASE             ; 91EC
          beq  L9201                ; 91EF
          bmi  L9201                ; 91F1
 L91F3
-         jsr  sub_94EC             ; 91F3
-         jsr  sub_9086             ; 91F6
-         jsr  sub_9207             ; 91F9
+         jsr  IO_MSG               ; 91F3
+         jsr  IO_SLOTSEC           ; 91F6
+         jsr  IO_SAVESET           ; 91F9
          bmi  L9201                ; 91FC
-         jsr  sub_90DC             ; 91FE
+         jsr  IO_MARK              ; 91FE
 L9201
          php                       ; 9201
          lda  $9053                ; 9202
          plp                       ; 9205
          rts                       ; 9206
-sub_9207
+
+* save the planets: $5000 + n * $200, $1F7 bytes each, those used in $39A0 ---
+IO_SAVESET
          ldx  #$EB                 ; 9207
          ldy  #$92                 ; 9209
          lda  $9430                ; 920B
@@ -276,14 +296,14 @@ L9223
          lda  $B8                  ; 9232
          ora  $B9                  ; 9234
          beq  L923F                ; 9236
-         jsr  sub_9276             ; 9238
+         jsr  IO_PUTRANGE          ; 9238
          bmi  L9201                ; 923B
          bpl  L921F                ; 923D
 L923F
          ldx  #$1F                 ; 923F
 L9241
          stx  $9261                ; 9241
-         lda  $39A0,x              ; 9244
+         lda  PLANET_STATE,x       ; 9244
          beq  L9260                ; 9247
          txa                       ; 9249
          asl                       ; 924A
@@ -295,25 +315,27 @@ L9241
          sta  $B8                  ; 9255
          lda  #$F7                 ; 9257
          sta  $BA                  ; 9259
-         jsr  sub_9276             ; 925B
+         jsr  IO_PUTRANGE          ; 925B
          bmi  L9201                ; 925E
 L9260
          ldx  #$60                 ; 9260
          dex                       ; 9262
          bpl  L9241                ; 9263
          lda  #$00                 ; 9265
-         jsr  sub_9314             ; 9267
+         jsr  IO_PUTBYTE           ; 9267
          bmi  L9201                ; 926A
          lda  #$00                 ; 926C
-         jsr  sub_9314             ; 926E
+         jsr  IO_PUTBYTE           ; 926E
          bmi  L9201                ; 9271
-         jmp  sub_933C             ; 9273
-sub_9276
+         jmp  IO_WRSEC             ; 9273
+
+* write a memory range as a byte stream --------------------
+IO_PUTRANGE
          ldy  #$00                 ; 9276
 L9278
          sty  $9287                ; 9278
          dta $B9,a($00B8)          ; 927B lda ,y
-         jsr  sub_9314             ; 927E
+         jsr  IO_PUTBYTE           ; 927E
          bpl  L9286                ; 9281
          jmp  L9201                ; 9283
 L9286
@@ -324,7 +346,7 @@ L9286
 L928D
          ldy  #$00                 ; 928D
          lda  ($B8),y              ; 928F
-         jsr  sub_9314             ; 9291
+         jsr  IO_PUTBYTE           ; 9291
          bpl  L9299                ; 9294
          jmp  L9201                ; 9296
 L9299
@@ -342,8 +364,10 @@ L92A8
          inc  $B9                  ; 92AC
 L92AE
          jmp  L928D                ; 92AE
-sub_92B1
-         jsr  sub_9388             ; 92B1
+
+* save a stand-alone Robbo game: format the disk, write the game ---
+IO_SAVEGAME
+         jsr  IO_FORMAT            ; 92B1
          bmi  L92DB                ; 92B4
          ldx  #$01                 ; 92B6
          stx  DAUX1                ; 92B8
@@ -361,7 +385,7 @@ sub_92B1
          sta  $BB                  ; 92D1
          jsr  L928D                ; 92D3
          bmi  L92DB                ; 92D6
-         jsr  sub_933C             ; 92D8
+         jsr  IO_WRSEC             ; 92D8
 L92DB
          php                       ; 92DB
          lda  $9053                ; 92DC
@@ -369,11 +393,13 @@ L92DB
          rts                       ; 92E0
          dta $A0,$39,$DF,$39,$00,$3A,$FF,$3B,$00,$00,$00,$1E,$FF,$3F,$00,$48 ; 92E1
          dta $FF,$4F,$00,$00                          ; 92F1
-sub_92F5
+
+* read one byte through the sector buffer $9431 ------------
+IO_GETBYTE
          clc                       ; 92F5
          ldy  $BF                  ; 92F6
          bpl  L930C                ; 92F8
-         jsr  sub_9338             ; 92FA
+         jsr  IO_RDSEC             ; 92FA
          bpl  L9300                ; 92FD
          rts                       ; 92FF
 L9300
@@ -388,12 +414,14 @@ L930C
          inc  $BF                  ; 930F
          ldy  #$01                 ; 9311
          rts                       ; 9313
-sub_9314
+
+* write one byte through the sector buffer $9431 -----------
+IO_PUTBYTE
          clc                       ; 9314
          ldy  $BF                  ; 9315
          bpl  L9330                ; 9317
          sta  $932B                ; 9319
-         jsr  sub_933C             ; 931C
+         jsr  IO_WRSEC             ; 931C
          bpl  L9322                ; 931F
          rts                       ; 9321
 L9322
@@ -409,10 +437,14 @@ L9330
          inc  $BF                  ; 9333
          ldy  #$01                 ; 9335
          rts                       ; 9337
-sub_9338
+
+* read a sector into $9431 (SIO R) -------------------------
+IO_RDSEC
          lda  #$52                 ; 9338
          bne  L933E                ; 933A
-sub_933C
+
+* write a sector from $9431 (SIO P) ------------------------
+IO_WRSEC
          lda  #$50                 ; 933C
 L933E
          sta  DCOMND               ; 933E
@@ -423,9 +455,11 @@ L933E
          lda  #$94                 ; 934B
          sta  DBUFHI               ; 934D
          jmp  DSKINV               ; 9350
-sub_9353
-         jsr  sub_9086             ; 9353
-         jsr  sub_9338             ; 9356
+
+* read a slot header and check it --------------------------
+IO_CHKSLOT
+         jsr  IO_SLOTSEC           ; 9353
+         jsr  IO_RDSEC             ; 9356
          bpl  L935D                ; 9359
          sec                       ; 935B
          rts                       ; 935C
@@ -459,7 +493,9 @@ L9381
          ldy  #$01                 ; 9384
          clc                       ; 9386
          rts                       ; 9387
-sub_9388
+
+* format the disk (SIO command $22) ------------------------
+IO_FORMAT
          lda  #$01                 ; 9388
          sta  DUNIT                ; 938A
          lda  #$22                 ; 938D

@@ -17,6 +17,18 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 9 | Docs, clean, commit | README, NOTES, root README entry | clean tree, verified build | [ ] |
 | – | Optional | board format and saved boards on the disk, compare editor engine with Robbo | | [ ] |
 
+### Step 5 sub-plan – the editor (agreed 2026-10-29)
+
+| # | Part | What | Done |
+|---|---|---|---|
+| 5.1 | Start-up and main loop | start routine, screen set-up (display lists, DLIs, fonts), per-frame loop: cursor, keys, messages | [x] |
+| 5.2 | Menu handlers | the 10 handlers of table $9F8E, checked against the menu texts and named; what "test" checks (error messages) | [x] |
+| 5.3 | Palette and elements | element → board cell; do the 27 names follow the object codes; variables $A317, $A7D6 | [~] variables answered, names follow the palette |
+| 5.4 | Tape and disk | save / load of planet sets → planet format; the extra disk sectors (saved sets) decoded and rendered | [~] format and slots known; decoding/rendering open |
+| 5.5 | Engine leftovers | the 26 engine routines still `sub_XXXX` (Konstruktor's changes to Robbo's engine) | [ ] |
+
+Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from XFormer is requested from the user.
+
 ## Timeline
 
 | Date | Step |
@@ -29,6 +41,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 2026-10-29 | `$0C6D-$1DD0` = help text, 16 pages decoded – the program's full feature list (section 7) |
 | 2026-10-29 | Texts written as `dta c'…'` / `d'…'` strings in the sources; Polish letter codes confirmed (section 8) |
 | 2026-10-29 | `TEXTS.DTA` analysed: two encodings, editor screens, messages, element names → `TEXTS.ASM` (section 9) |
+| 2026-10-29 | Editor analysed and named (5.1-5.2, parts of 5.3-5.4): 144 routines, editor variables, planet format, disk slots (section 10) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -309,6 +322,59 @@ the glyph-mapped Polish letters) and `strings` (ATASCII, one string per line inc
 Lesson: write analysis scripts to a file (Write tool) instead of passing them through a shell here-document – the
 shell layer collapses backslashes (`'\\'` arrived as `'\'`).
 
+## 10. The editor (steps 5.1-5.2, parts of 5.3-5.4) (2026-10-29)
+
+Method: a call graph of all 112 editor routines (size, callers, callees, hardware, zero page, tables – scratch
+script), then reading each cluster with a compact dump of the generated sources (names already shown). Every name
+below rests on code that was read.
+
+**Structure**
+
+| Area | Content |
+|---|---|
+| `$A810` jump table | module interface: `START` (→ `START_` $A9A7), `CLICK`, `INPUT_CLR`, `GETKEY`, `REDRAW`, `COUNT_ELEM`, `INPUT`, `DIR_TEST`, `KEY_EVENT`, `TO_DIGITS`, `ASK_YESNO`, `ATA2SCR`, `SET_DLIST`, `TITLE_ED`, `WAIT_KEY`; `$A828` = `jmp $F556` has no callers (leftover) |
+| `MAIN_LOOP` $A9B5 | every 4 frames (OS timer 3): `REDRAW`, `ED_FRAME`, `EDIT` |
+| `ED_SETUP` $AF3E | one-time part (patches its own `lda #0`): zero page $B0-$D0, cursor 18/9; every time: screen off, colours, key repeat, DLI `ED_DLI` $B05F, **font $4C00**, P/M positions ($B5BC) |
+| `$94E0` jump table | editor services: `ED_FRAME`, `ED_INIT`, `ED_COLORS`, `MESSAGE`, `IO_MSG`, `ELEM_MSG`, `ED_DLIST`, `HELP_KEY` |
+| `REDRAW` $ACB6 | palette (columns 17-19, element codes $B51C → glyphs via $B55A), the 16 × 10 board window from row `WIN_TOP`, planet strip / scroll bar, enlarged element preview ($43E0/$47E0), display lists swapped ($A846 / $A8A3, screens `SCR_PAGE` $B6/$B8) |
+| `HELP` $0800-$0C6C | help viewer: `HLP_PAGE` (16 lines), `HLP_LINE`, `HLP_PREV/NEXT` (markers $0909/$090A), scrolling |
+| `IO_*` $9000-$9430 | tape/disk (below) |
+| `TX_*` $B254-$B34C | text input for the title page (key table $B330: arrows, backspace, delete, insert, clear, return) |
+
+**Main menu** (`MENU` $9582): the table index is row + 5 × page (`MENU_POS` bit 7 = page): entries 0-4 = left column
+(basic functions), 5-9 = right column (additional) – exactly the layout of the menu text. Handlers: `M_TEST`
+(test planety), `M_CLEAR` (czyść planetę), `M_COLORS` (zmiana kolorów), `M_DISK` (operacje dyskowe), `M_PAGE`
+(funkcje dodatkowe / podstawowe – one routine flips the page), `TITLE_ED` (strona tytułowa), `M_ORDER` (kolejność
+planet), `M_TESTALL` (test Robbo), `M_SAVEGAME` (zapisz Robbo → `SAVEGAME_GO`). **`HELP_PAGE` ($CE) = index / 2 + 3**
+(2 while in the menu) – exactly the help page order: the HELP key is context-sensitive.
+
+**Planets** (`CELL_ADDR` $AC6F): planet n at **`$5000 + n × $200`**, 16 × 31 cells row by row, header at offset
+`$1F0-$1F7` (colours; defaults `$9F83`), `$1F7` bytes saved. Cells hold **Robbo's level characters**: `$20` empty,
+`$2A` Robbo, `$14` capsule, `$24` screw (`PLANET_TEST` $AC15: Robbo exactly 1, capsule exactly 1, screws < 100 –
+error messages 4-8). `PLANET_STATE` ($39A0, 32 bytes): 0 empty, bit 7 = bad (low bits = message), else good –
+the legend "zła / dobra / pusta". `PLANET_CLR` fills with `$20` and restores the header.
+
+**Tape / disk** (`IO_CMD` $9000): command letters `r w e d` (read, write, erase, directory, table $902B). Slot header
+sectors (table $9037): **4, 256, 388, 520, 652, 784** – the extra used sectors on the disk are the 5 slots of saved
+planet sets (slot 0 = sector 4, the program's own start). Header signature: inverse **" RKdata "** (used) or
+**" unused "** (erased). `IO_RDSEC`/`IO_WRSEC` (SIO `R`/`P`, buffer $9431), `IO_FORMAT` (SIO `$22`, used by
+`IO_SAVEGAME` – "zapisz Robbo" formats the disk and writes a stand-alone game). Without a disk drive, `ED_INIT_`
+copies " kasetowe" over the menu word – the menu then says "operacje kasetowe".
+
+**Engine entries**: `ENGINE_INIT` ($1E00: screen, DL $1E0F, DLI, font $3C00, score/keys/ammo cleared) and
+`ENGINE_PLAY` ($1E03: A = planet data page, X = number shown, Y = lives, carry = demo; installs the engine VBI and
+returns to the editor) – used by `M_TEST` and `M_TESTALL`.
+
+**Answers to open questions**: `$A317` = `CUR_MSG` (message in the status line, `MESSAGE_` compares and stores
+it); `$A7D6` = `CUR_ELEM` (palette entry whose name is shown; name = message entry + $1E) – so the 27 element names
+follow the **palette order**. `$14` in the help text is **not a quotation mark but an inverse on/off toggle**
+(`HLP_LINE`: `eor #$80` into $0C76) and inverse digits `$B1-$B9` are indentation codes – corrected in README.
+
+**Naming**: 144 editor / help / I/O / boot routines named (`util/split.py` `NAMES`, prefixes `HLP_ IO_ ED_ M_ DISK_
+TX_`, jump-table targets = service name + `_`), each with a comment; editor variables `FRAMES CUR_X CUR_Y WIN_TOP
+SCR_PAGE PAL_SEL ED_FLAGS MENU_POS PLANET HELP_PAGE PANEL_ST CUR_MSG CUR_ELEM JOY… PLANET_STATE DISK_SLOTS`. MADS and
+`asm.py` builds byte-exact. The 58 generated labels left are all in the engine (step 5.5).
+
 ## Open questions
 
 
@@ -318,8 +384,8 @@ shell layer collapses backslashes (`'\\'` arrived as `'\'`).
 - `JMP $F556` in the jump table – an OS ROM routine or RAM under the OS?
 - Data to classify: `$0803-$09A5` (display list + tables), `$3142-$3333`, `$35D0-$3682` (display list),
   `$4000-$47FF`; help-text preamble `$0C77`: `79 0C 80 01`; tables in `TEXTS.ASM` ($9FA2, $9FAC, $A7F8, $A7FE).
-- Variables `$A317` and `$A7D6` inside the text block – meaning?
-- Is the order of the 27 element names the order of the palette / the object codes?
+- Palette ↔ object codes: which code does each of the 27 palette entries put on the board (table $B51C)?
+- Decode and render the saved planet sets in the disk slots (sectors 256, 388, 520, 652, 784).
 - Editor screen layout: is it a 16-column board window + palette (cursor X 0-19 skipping 16)?
 - The 26 remaining `sub_XXXX` in the engine and the editor code (no source): analyse and name.
 - Engine data tables: compare with Robbo's (e.g. `$33CC` = Robbo `R1.ASM` 1624 ff.).

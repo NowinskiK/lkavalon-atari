@@ -3,99 +3,115 @@
 
          org $A810
 
-entry_A810
-         jmp  LA9A7                ; A810
-entry_A813
-         jmp  LB00A                ; A813
-entry_A816
-         jmp  LB159                ; A816
-entry_A819
-         jmp  LB16C                ; A819
-entry_A81C
-         jmp  LACB6                ; A81C
-entry_A81F
-         jmp  LAC8B                ; A81F
-entry_A822
-         jmp  LB0BC                ; A822
-entry_A825
-         jmp  LB17F                ; A825
-entry_A828
+
+* module interface: jump table (start, sounds, input, redraw, messages, ...) ---
+START
+         jmp  START_               ; A810
+CLICK
+         jmp  CLICK_               ; A813
+INPUT_CLR
+         jmp  INPUT_CLR_           ; A816
+GETKEY
+         jmp  GETKEY_              ; A819
+REDRAW
+         jmp  REDRAW_              ; A81C
+COUNT_ELEM
+         jmp  COUNT_ELEM_          ; A81F
+INPUT
+         jmp  INPUT_               ; A822
+DIR_TEST
+         jmp  DIR_TEST_            ; A825
+J_F556
          jmp  LF556                ; A828
-entry_A82B
-         jmp  LB023                ; A82B
-entry_A82E
-         jmp  LB4CD                ; A82E
-entry_A831
-         jmp  LB3F5                ; A831
-entry_A834
-         jmp  LB4A2                ; A834
-entry_A837
-         jmp  LB3BE                ; A837
-entry_A83A
-         jmp  LB189                ; A83A
-entry_A83D
-         jmp  LB03B                ; A83D
-         dta $00,$00,$00,$00,$00,$00,$10,$F0,$C4,$00,$B6,$C4,$00,$B6,$C4,$28 ; A840
-         dta $B6,$C4,$28,$B6,$C4,$50,$B6,$C4,$50,$B6,$C4,$78,$B6,$C4,$78,$B6 ; A850
-         dta $C4,$A0,$B6,$C4,$A0,$B6,$C4,$C8,$B6,$C4,$C8,$B6,$C4,$F0,$B6,$C4 ; A860
-         dta $F0,$B6,$C4,$18,$B7,$C4,$18,$B7,$C4,$40,$B7,$C4,$40,$B7,$C4,$68 ; A870
-         dta $B7,$C4,$68,$B7,$20,$4F,$50,$BD,$0F,$0F,$42,$00,$BC,$02,$02,$02 ; A880
-         dta $02,$4F,$00,$BD,$0F,$0F,$0F,$0F,$42,$C8,$BC,$4F,$00,$BD,$0F,$0F ; A890
-         dta $41,$46,$A8,$10,$F0,$C4,$00,$B8,$C4,$00,$B8,$C4,$28,$B8,$C4,$28 ; A8A0
-         dta $B8,$C4,$50,$B8,$C4,$50,$B8,$C4,$78,$B8,$C4,$78,$B8,$C4,$A0,$B8 ; A8B0
-         dta $C4,$A0,$B8,$C4,$C8,$B8,$C4,$C8,$B8,$C4,$F0,$B8,$C4,$F0,$B8,$C4 ; A8C0
-         dta $18,$B9,$C4,$18,$B9,$C4,$40,$B9,$C4,$40,$B9,$C4,$68,$B9,$C4,$68 ; A8D0
-         dta $B9,$20,$4F,$50,$BD,$0F,$0F,$42,$00,$BC,$02,$02,$02,$02,$4F,$00 ; A8E0
-         dta $BD,$0F,$0F,$0F,$0F,$42,$C8,$BC,$4F,$00,$BD,$0F,$0F,$41,$A3,$A8 ; A8F0
-         dta $10,$70,$4F,$50,$BD,$0F,$42,$00,$B6,$4F,$78,$BD,$0F,$0F,$42,$28 ; A900
-         dta $B6,$02,$02,$02,$02,$02,$02,$02,$4F,$78,$BD,$0F,$0F,$4F,$50,$BD ; A910
-         dta $0F,$42,$00,$B8,$4F,$78,$BD,$0F,$0F,$42,$28,$B8,$02,$02,$02,$02 ; A920
-         dta $02,$02,$02,$4F,$00,$BD,$0F,$0F,$20,$4F,$50,$BD,$0F,$0F,$42,$00 ; A930
-         dta $BC,$02,$02,$02,$02,$4F,$00,$BD,$0F,$0F,$0F,$0F,$42,$C8,$BC,$4F ; A940
-         dta $00,$BD,$0F,$0F,$41,$00,$A9,$80,$80,$80,$80,$DD,$80,$80,$80,$80 ; A950
-         dta $80,$80,$F4,$E5,$EB,$F3,$F4,$80,$F0,$EF,$E3,$FA,$A0,$F4,$EB,$EF ; A960
-         dta $F7,$F9,$9A,$80,$80,$80,$80,$80,$80,$80,$DD,$80,$80,$80,$80,$80 ; A970
-         dta $80,$80,$80,$DD,$80,$80,$80,$80,$80,$F4,$E5,$EB,$F3,$F4,$80,$E7 ; A980
-         dta $F2,$E1,$F4,$F5,$EC,$E1,$E3,$F9,$EA,$EE,$F9,$9A,$80,$80,$80,$80 ; A990
-         dta $80,$80,$DD,$80,$80,$80,$80              ; A9A0
-LA9A7
+KEY_EVENT
+         jmp  KEY_EVENT_           ; A82B
+TO_DIGITS
+         jmp  TO_DIGITS_           ; A82E
+ASK_YESNO
+         jmp  ASK_YESNO_           ; A831
+ATA2SCR
+         jmp  ATA2SCR_             ; A834
+SET_DLIST
+         jmp  SET_DLIST_           ; A837
+TITLE_ED
+         jmp  TITLE_ED_            ; A83A
+WAIT_KEY
+         jmp  WAIT_KEY_            ; A83D
+
+* input ------------------------
+JOY              dta $00                              ; A840 input bits: stick, fire
+JOY_LAST         dta $00                              ; A841 previous stick value
+JOY_RPT          dta $00                              ; A842 auto-repeat counter
+TRIG_ST          dta $00                              ; A843 fire / console keys
+EVENT            dta $00                              ; A844 input event flag
+TRIG_LAST        dta $00                              ; A845 previous fire / console keys
+         dta $10,$F0,$C4,$00,$B6,$C4,$00,$B6,$C4,$28,$B6,$C4,$28,$B6,$C4,$50 ; A846
+         dta $B6,$C4,$50,$B6,$C4,$78,$B6,$C4,$78,$B6,$C4,$A0,$B6,$C4,$A0,$B6 ; A856
+         dta $C4,$C8,$B6,$C4,$C8,$B6,$C4,$F0,$B6,$C4,$F0,$B6,$C4,$18,$B7,$C4 ; A866
+         dta $18,$B7,$C4,$40,$B7,$C4,$40,$B7,$C4,$68,$B7,$C4,$68,$B7,$20,$4F ; A876
+         dta $50,$BD,$0F,$0F,$42,$00,$BC,$02,$02,$02,$02,$4F,$00,$BD,$0F,$0F ; A886
+         dta $0F,$0F,$42,$C8,$BC,$4F,$00,$BD,$0F,$0F,$41,$46,$A8,$10,$F0,$C4 ; A896
+         dta $00,$B8,$C4,$00,$B8,$C4,$28,$B8,$C4,$28,$B8,$C4,$50,$B8,$C4,$50 ; A8A6
+         dta $B8,$C4,$78,$B8,$C4,$78,$B8,$C4,$A0,$B8,$C4,$A0,$B8,$C4,$C8,$B8 ; A8B6
+         dta $C4,$C8,$B8,$C4,$F0,$B8,$C4,$F0,$B8,$C4,$18,$B9,$C4,$18,$B9,$C4 ; A8C6
+         dta $40,$B9,$C4,$40,$B9,$C4,$68,$B9,$C4,$68,$B9,$20,$4F,$50,$BD,$0F ; A8D6
+         dta $0F,$42,$00,$BC,$02,$02,$02,$02,$4F,$00,$BD,$0F,$0F,$0F,$0F,$42 ; A8E6
+         dta $C8,$BC,$4F,$00,$BD,$0F,$0F,$41,$A3,$A8,$10,$70,$4F,$50,$BD,$0F ; A8F6
+         dta $42,$00,$B6,$4F,$78,$BD,$0F,$0F,$42,$28,$B6,$02,$02,$02,$02,$02 ; A906
+         dta $02,$02,$4F,$78,$BD,$0F,$0F,$4F,$50,$BD,$0F,$42,$00,$B8,$4F,$78 ; A916
+         dta $BD,$0F,$0F,$42,$28,$B8,$02,$02,$02,$02,$02,$02,$02,$4F,$00,$BD ; A926
+         dta $0F,$0F,$20,$4F,$50,$BD,$0F,$0F,$42,$00,$BC,$02,$02,$02,$02,$4F ; A936
+         dta $00,$BD,$0F,$0F,$0F,$0F,$42,$C8,$BC,$4F,$00,$BD,$0F,$0F,$41,$00 ; A946
+         dta $A9,$80,$80,$80,$80,$DD,$80,$80,$80,$80,$80,$80,$F4,$E5,$EB,$F3 ; A956
+         dta $F4,$80,$F0,$EF,$E3,$FA,$A0,$F4,$EB,$EF,$F7,$F9,$9A,$80,$80,$80 ; A966
+         dta $80,$80,$80,$80,$DD,$80,$80,$80,$80,$80,$80,$80,$80,$DD,$80,$80 ; A976
+         dta $80,$80,$80,$F4,$E5,$EB,$F3,$F4,$80,$E7,$F2,$E1,$F4,$F5,$EC,$E1 ; A986
+         dta $E3,$F9,$EA,$EE,$F9,$9A,$80,$80,$80,$80,$80,$80,$DD,$80,$80,$80 ; A996
+         dta $80                                      ; A9A6
+
+* start: stack, init, then the main loop -------------------
+START_
          cli                       ; A9A7
          cld                       ; A9A8
          ldx  #$FF                 ; A9A9
          txs                       ; A9AB
          stx  CH                   ; A9AC
-         stx  $A840                ; A9AF
-         jsr  sub_AF3E             ; A9B2
-LA9B5
+         stx  JOY                  ; A9AF
+         jsr  ED_SETUP             ; A9B2
+
+* editor main loop: every 4 frames (CDTMV3) - redraw, frame, cursor ---
+MAIN_LOOP
          lda  CDTMV3               ; A9B5
-         bne  LA9B5                ; A9B8
+         bne  MAIN_LOOP            ; A9B8
          lda  #$04                 ; A9BA
          sta  CDTMV3               ; A9BC
          lda  #$FF                 ; A9BF
          sta  CH                   ; A9C1
-         inc  $C4                  ; A9C4
-         jsr  entry_A81C           ; A9C6
-         jsr  sub_94E0             ; A9C9
-         jsr  sub_A9D2             ; A9CC
-         jmp  LA9B5                ; A9CF
-sub_A9D2
-         lda  $CA                  ; A9D2
+         inc  FRAMES               ; A9C4
+         jsr  REDRAW               ; A9C6
+         jsr  ED_FRAME             ; A9C9
+         jsr  EDIT                 ; A9CC
+         jmp  MAIN_LOOP            ; A9CF
+
+* board editor: cursor, palette, put elements --------------
+EDIT
+         lda  ED_FLAGS             ; A9D2
          bmi  LA9D7                ; A9D4
          rts                       ; A9D6
 LA9D7
          inc  $B5BB                ; A9D7
          lda  #$00                 ; A9DA
          sta  $AB3E                ; A9DC
-         ldx  $C5                  ; A9DF
-         ldy  $C6                  ; A9E1
-         lda  $C7                  ; A9E3
+         ldx  CUR_X                ; A9DF
+         ldy  CUR_Y                ; A9E1
+         lda  WIN_TOP              ; A9E3
          sta  $B6                  ; A9E5
-         lda  $A840                ; A9E7
+         lda  JOY                  ; A9E7
          and  #$08                 ; A9EA
          bne  LAA03                ; A9EC
          cpx  #$0F                 ; A9EE
          bne  LA9F7                ; A9F0
-         lda  $A843                ; A9F2
+         lda  TRIG_ST              ; A9F2
          beq  LAA03                ; A9F5
 LA9F7
          inx                       ; A9F7
@@ -107,12 +123,12 @@ LA9FD
          bcc  LAA03                ; A9FF
          ldx  #$00                 ; AA01
 LAA03
-         lda  $A840                ; AA03
+         lda  JOY                  ; AA03
          and  #$04                 ; AA06
          bne  LAA1D                ; AA08
          txa                       ; AA0A
          bne  LAA12                ; AA0B
-         lda  $A843                ; AA0D
+         lda  TRIG_ST              ; AA0D
          beq  LAA1D                ; AA10
 LAA12
          dex                       ; AA12
@@ -124,7 +140,7 @@ LAA18
          bpl  LAA1D                ; AA19
          ldx  #$13                 ; AA1B
 LAA1D
-         lda  $A840                ; AA1D
+         lda  JOY                  ; AA1D
          and  #$02                 ; AA20
          bne  LAA40                ; AA22
          iny                       ; AA24
@@ -134,16 +150,16 @@ LAA1D
          cpx  #$10                 ; AA2A
          bcc  LAA38                ; AA2C
          lda  #$02                 ; AA2E
-         jsr  entry_A825           ; AA30
+         jsr  DIR_TEST             ; AA30
          bcs  LAA40                ; AA33
          jmp  LAB4D                ; AA35
 LAA38
-         lda  $C7                  ; AA38
+         lda  WIN_TOP              ; AA38
          cmp  #$15                 ; AA3A
          bcs  LAA40                ; AA3C
          inc  $B6                  ; AA3E
 LAA40
-         lda  $A840                ; AA40
+         lda  JOY                  ; AA40
          and  #$01                 ; AA43
          bne  LAA55                ; AA45
          dey                       ; AA47
@@ -151,98 +167,98 @@ LAA40
          iny                       ; AA4A
          cpx  #$10                 ; AA4B
          bcs  LAA55                ; AA4D
-         lda  $C7                  ; AA4F
+         lda  WIN_TOP              ; AA4F
          beq  LAA55                ; AA51
          dec  $B6                  ; AA53
 LAA55
          lda  $B6                  ; AA55
-         cmp  $C7                  ; AA57
+         cmp  WIN_TOP              ; AA57
          bne  LAA63                ; AA59
-         cpx  $C5                  ; AA5B
+         cpx  CUR_X                ; AA5B
          bne  LAA63                ; AA5D
-         cpy  $C6                  ; AA5F
+         cpy  CUR_Y                ; AA5F
          beq  LAA80                ; AA61
 LAA63
          lda  #$00                 ; AA63
          sta  $B5BB                ; AA65
-         stx  $C5                  ; AA68
-         sty  $C6                  ; AA6A
+         stx  CUR_X                ; AA68
+         sty  CUR_Y                ; AA6A
          lda  $B6                  ; AA6C
-         sta  $C7                  ; AA6E
-         lda  $A843                ; AA70
+         sta  WIN_TOP              ; AA6E
+         lda  TRIG_ST              ; AA70
          beq  LAA7B                ; AA73
-         jsr  entry_A813           ; AA75
+         jsr  CLICK                ; AA75
          jmp  LAA80                ; AA78
 LAA7B
          lda  #$01                 ; AA7B
          sta  $AB3E                ; AA7D
 LAA80
          lda  #$FF                 ; AA80
-         sta  $A840                ; AA82
-         jsr  entry_A82B           ; AA85
+         sta  JOY                  ; AA82
+         jsr  KEY_EVENT            ; AA85
          bcs  LAA8D                ; AA88
          jmp  LAB4D                ; AA8A
 LAA8D
          cmp  #$27                 ; AA8D
          beq  LAAE2                ; AA8F
-         lda  $C5                  ; AA91
+         lda  CUR_X                ; AA91
          cmp  #$10                 ; AA93
          bcc  LAAED                ; AA95
          lda  #$0D                 ; AA97
-         sta  $CE                  ; AA99
-         lda  $C6                  ; AA9B
+         sta  HELP_PAGE            ; AA99
+         lda  CUR_Y                ; AA9B
          asl                       ; AA9D
-         adc  $C6                  ; AA9E
+         adc  CUR_Y                ; AA9E
          sta  $B6                  ; AAA0
          sec                       ; AAA2
-         lda  $C5                  ; AAA3
+         lda  CUR_X                ; AAA3
          sbc  #$11                 ; AAA5
          clc                       ; AAA7
          adc  $B6                  ; AAA8
          pha                       ; AAAA
          tax                       ; AAAB
          lda  $B51C,x              ; AAAC
-         jsr  sub_94EF             ; AAAF
+         jsr  ELEM_MSG             ; AAAF
          pla                       ; AAB2
          tax                       ; AAB3
          lda  $B51C,x              ; AAB4
          bmi  LAAE2                ; AAB7
-         cpx  $C9                  ; AAB9
+         cpx  PAL_SEL              ; AAB9
          bne  LAAD8                ; AABB
          cmp  #$00                 ; AABD
          bne  LAB2E                ; AABF
-         jsr  entry_A816           ; AAC1
+         jsr  INPUT_CLR            ; AAC1
          bne  LAB2E                ; AAC4
-         jsr  sub_AC6B             ; AAC6
+         jsr  CELL_HEADER          ; AAC6
          ldy  #$00                 ; AAC9
          clc                       ; AACB
          lda  ($B2),y              ; AACC
          adc  #$20                 ; AACE
          sta  ($B2),y              ; AAD0
-         jsr  entry_A813           ; AAD2
+         jsr  CLICK                ; AAD2
          jmp  LAB2E                ; AAD5
 LAAD8
-         jsr  entry_A816           ; AAD8
+         jsr  INPUT_CLR            ; AAD8
          bne  LAB2E                ; AADB
-         stx  $C9                  ; AADD
-         jmp  entry_A813           ; AADF
+         stx  PAL_SEL              ; AADD
+         jmp  CLICK                ; AADF
 LAAE2
-         jsr  entry_A816           ; AAE2
+         jsr  INPUT_CLR            ; AAE2
          bne  LAB2E                ; AAE5
          inc  $B5BA                ; AAE7
-         jmp  entry_A813           ; AAEA
+         jmp  CLICK                ; AAEA
 LAAED
          lda  #$00                 ; AAED
-         jsr  sub_94E9             ; AAEF
+         jsr  MESSAGE              ; AAEF
          lda  #$0E                 ; AAF2
-         sta  $CE                  ; AAF4
-         ldx  $C5                  ; AAF6
+         sta  HELP_PAGE            ; AAF4
+         ldx  CUR_X                ; AAF6
          clc                       ; AAF8
-         lda  $C6                  ; AAF9
-         adc  $C7                  ; AAFB
+         lda  CUR_Y                ; AAF9
+         adc  WIN_TOP              ; AAFB
          tay                       ; AAFD
-         jsr  sub_AC6F             ; AAFE
-         ldx  $C9                  ; AB01
+         jsr  CELL_ADDR            ; AAFE
+         ldx  PAL_SEL              ; AB01
          lda  $B51C,x              ; AB03
          sta  $AB35                ; AB06
          ldy  #$00                 ; AB09
@@ -259,85 +275,87 @@ LAAED
 LAB1D
          cmp  $AB35                ; AB1D
          beq  LAB3D                ; AB20
-         lda  $A841                ; AB22
+         lda  JOY_LAST             ; AB22
          cmp  #$0F                 ; AB25
          bne  LAB2F                ; AB27
-         jsr  entry_A816           ; AB29
+         jsr  INPUT_CLR            ; AB29
          beq  LAB34                ; AB2C
 LAB2E
          rts                       ; AB2E
 LAB2F
-         lda  $A843                ; AB2F
+         lda  TRIG_ST              ; AB2F
          bne  LAB2E                ; AB32
 LAB34
          lda  #$00                 ; AB34
          ldy  #$00                 ; AB36
          sta  ($B2),y              ; AB38
-         jmp  entry_A813           ; AB3A
+         jmp  CLICK                ; AB3A
 LAB3D
          lda  #$3D                 ; AB3D
          bne  LAB4A                ; AB3F
-         jsr  entry_A816           ; AB41
+         jsr  INPUT_CLR            ; AB41
          bne  LAB2E                ; AB44
          lda  #$20                 ; AB46
          sta  ($B2),y              ; AB48
 LAB4A
-         jmp  entry_A813           ; AB4A
+         jmp  CLICK                ; AB4A
 LAB4D
-         jsr  entry_A813           ; AB4D
+         jsr  CLICK                ; AB4D
          ldx  #$00                 ; AB50
-         stx  $CA                  ; AB52
+         stx  ED_FLAGS             ; AB52
          stx  $B5BB                ; AB54
          dex                       ; AB57
-         stx  $A840                ; AB58
-         lda  $C5                  ; AB5B
+         stx  JOY                  ; AB58
+         lda  CUR_X                ; AB5B
          pha                       ; AB5D
-         lda  $C6                  ; AB5E
+         lda  CUR_Y                ; AB5E
          pha                       ; AB60
          lda  #$1E                 ; AB61
-         sta  $C6                  ; AB63
+         sta  CUR_Y                ; AB63
 LAB65
          lda  #$0F                 ; AB65
-         sta  $C5                  ; AB67
+         sta  CUR_X                ; AB67
 LAB69
-         jsr  sub_ABA7             ; AB69
-         dec  $C5                  ; AB6C
+         jsr  AUTO_VARIANT         ; AB69
+         dec  CUR_X                ; AB6C
          bpl  LAB69                ; AB6E
-         dec  $C6                  ; AB70
+         dec  CUR_Y                ; AB70
          bpl  LAB65                ; AB72
          pla                       ; AB74
-         sta  $C6                  ; AB75
+         sta  CUR_Y                ; AB75
          pla                       ; AB77
-         sta  $C5                  ; AB78
-         jsr  sub_AC15             ; AB7A
+         sta  CUR_X                ; AB78
+         jsr  PLANET_TEST          ; AB7A
          bcc  LAB89                ; AB7D
          beq  LAB83                ; AB7F
          ora  #$80                 ; AB81
 LAB83
-         ldx  $CD                  ; AB83
-         sta  $39A0,x              ; AB85
+         ldx  PLANET               ; AB83
+         sta  PLANET_STATE,x       ; AB85
          rts                       ; AB88
 LAB89
          pha                       ; AB89
-         jsr  sub_AC6B             ; AB8A
+         jsr  CELL_HEADER          ; AB8A
          pla                       ; AB8D
-         jsr  entry_A82E           ; AB8E
+         jsr  TO_DIGITS            ; AB8E
          tya                       ; AB91
          ldy  #$01                 ; AB92
          sta  ($B2),y              ; AB94
          dey                       ; AB96
          lda  ($B2),y              ; AB97
          and  #$E0                 ; AB99
-         ora  $CD                  ; AB9B
+         ora  PLANET               ; AB9B
          sta  ($B2),y              ; AB9D
-         ldx  $CD                  ; AB9F
+         ldx  PLANET               ; AB9F
          lda  #$01                 ; ABA1
-         sta  $39A0,x              ; ABA3
+         sta  PLANET_STATE,x       ; ABA3
          rts                       ; ABA6
-sub_ABA7
-         ldx  $C5                  ; ABA7
-         ldy  $C6                  ; ABA9
-         jsr  sub_AC6F             ; ABAB
+
+* choose the variant ($41-$45) of an element from its free neighbours ---
+AUTO_VARIANT
+         ldx  CUR_X                ; ABA7
+         ldy  CUR_Y                ; ABA9
+         jsr  CELL_ADDR            ; ABAB
          ldy  #$00                 ; ABAE
          lda  ($B2),y              ; ABB0
          cmp  #$41                 ; ABB2
@@ -350,9 +368,9 @@ sub_ABA7
          clc                       ; ABBF
          adc  #$41                 ; ABC0
          sta  $B4                  ; ABC2
-         ldx  $C5                  ; ABC4
-         ldy  $C6                  ; ABC6
-         jsr  sub_AC6F             ; ABC8
+         ldx  CUR_X                ; ABC4
+         ldy  CUR_Y                ; ABC6
+         jsr  CELL_ADDR            ; ABC8
          sec                       ; ABCB
          lda  $B2                  ; ABCC
          sbc  #$11                 ; ABCE
@@ -363,11 +381,11 @@ LABD6
          ldx  #$03                 ; ABD6
 LABD8
          clc                       ; ABD8
-         lda  $C5                  ; ABD9
+         lda  CUR_X                ; ABD9
          adc  $AC0D,x              ; ABDB
          cmp  #$10                 ; ABDE
          bcs  LABF7                ; ABE0
-         lda  $C6                  ; ABE2
+         lda  CUR_Y                ; ABE2
          adc  $AC11,x              ; ABE4
          cmp  #$1F                 ; ABE7
          bcs  LABF7                ; ABE9
@@ -382,19 +400,21 @@ LABF7
          txa                       ; ABF8
          adc  $B4                  ; ABF9
          pha                       ; ABFB
-         ldx  $C5                  ; ABFC
-         ldy  $C6                  ; ABFE
-         jsr  sub_AC6F             ; AC00
+         ldx  CUR_X                ; ABFC
+         ldy  CUR_Y                ; ABFE
+         jsr  CELL_ADDR            ; AC00
          pla                       ; AC03
          ldy  #$00                 ; AC04
          sta  ($B2),y              ; AC06
 LAC08
          rts                       ; AC08
          dta $10,$12,$01,$21,$FF,$01,$00,$00,$00,$00,$FF,$01 ; AC09
-sub_AC15
+
+* test a planet: empty, Robbo ($2A) exactly 1, capsule ($14) exactly 1, screws ($24) < 100 ---
+PLANET_TEST
          ldx  #$00                 ; AC15
          ldy  #$00                 ; AC17
-         jsr  sub_AC6F             ; AC19
+         jsr  CELL_ADDR            ; AC19
          ldy  #$00                 ; AC1C
 LAC1E
          lda  ($B2),y              ; AC1E
@@ -414,7 +434,7 @@ LAC29
          beq  LAC68                ; AC36
 LAC38
          lda  #$2A                 ; AC38
-         jsr  entry_A81F           ; AC3A
+         jsr  COUNT_ELEM           ; AC3A
          tay                       ; AC3D
          bne  LAC44                ; AC3E
          lda  #$04                 ; AC40
@@ -424,7 +444,7 @@ LAC44
          cpy  #$01                 ; AC46
          bne  LAC68                ; AC48
          lda  #$14                 ; AC4A
-         jsr  entry_A81F           ; AC4C
+         jsr  COUNT_ELEM           ; AC4C
          tay                       ; AC4F
          bne  LAC56                ; AC50
          lda  #$05                 ; AC52
@@ -434,7 +454,7 @@ LAC56
          cpy  #$01                 ; AC58
          bne  LAC68                ; AC5A
          lda  #$24                 ; AC5C
-         jsr  entry_A81F           ; AC5E
+         jsr  COUNT_ELEM           ; AC5E
          cmp  #$64                 ; AC61
          bcs  LAC66                ; AC63
          rts                       ; AC65
@@ -444,10 +464,14 @@ LAC68
          tax                       ; AC68
          sec                       ; AC69
          rts                       ; AC6A
-sub_AC6B
+
+* address of the planet header (row 31) --------------------
+CELL_HEADER
          ldx  #$00                 ; AC6B
          ldy  #$1F                 ; AC6D
-sub_AC6F
+
+* cell address: $5000 + planet * $200 + row * 16 + column ---
+CELL_ADDR
          lda  #$00                 ; AC6F
          sta  $B3                  ; AC71
          tya                       ; AC73
@@ -457,7 +481,7 @@ sub_AC6F
          asl                       ; AC77
          rol  $B3                  ; AC78
          sta  $B2                  ; AC7A
-         lda  $CD                  ; AC7C
+         lda  PLANET               ; AC7C
          asl                       ; AC7E
          adc  #$50                 ; AC7F
          adc  $B3                  ; AC81
@@ -466,7 +490,9 @@ sub_AC6F
          adc  $B2                  ; AC86
          sta  $B2                  ; AC88
          rts                       ; AC8A
-LAC8B
+
+* count the cells holding element A on the current planet ---
+COUNT_ELEM_
          sta  $B4                  ; AC8B
          lda  #$00                 ; AC8D
          sta  $B6                  ; AC8F
@@ -476,7 +502,7 @@ LAC95
          ldx  #$0F                 ; AC95
 LAC97
          ldy  $B7                  ; AC97
-         jsr  sub_AC6F             ; AC99
+         jsr  CELL_ADDR            ; AC99
          ldy  #$00                 ; AC9C
          lda  ($B2),y              ; AC9E
          cmp  $B4                  ; ACA0
@@ -492,7 +518,9 @@ LACAA
          lda  $B6                  ; ACB1
          rts                       ; ACB3
          dta $03,$B0                                  ; ACB4
-LACB6
+
+* redraw: palette, board window, planet strip, element preview; swap display lists ---
+REDRAW_
          lda  $B5BA                ; ACB6
          and  #$03                 ; ACB9
          asl                       ; ACBB
@@ -508,7 +536,7 @@ LACC3
          dey                       ; ACCA
          bpl  LACC3                ; ACCB
          lda  #$00                 ; ACCD
-         jsr  sub_AEB2             ; ACCF
+         jsr  BLINK                ; ACCF
          lda  #$1D                 ; ACD2
          sta  $B6                  ; ACD4
          lda  #$09                 ; ACD6
@@ -529,7 +557,7 @@ LACE7
 LACEF
          cmp  #$00                 ; ACEF
          bne  LACF9                ; ACF1
-         ldy  $CD                  ; ACF3
+         ldy  PLANET               ; ACF3
          bpl  LACF9                ; ACF5
          lda  #$20                 ; ACF7
 LACF9
@@ -543,12 +571,12 @@ LAD02
          lda  $B55A,y              ; AD03
 LAD06
          ldy  $B6                  ; AD06
-         cpy  $C9                  ; AD08
+         cpy  PAL_SEL              ; AD08
          bne  LAD1B                ; AD0A
-         bit  $CA                  ; AD0C
+         bit  ED_FLAGS             ; AD0C
          bpl  LAD1B                ; AD0E
          pha                       ; AD10
-         lda  $C4                  ; AD11
+         lda  FRAMES               ; AD11
          lsr                       ; AD13
          lsr                       ; AD14
          pla                       ; AD15
@@ -556,7 +584,7 @@ LAD06
          lda  $B55A                ; AD18
 LAD1B
          ldy  $B7                  ; AD1B
-         jsr  sub_AEDD             ; AD1D
+         jsr  PUT_CELL             ; AD1D
          dec  $B6                  ; AD20
          dex                       ; AD22
          cpx  #$11                 ; AD23
@@ -566,12 +594,12 @@ LAD1B
          lda  $B55A                ; AD2B
          ldx  #$10                 ; AD2E
          ldy  #$09                 ; AD30
-         jsr  sub_AEDD             ; AD32
+         jsr  PUT_CELL             ; AD32
          ldy  #$00                 ; AD35
          lda  $B55A                ; AD37
-         jsr  sub_AEDD             ; AD3A
+         jsr  PUT_CELL             ; AD3A
          iny                       ; AD3D
-         jsr  sub_AEDD             ; AD3E
+         jsr  PUT_CELL             ; AD3E
          lda  $AF36                ; AD41
          sta  $B0                  ; AD44
          lda  $AF37                ; AD46
@@ -581,14 +609,14 @@ LAD1B
          tay                       ; AD4F
 LAD50
          clc                       ; AD50
-         lda  $C7                  ; AD51
+         lda  WIN_TOP              ; AD51
          adc  #$01                 ; AD53
          lsr                       ; AD55
          lsr                       ; AD56
          cmp  $B6                  ; AD57
          bne  LAD91                ; AD59
          clc                       ; AD5B
-         lda  $C7                  ; AD5C
+         lda  WIN_TOP              ; AD5C
          adc  #$01                 ; AD5E
          cmp  #$04                 ; AD60
          bcc  LAD68                ; AD62
@@ -646,10 +674,10 @@ LADAE
          bcc  LAD50                ; ADB4
 LADB6
          lda  #$01                 ; ADB6
-         jsr  sub_AEB2             ; ADB8
+         jsr  BLINK                ; ADB8
          ldx  #$00                 ; ADBB
-         ldy  $C7                  ; ADBD
-         jsr  sub_AC6F             ; ADBF
+         ldy  WIN_TOP              ; ADBD
+         jsr  CELL_ADDR            ; ADBF
          clc                       ; ADC2
          lda  $B2                  ; ADC3
          adc  #$9F                 ; ADC5
@@ -663,7 +691,7 @@ LADD3
          ldx  #$0F                 ; ADD3
 LADD5
          ldy  #$00                 ; ADD5
-         lda  $CD                  ; ADD7
+         lda  PLANET               ; ADD7
          bmi  LADE7                ; ADD9
          lda  ($B2),y              ; ADDB
          sec                       ; ADDD
@@ -676,7 +704,7 @@ LADE6
 LADE7
          lda  $B55A,y              ; ADE7
          ldy  $B6                  ; ADEA
-         jsr  sub_AEDD             ; ADEC
+         jsr  PUT_CELL             ; ADEC
          lda  $B2                  ; ADEF
          bne  LADF5                ; ADF1
          dec  $B3                  ; ADF3
@@ -710,7 +738,7 @@ LAE20
          bne  LAE20                ; AE23
          ldx  #$46                 ; AE25
          ldy  #$A8                 ; AE27
-         lda  $C8                  ; AE29
+         lda  SCR_PAGE             ; AE29
          cmp  #$B6                 ; AE2B
          php                       ; AE2D
          beq  LAE34                ; AE2E
@@ -726,8 +754,8 @@ LAE34
          bne  LAE46                ; AE42
          lda  #$B8                 ; AE44
 LAE46
-         sta  $C8                  ; AE46
-         lda  $C4                  ; AE48
+         sta  SCR_PAGE             ; AE46
+         lda  FRAMES               ; AE48
          lsr                       ; AE4A
          and  #$03                 ; AE4B
          tax                       ; AE4D
@@ -757,10 +785,10 @@ LAE75
          bne  LAE75                ; AE7A
          cpx  #$1F                 ; AE7C
          bcc  LAE5A                ; AE7E
-         jsr  sub_AC6B             ; AE80
+         jsr  CELL_HEADER          ; AE80
          ldy  #$00                 ; AE83
          tya                       ; AE85
-         ldx  $CD                  ; AE86
+         ldx  PLANET               ; AE86
          bmi  LAE8C                ; AE88
          lda  ($B2),y              ; AE8A
 LAE8C
@@ -788,37 +816,43 @@ LAEA4
          dey                       ; AEAE
          bpl  LAEA4                ; AEAF
          rts                       ; AEB1
-sub_AEB2
+
+* blinking: toggle bit 0 of the selected glyphs every 4 frames ---
+BLINK
          sta  $B6                  ; AEB2
-         lda  $C4                  ; AEB4
+         lda  FRAMES               ; AEB4
          and  #$04                 ; AEB6
          bne  LAEBC                ; AEB8
          sta  $B6                  ; AEBA
 LAEBC
          ldy  #$2E                 ; AEBC
 LAEBE
-         jsr  sub_AED2             ; AEBE
+         jsr  BLINK_ONE            ; AEBE
          dey                       ; AEC1
          cpy  #$21                 ; AEC2
          bcs  LAEBE                ; AEC4
          ldy  #$06                 ; AEC6
-         jsr  sub_AED2             ; AEC8
+         jsr  BLINK_ONE            ; AEC8
          ldy  #$54                 ; AECB
-         jsr  sub_AED2             ; AECD
+         jsr  BLINK_ONE            ; AECD
          ldy  #$0A                 ; AED0
-sub_AED2
+
+* blinking: one glyph --------------------------------------
+BLINK_ONE
          lda  $B55A,y              ; AED2
          and  #$FE                 ; AED5
          ora  $B6                  ; AED7
          sta  $B55A,y              ; AED9
          rts                       ; AEDC
-sub_AEDD
-         cpy  $C6                  ; AEDD
+
+* draw one board cell into the screen ----------------------
+PUT_CELL
+         cpy  CUR_Y                ; AEDD
          bne  LAEFD                ; AEDF
-         cpx  $C5                  ; AEE1
+         cpx  CUR_X                ; AEE1
          bne  LAEFD                ; AEE3
          sta  $B4                  ; AEE5
-         bit  $CA                  ; AEE7
+         bit  ED_FLAGS             ; AEE7
          bpl  LAEFD                ; AEE9
          sta  $AEF5                ; AEEB
          lda  $B5BB                ; AEEE
@@ -857,7 +891,7 @@ LAF14
 LAF24
          clc                       ; AF24
          lda  $B1                  ; AF25
-         adc  $C8                  ; AF27
+         adc  SCR_PAGE             ; AF27
          sta  $AF37                ; AF29
          sta  $AF3C                ; AF2C
          pla                       ; AF2F
@@ -870,11 +904,13 @@ LAF24
          ora  #$01                 ; AF38
          sta  $AF3A                ; AF3A
          rts                       ; AF3D
-sub_AF3E
+
+* editor set-up (zero page cleared once, screen, colours, DLI, font $4C00) ---
+ED_SETUP
          lda  #$00                 ; AF3E
          bne  LAF5C                ; AF40
          inc  $AF3F                ; AF42
-         sta  $CA                  ; AF45
+         sta  ED_FLAGS             ; AF45
          ldx  #$D0                 ; AF47
 LAF49
          sta  $00,x                ; AF49
@@ -882,24 +918,24 @@ LAF49
          cpx  #$B0                 ; AF4C
          bcs  LAF49                ; AF4E
          lda  #$0C                 ; AF50
-         sta  $C9                  ; AF52
+         sta  PAL_SEL              ; AF52
          lda  #$12                 ; AF54
-         sta  $C5                  ; AF56
+         sta  CUR_X                ; AF56
          lda  #$09                 ; AF58
-         sta  $C6                  ; AF5A
+         sta  CUR_Y                ; AF5A
 LAF5C
          lda  #$00                 ; AF5C
          sta  SDMCTL               ; AF5E
          sta  DMACTL               ; AF61
          sta  $00                  ; AF64
-         jsr  sub_B003             ; AF66
+         jsr  WAIT_VBL             ; AF66
          lda  #$FF                 ; AF69
          ldx  #$10                 ; AF6B
 LAF6D
          sta  HPOSP0,x             ; AF6D
          dex                       ; AF70
          bpl  LAF6D                ; AF71
-         jsr  sub_AC6B             ; AF73
+         jsr  CELL_HEADER          ; AF73
          ldy  #$06                 ; AF76
          ldx  #$08                 ; AF78
 LAF7A
@@ -942,9 +978,9 @@ LAFC4
          stx  $BD00                ; AFC7
          lda  #$55                 ; AFCA
          sta  $BD50                ; AFCC
-         jsr  sub_94E3             ; AFCF
+         jsr  ED_INIT              ; AFCF
          lda  #$B6                 ; AFD2
-         sta  $C8                  ; AFD4
+         sta  SCR_PAGE             ; AFD4
          ldx  #$02                 ; AFD6
 LAFD8
          lda  $B5BC,x              ; AFD8
@@ -959,19 +995,23 @@ LAFD8
          sta  GPRIOR               ; AFEC
          lda  #$00                 ; AFEF
          sta  IRQEN                ; AFF1
-         jsr  entry_A816           ; AFF4
+         jsr  INPUT_CLR            ; AFF4
          lda  #$01                 ; AFF7
-         sta  $CE                  ; AFF9
-         jsr  sub_94F5             ; AFFB
+         sta  HELP_PAGE            ; AFF9
+         jsr  HELP_KEY             ; AFFB
          lda  #$60                 ; AFFE
          sta  $AFF7                ; B000
-sub_B003
+
+* wait for the next frame ----------------------------------
+WAIT_VBL
          lda  RTCLOK+2             ; B003
 LB005
          cmp  RTCLOK+2             ; B005
          beq  LB005                ; B007
          rts                       ; B009
-LB00A
+
+* click sound ----------------------------------------------
+CLICK_
          lda  #$00                 ; B00A
          sta  AUDF1                ; B00C
          lda  #$64                 ; B00F
@@ -987,8 +1027,10 @@ LB018
          stx  AUDC1                ; B01E
          rts                       ; B021
          dta $00                                      ; B022
-LB023
-         jsr  entry_A819           ; B023
+
+* key event ------------------------------------------------
+KEY_EVENT_
+         jsr  GETKEY               ; B023
          bcc  LB02D                ; B026
 LB028
          sta  $B022                ; B028
@@ -1002,13 +1044,15 @@ LB02D
          sta  $B022                ; B036
          clc                       ; B039
          rts                       ; B03A
-LB03B
-         jsr  entry_A822           ; B03B
-         jsr  entry_A816           ; B03E
+
+* wait for a key or fire -----------------------------------
+WAIT_KEY_
+         jsr  INPUT                ; B03B
+         jsr  INPUT_CLR            ; B03E
          beq  LB051                ; B041
-         jsr  entry_A82B           ; B043
+         jsr  KEY_EVENT            ; B043
          bcc  LB055                ; B046
-         lda  $A840                ; B048
+         lda  JOY                  ; B048
          cmp  #$FF                 ; B04B
          bne  LB055                ; B04D
          sec                       ; B04F
@@ -1021,10 +1065,12 @@ LB055
 LB057
          clc                       ; B057
          ldx  #$FF                 ; B058
-         stx  $A840                ; B05A
+         stx  JOY                  ; B05A
          tax                       ; B05D
          rts                       ; B05E
-irq_B05F
+
+* editor DLI -----------------------------------------------
+ED_DLI
          cld                       ; B05F
          pha                       ; B060
          lda  VCOUNT               ; B061
@@ -1068,13 +1114,15 @@ LB08E
          sta  COLPF1               ; B0AF
          lda  #$4C                 ; B0B2
          sta  CHBASE               ; B0B4
-         jsr  entry_A822           ; B0B7
+         jsr  INPUT                ; B0B7
 LB0BA
          pla                       ; B0BA
          rti                       ; B0BB
-LB0BC
+
+* read joystick, fire, console keys and keyboard into JOY ---
+INPUT_
          lsr  $4D                  ; B0BC
-         jsr  entry_A819           ; B0BE
+         jsr  GETKEY               ; B0BE
          bcs  LB0CA                ; B0C1
          sec                       ; B0C3
          sbc  #$0C                 ; B0C4
@@ -1093,21 +1141,21 @@ LB0CE
          and  TRIG0                ; B0D9
          and  $D011                ; B0DC
          and  CONSOL               ; B0DF
-         sta  $A843                ; B0E2
-         cmp  $A845                ; B0E5
+         sta  TRIG_ST              ; B0E2
+         cmp  TRIG_LAST            ; B0E5
          beq  LB0ED                ; B0E8
-         sta  $A844                ; B0EA
+         sta  EVENT                ; B0EA
 LB0ED
-         lda  $A843                ; B0ED
-         sta  $A845                ; B0F0
-         lda  $A842                ; B0F3
+         lda  TRIG_ST              ; B0ED
+         sta  TRIG_LAST            ; B0F0
+         lda  JOY_RPT              ; B0F3
          bmi  LB0FB                ; B0F6
-         dec  $A842                ; B0F8
+         dec  JOY_RPT              ; B0F8
 LB0FB
          txa                       ; B0FB
          pha                       ; B0FC
          ldx  #$00                 ; B0FD
-         jsr  entry_A819           ; B0FF
+         jsr  GETKEY               ; B0FF
          bcs  LB10E                ; B102
          ldx  #$04                 ; B104
 LB106
@@ -1128,14 +1176,14 @@ LB10E
          lsr                       ; B11E
          and  PORTA                ; B11F
          and  #$00                 ; B122
-         cmp  $A841                ; B124
+         cmp  JOY_LAST             ; B124
          bne  LB12E                ; B127
-         bit  $A842                ; B129
+         bit  JOY_RPT              ; B129
          bpl  LB158                ; B12C
 LB12E
-         bit  $A840                ; B12E
+         bit  JOY                  ; B12E
          bpl  LB158                ; B131
-         cmp  $A841                ; B133
+         cmp  JOY_LAST             ; B133
          pha                       ; B136
          php                       ; B137
          lda  $B511                ; B138
@@ -1143,29 +1191,33 @@ LB12E
          beq  LB141                ; B13C
          lda  $B510                ; B13E
 LB141
-         sta  $A842                ; B141
-         lda  $A841                ; B144
+         sta  JOY_RPT              ; B141
+         lda  JOY_LAST             ; B144
          sta  $B17E                ; B147
          pla                       ; B14A
          cmp  #$0F                 ; B14B
          beq  LB155                ; B14D
-         sta  $A844                ; B14F
-         sta  $A840                ; B152
+         sta  EVENT                ; B14F
+         sta  JOY                  ; B152
 LB155
-         sta  $A841                ; B155
+         sta  JOY_LAST             ; B155
 LB158
          rts                       ; B158
-LB159
-         lda  $A844                ; B159
+
+* clear the input event ------------------------------------
+INPUT_CLR_
+         lda  EVENT                ; B159
          bne  LB16B                ; B15C
          lda  #$FF                 ; B15E
-         sta  $A844                ; B160
-         sta  $A840                ; B163
+         sta  EVENT                ; B160
+         sta  JOY                  ; B163
          lda  #$00                 ; B166
          sta  $B5BB                ; B168
 LB16B
          rts                       ; B16B
-LB16C
+
+* read a key: KBCODE, carry clear if a key is pressed ------
+GETKEY_
          lda  SKCTL                ; B16C
          and  #$04                 ; B16F
          bne  LB17A                ; B171
@@ -1178,7 +1230,9 @@ LB17A
          sec                       ; B17C
          rts                       ; B17D
          dta $00                                      ; B17E
-LB17F
+
+* test direction bits --------------------------------------
+DIR_TEST_
          clc                       ; B17F
          and  $B17E                ; B180
          bne  LB186                ; B183
@@ -1186,19 +1240,21 @@ LB17F
 LB186
          rts                       ; B186
          dta $00,$00                                  ; B187
-LB189
+
+* menu function "strona tytułowa": edit the start and congratulation texts ---
+TITLE_ED_
          lda  #$1D                 ; B189
-         jsr  sub_94E9             ; B18B
-         jsr  sub_94F2             ; B18E
+         jsr  MESSAGE              ; B18B
+         jsr  ED_DLIST             ; B18E
          lda  $B187                ; B191
          sta  $B4                  ; B194
          lda  $B188                ; B196
          sta  $B5                  ; B199
 LB19B
-         jsr  sub_B34C             ; B19B
+         jsr  TX_DRAW              ; B19B
          ldx  #$00                 ; B19E
          ldy  #$A9                 ; B1A0
-         jsr  entry_A837           ; B1A2
+         jsr  SET_DLIST            ; B1A2
          lda  #$40                 ; B1A5
          sta  IRQEN                ; B1A7
          jsr  LB1C3                ; B1AA
@@ -1209,7 +1265,7 @@ LB19B
          sta  $B188                ; B1B6
          lda  $B4                  ; B1B9
          sta  $B187                ; B1BB
-         jsr  sub_94F2             ; B1BE
+         jsr  ED_DLIST             ; B1BE
          sec                       ; B1C1
          rts                       ; B1C2
 LB1C3
@@ -1217,38 +1273,38 @@ LB1C3
          sta  $B2                  ; B1C5
          lda  #$3A                 ; B1C7
          sta  $B3                  ; B1C9
-         jsr  sub_B2F4             ; B1CB
+         jsr  TX_SETBIT            ; B1CB
          lda  $B5                  ; B1CE
          sta  $B2                  ; B1D0
          ldy  #$00                 ; B1D2
          lda  ($B2),y              ; B1D4
          ora  #$80                 ; B1D6
          sta  ($B2),y              ; B1D8
-         jsr  sub_B34C             ; B1DA
+         jsr  TX_DRAW              ; B1DA
          ldy  #$00                 ; B1DD
          lda  ($B2),y              ; B1DF
          and  #$7F                 ; B1E1
          sta  ($B2),y              ; B1E3
-         jsr  entry_A819           ; B1E5
+         jsr  GETKEY               ; B1E5
          bcs  LB1F3                ; B1E8
          cmp  #$11                 ; B1EA
          bne  LB1F3                ; B1EC
-         jsr  sub_94F5             ; B1EE
+         jsr  HELP_KEY             ; B1EE
          clc                       ; B1F1
          rts                       ; B1F2
 LB1F3
-         jsr  entry_A822           ; B1F3
-         jsr  entry_A816           ; B1F6
+         jsr  INPUT                ; B1F3
+         jsr  INPUT_CLR            ; B1F6
          bne  LB206                ; B1F9
          lda  TRIG0                ; B1FB
          and  $D011                ; B1FE
          and  CONSOL               ; B201
          beq  LB20B                ; B204
 LB206
-         jsr  entry_A82B           ; B206
+         jsr  KEY_EVENT            ; B206
          bcs  LB210                ; B209
 LB20B
-         jsr  entry_A813           ; B20B
+         jsr  CLICK                ; B20B
          sec                       ; B20E
          rts                       ; B20F
 LB210
@@ -1276,38 +1332,48 @@ LB23B
          ldy  $B330,x              ; B23E
          bne  LB227                ; B241
          lda  #$00                 ; B243
-         jsr  sub_B2FD             ; B245
+         jsr  TX_ALLOWED           ; B245
          bcc  LB24D                ; B248
          jmp  LB1C3                ; B24A
 LB24D
-         jsr  entry_A834           ; B24D
+         jsr  ATA2SCR              ; B24D
          ldy  #$00                 ; B250
          sta  ($B2),y              ; B252
-entry_B254
+
+* text input: cursor right ---------------------------------
+TX_RIGHT
          inc  $B5                  ; B254
          jmp  LB275                ; B256
-entry_B259
+
+* text input: cursor left ----------------------------------
+TX_LEFT
          dec  $B5                  ; B259
          jmp  LB275                ; B25B
-entry_B25E
+
+* text input: cursor up ------------------------------------
+TX_UP
          sec                       ; B25E
          lda  $B5                  ; B25F
          sbc  #$20                 ; B261
          sta  $B5                  ; B263
          bcs  LB275                ; B265
          bcc  LB272                ; B267
-entry_B269
+
+* text input: cursor down ----------------------------------
+TX_DOWN
          clc                       ; B269
          lda  $B5                  ; B26A
          adc  #$20                 ; B26C
          sta  $B5                  ; B26E
          bcc  LB275                ; B270
 LB272
-         jsr  sub_B2ED             ; B272
+         jsr  TX_FLIP              ; B272
 LB275
-         jsr  entry_A813           ; B275
+         jsr  CLICK                ; B275
          jmp  LB1C3                ; B278
-entry_B27B
+
+* text input: backspace ------------------------------------
+TX_BACKSP
          lda  $B5                  ; B27B
          bne  LB282                ; B27D
          jmp  LB1C3                ; B27F
@@ -1319,7 +1385,9 @@ LB282
          tya                       ; B28A
          sta  ($B2),y              ; B28B
          jmp  LB275                ; B28D
-entry_B290
+
+* text input: insert character -----------------------------
+TX_INSERT
          lda  #$00                 ; B290
          sta  $B2                  ; B292
          dec  $B5                  ; B294
@@ -1341,7 +1409,9 @@ LB2A9
          sta  ($B2),y              ; B2AC
          inc  $B5                  ; B2AE
          jmp  LB275                ; B2B0
-entry_B2B3
+
+* text input: delete character -----------------------------
+TX_DELETE
          lda  #$00                 ; B2B3
          sta  $B2                  ; B2B5
          ldy  $B5                  ; B2B7
@@ -1359,17 +1429,21 @@ LB2C5
          lda  #$00                 ; B2C6
          sta  ($B2),y              ; B2C8
          jmp  LB275                ; B2CA
-entry_B2CD
+
+* text input: return ---------------------------------------
+TX_RETURN
          clc                       ; B2CD
          lda  $B5                  ; B2CE
          adc  #$20                 ; B2D0
          and  #$E0                 ; B2D2
          sta  $B5                  ; B2D4
          bcc  LB2DB                ; B2D6
-         jsr  sub_B2ED             ; B2D8
+         jsr  TX_FLIP              ; B2D8
 LB2DB
          jmp  LB275                ; B2DB
-entry_B2DE
+
+* text input: clear ----------------------------------------
+TX_CLEAR
          ldy  #$00                 ; B2DE
          sty  $B2                  ; B2E0
          sty  $B5                  ; B2E2
@@ -1379,18 +1453,24 @@ LB2E5
          dey                       ; B2E7
          bne  LB2E5                ; B2E8
          jmp  LB275                ; B2EA
-sub_B2ED
+
+* text input: flip bit 0 of $B4 ----------------------------
+TX_FLIP
          lda  $B4                  ; B2ED
          eor  #$01                 ; B2EF
          sta  $B4                  ; B2F1
          rts                       ; B2F3
-sub_B2F4
+
+* text input: set bit 0 of $B3 from $B4 --------------------
+TX_SETBIT
          lda  $B3                  ; B2F4
          and  #$FE                 ; B2F6
          ora  $B4                  ; B2F8
          sta  $B3                  ; B2FA
          rts                       ; B2FC
-sub_B2FD
+
+* text input: is the character allowed ---------------------
+TX_ALLOWED
          ldx  #$00                 ; B2FD
 LB2FF
          ldy  $B4F9,x              ; B2FF
@@ -1424,7 +1504,9 @@ LB32E
          rts                       ; B32F
          dta $1E,$59,$B2,$1F,$54,$B2,$1C,$5E,$B2,$1D,$69,$B2,$7E,$7B,$B2,$FE ; B330
          dta $B3,$B2,$FF,$90,$B2,$7D,$DE,$B2,$9B,$CD,$B2,$00 ; B340
-sub_B34C
+
+* text input: draw the text window -------------------------
+TX_DRAW
          ldy  #$27                 ; B34C
 LB34E
          lda  $A957,y              ; B34E
@@ -1492,8 +1574,10 @@ LB3A7
          dex                       ; B3BA
          bne  LB376                ; B3BB
          rts                       ; B3BD
-LB3BE
-         jsr  sub_B003             ; B3BE
+
+* set a display list (X/Y) and the colours -----------------
+SET_DLIST_
+         jsr  WAIT_VBL             ; B3BE
          stx  SDLSTL               ; B3C1
          stx  DLISTL               ; B3C4
          sty  SDLSTH               ; B3C7
@@ -1516,7 +1600,9 @@ LB3D2
          sta  DMACTL               ; B3F0
          rts                       ; B3F3
          dta $00                                      ; B3F4
-LB3F5
+
+* yes / no choice: move the highlight in "tak nie" ---------
+ASK_YESNO_
          lda  $B3F4                ; B3F5
          and  #$01                 ; B3F8
          tax                       ; B3FA
@@ -1556,25 +1642,25 @@ LB424
          ora  #$80                 ; B435
          sta  $BCC8,y              ; B437
 LB43A
-         lda  $A840                ; B43A
+         lda  JOY                  ; B43A
          cmp  #$FF                 ; B43D
          beq  LB459                ; B43F
          and  #$04                 ; B441
          beq  LB44C                ; B443
-         lda  $A840                ; B445
+         lda  JOY                  ; B445
          and  #$08                 ; B448
          bne  LB455                ; B44A
 LB44C
          inc  $B3F4                ; B44C
-         jsr  entry_A813           ; B44F
+         jsr  CLICK                ; B44F
          jmp  LB459                ; B452
 LB455
          lda  #$78                 ; B455
          bne  LB474                ; B457
 LB459
-         jsr  entry_A816           ; B459
+         jsr  INPUT_CLR            ; B459
          beq  LB468                ; B45C
-         jsr  entry_A82B           ; B45E
+         jsr  KEY_EVENT            ; B45E
          bcc  LB464                ; B461
          rts                       ; B463
 LB464
@@ -1592,7 +1678,7 @@ LB474
          pha                       ; B474
          lda  #$00                 ; B475
          sta  $B3F4                ; B477
-         jsr  entry_A813           ; B47A
+         jsr  CLICK                ; B47A
          lda  #$00                 ; B47D
          bmi  LB49B                ; B47F
          lsr  $B48C                ; B481
@@ -1605,7 +1691,7 @@ LB48A
          bne  LB48A                ; B48E
          cmp  $0440                ; B490
          beq  LB49B                ; B493
-         lda  entry_A810           ; B495
+         lda  START                ; B495
          sta  $ACB3                ; B498
 LB49B
          sec                       ; B49B
@@ -1613,7 +1699,9 @@ LB49B
          pla                       ; B49F
          clc                       ; B4A0
          rts                       ; B4A1
-LB4A2
+
+* ATASCII -> screen code -----------------------------------
+ATA2SCR_
          stx  $B4CB                ; B4A2
          sty  $B4C9                ; B4A5
          asl                       ; B4A8
@@ -1640,7 +1728,9 @@ LB4C6
          ldy  #$00                 ; B4C8
          ldx  #$00                 ; B4CA
          rts                       ; B4CC
-LB4CD
+
+* number -> two decimal digits (screen codes) --------------
+TO_DIGITS_
          sta  $B6                  ; B4CD
          lda  #$00                 ; B4CF
          sta  $B7                  ; B4D1
@@ -1656,14 +1746,16 @@ LB4D6
          lda  $B7                  ; B4E0
          tay                       ; B4E2
          pha                       ; B4E3
-         jsr  sub_B4ED             ; B4E4
+         jsr  DIGIT                ; B4E4
          tax                       ; B4E7
          pla                       ; B4E8
          lsr                       ; B4E9
          lsr                       ; B4EA
          lsr                       ; B4EB
          lsr                       ; B4EC
-sub_B4ED
+
+* one digit (low nibble) -> screen code --------------------
+DIGIT
          and  #$0F                 ; B4ED
          clc                       ; B4EF
          adc  #$10                 ; B4F0

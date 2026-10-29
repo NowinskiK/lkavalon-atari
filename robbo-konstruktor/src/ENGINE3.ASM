@@ -53,7 +53,7 @@ L36A7
          sta  $E9                  ; 36B7
          jmp  L3683                ; 36B9
 sub_36BC
-         jsr  entry_1E00           ; 36BC
+         jsr  ENGINE_INIT          ; 36BC
          ldx  $395B                ; 36BF
          dex                       ; 36C2
          stx  $EC                  ; 36C3
@@ -113,7 +113,7 @@ L3725
          ldx  $EA                  ; 3727
          inx                       ; 3729
          ldy  $EB                  ; 372A
-         jsr  entry_1E03           ; 372C
+         jsr  ENGINE_PLAY          ; 372C
          dex                       ; 372F
          stx  $EA                  ; 3730
          sty  $EB                  ; 3732
@@ -331,7 +331,7 @@ L3897
          sta  $3B00,y              ; 389C
          dey                       ; 389F
          bne  L3897                ; 38A0
-         jmp  entry_A810           ; 38A2
+         jmp  START                ; 38A2
 L38A5
          jsr  sub_3913             ; 38A5
          ldy  #$00                 ; 38A8

@@ -159,7 +159,7 @@ CM2
          inc  $2502                ; 254F
          ldx  #$50                 ; 2552
 L2554
-         lda  entry_1E00,x         ; 2554
+         lda  ENGINE_INIT,x        ; 2554
          sta  CONSOL               ; 2557
          dex                       ; 255A
          bpl  L2554                ; 255B

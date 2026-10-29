@@ -123,8 +123,9 @@ original label names from `robbo/d1/*.ASM` can be used.
 The program's manual, shown with the HELP key. Format: `$00 nn` starts page *nn* (the text before marker 1 is
 page 0); a character with **bit 7 set is followed by a space** (simple compression); Polish letters use low codes:
 they are typed as CONTROL + a, c, e, l, n, o, s, z (help page 8 lists them in that order), so `$01` ą, `$03` ć,
-`$05` ę, `$0C` ł, `$0E` ń, `$0F` ó, `$13` ś, `$1A` ż – only one z, so ż and ź share it; `$14` = quotation mark,
-`$1C-$1F` = arrows ↑↓←→.
+`$05` ę, `$0C` ł, `$0E` ń, `$0F` ó, `$13` ś, `$1A` ż – only one z, so ż and ź share it;
+`$1C-$1F` = arrows ↑↓←→. Control codes for the viewer: **`$14` toggles inverse video** (titles), inverse digits
+`$B1-$B9` = indentation.
 
 | Page | Title | Function |
 |---|---|---|
@@ -159,3 +160,26 @@ Two encodings in one block (written as `dta d'…'` / `dta c'…'` strings in `s
 | $A804-$A808 | ATASCII | "Robbo" |
 
 The menu text has a typo in the original: "funcje podstawowe" (for "funkcje").
+
+## Editor structure
+
+| Part | Routines |
+|---|---|
+| start, main loop | `START` → `START_` ($A9A7), `ED_SETUP`, `MAIN_LOOP` (every 4 frames: `REDRAW`, `ED_FRAME`, `EDIT`) |
+| module interface ($A810) | `CLICK INPUT_CLR GETKEY REDRAW COUNT_ELEM INPUT DIR_TEST KEY_EVENT TO_DIGITS ASK_YESNO ATA2SCR SET_DLIST TITLE_ED WAIT_KEY` |
+| editor services ($94E0) | `ED_FRAME ED_INIT ED_COLORS MESSAGE IO_MSG ELEM_MSG ED_DLIST HELP_KEY` |
+| main menu | `MENU`: index = row + 5 × page; `M_TEST M_CLEAR M_COLORS M_DISK M_PAGE` (basic) / `TITLE_ED M_ORDER M_TESTALL M_SAVEGAME M_PAGE` (additional); `HELP_PAGE` = index / 2 + 3 (context help) |
+| board editor | `EDIT`, `CELL_ADDR`, `AUTO_VARIANT`, `PLANET_TEST`, `PLANET_CLR`, `REDRAW_`, `PUT_CELL`, `BLINK` |
+| help viewer | `HELP` / `HLP_*` |
+| tape / disk | `IO_CMD` (letters r w e d), `IO_*`, `DISK_*` sub-menu, `IO_FORMAT` (zapisz Robbo) |
+| text input | `TX_*` (title page texts) |
+| engine entries | `ENGINE_INIT` ($1E00), `ENGINE_PLAY` ($1E03) |
+
+## Planet format and disk slots
+
+- Planet n in memory at `$5000 + n × $200` (32 planets): 16 × 31 cells row by row, header (colours) at offset
+  `$1F0-$1F7`; `$1F7` bytes are saved. Cells are Robbo's level characters: `$20` empty, `$2A` Robbo, `$14` capsule,
+  `$24` screw, … `PLANET_STATE` ($39A0): 0 empty, bit 7 = bad (low bits = error message), else good.
+- A test accepts a planet with exactly one Robbo, exactly one capsule and fewer than 100 screws.
+- Disk: 5 slots for planet sets, header sectors **256, 388, 520, 652, 784** (slot 0 = sector 4 = the program);
+  header signature inverse " RKdata " (used) or " unused " (erased). These are the extra used sectors of the disk.

@@ -112,6 +112,22 @@ HLP            equ $00A7  ; temporary (Robbo HLP)
 RUCH           equ $00A8  ; move ("ruch")
 TOLE           equ $00AA  ; Robbo TOLE
 
+* zero page - editor -----------
+FRAMES         equ $00C4  ; editor frame counter (main loop)
+CUR_X          equ $00C5  ; cursor column (0-15 board, 17-19 palette)
+CUR_Y          equ $00C6  ; cursor row (0-9)
+WIN_TOP        equ $00C7  ; first board row shown in the 10-row window
+SCR_PAGE       equ $00C8  ; screen buffer being drawn ($B6 / $B8)
+PAL_SEL        equ $00C9  ; selected palette row
+ED_FLAGS       equ $00CA  ; editor flags (bit 7 tested by the cursor and the redraw)
+MENU_POS       equ $00CB  ; main menu: row, bit 7 = page (basic / additional functions)
+PLANET         equ $00CD  ; current planet (0-31), bit 7 = none
+HELP_PAGE      equ $00CE  ; help page shown by the HELP key (2 = menu, 3-12 = functions)
+PANEL_ST       equ $00CF  ; lower screen panel state (PANEL)
+
+* planets ----------------------
+PLANET_STATE   equ $39A0  ; +1F status of the 32 planets: 0 empty, bit 7 = bad (low bits = error message), else good
+
 ; labels not at an instruction boundary or outside the source blocks
 
 LF556      equ $F556

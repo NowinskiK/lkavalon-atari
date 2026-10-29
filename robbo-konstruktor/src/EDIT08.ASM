@@ -3,8 +3,10 @@
 
          org $0800
 
-entry_0800
-         jmp  L09A6                ; 0800
+
+* HELP: show the help text, page by page (entered from HELP_KEY) ---
+HELP
+         jmp  HELP_                ; 0800
          dta $10,$70,$42,$2E,$09,$02,$42,$00,$B6,$02,$02,$02,$02,$02,$02,$02 ; 0803
          dta $02,$02,$02,$02,$02,$02,$02,$02,$42,$56,$09,$02,$20,$4F,$50,$BD ; 0813
          dta $0F,$0F,$42,$3E,$08,$02,$02,$02,$02,$4F,$00,$BD,$0F,$0F,$0F,$0F ; 0823
@@ -32,7 +34,7 @@ entry_0800
          dta $1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E ; 0983
          dta $1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E,$1E ; 0993
          dta $1E,$1E,$00                              ; 09A3
-L09A6
+HELP_
          sta  $0C75                ; 09A6
          ldx  #$07                 ; 09A9
 L09AB
@@ -42,8 +44,8 @@ L09AB
          bpl  L09AB                ; 09B1
          lda  #$80                 ; 09B3
          bne  L09BD                ; 09B5
-         jsr  entry_A813           ; 09B7
-         jsr  sub_94F2             ; 09BA
+         jsr  CLICK                ; 09B7
+         jsr  ED_DLIST             ; 09BA
 L09BD
          asl  $09B4                ; 09BD
          lda  #$79                 ; 09C0
@@ -70,42 +72,42 @@ L09E1
          ldy  #$01                 ; 09E1
          lda  ($B2),y              ; 09E3
          beq  L09F5                ; 09E5
-         cmp  $CE                  ; 09E7
+         cmp  HELP_PAGE            ; 09E7
          bne  L09CA                ; 09E9
          lda  $B2                  ; 09EB
          sta  $0C77                ; 09ED
          lda  $B3                  ; 09F0
          sta  $0C78                ; 09F2
 L09F5
-         jsr  sub_0A3F             ; 09F5
-         jsr  sub_0B16             ; 09F8
+         jsr  HLP_PAGE             ; 09F5
+         jsr  HLP_COPY             ; 09F8
          ldx  #$03                 ; 09FB
          ldy  #$08                 ; 09FD
-         jsr  entry_A837           ; 09FF
+         jsr  SET_DLIST            ; 09FF
 L0A02
-         jsr  entry_A822           ; 0A02
-         lda  $A840                ; 0A05
+         jsr  INPUT                ; 0A02
+         lda  JOY                  ; 0A05
          and  #$04                 ; 0A08
          bne  L0A12                ; 0A0A
-         jsr  sub_0B3C             ; 0A0C
+         jsr  HLP_PREV             ; 0A0C
          jmp  L0A1C                ; 0A0F
 L0A12
-         lda  $A840                ; 0A12
+         lda  JOY                  ; 0A12
          and  #$08                 ; 0A15
          bne  L0A24                ; 0A17
-         jsr  sub_0B62             ; 0A19
+         jsr  HLP_NEXT             ; 0A19
 L0A1C
          lda  #$FF                 ; 0A1C
-         sta  $A840                ; 0A1E
+         sta  JOY                  ; 0A1E
          jmp  L0A02                ; 0A21
 L0A24
-         jsr  entry_A82B           ; 0A24
+         jsr  KEY_EVENT            ; 0A24
          bcc  L0A2E                ; 0A27
-         jsr  entry_A816           ; 0A29
+         jsr  INPUT_CLR            ; 0A29
          bne  L0A1C                ; 0A2C
 L0A2E
-         jsr  entry_A813           ; 0A2E
-         jsr  sub_94F2             ; 0A31
+         jsr  CLICK                ; 0A2E
+         jsr  ED_DLIST             ; 0A31
          ldx  #$07                 ; 0A34
 L0A36
          lda  $0C6D,x              ; 0A36
@@ -113,12 +115,14 @@ L0A36
          dex                       ; 0A3B
          bpl  L0A36                ; 0A3C
          rts                       ; 0A3E
-sub_0A3F
+
+* help: draw one page (16 lines) from the text pointer $0C77 ---
+HLP_PAGE
          ldx  #$5E                 ; 0A3F
          stx  $0909                ; 0A41
          inx                       ; 0A44
          stx  $090A                ; 0A45
-         jsr  sub_0C2D             ; 0A48
+         jsr  HLP_PTRTXT           ; 0A48
          ldx  #$00                 ; 0A4B
          stx  $0C76                ; 0A4D
          lda  ($B2,x)              ; 0A50
@@ -126,14 +130,14 @@ sub_0A3F
          bne  L0A59                ; 0A54
          stx  $0909                ; 0A56
 L0A59
-         jsr  sub_0C47             ; 0A59
-         jsr  sub_0C47             ; 0A5C
+         jsr  HLP_INCTXT           ; 0A59
+         jsr  HLP_INCTXT           ; 0A5C
          ldx  #$10                 ; 0A5F
 L0A61
          txa                       ; 0A61
          pha                       ; 0A62
-         jsr  sub_0A7A             ; 0A63
-         jsr  sub_0C55             ; 0A66
+         jsr  HLP_LINE             ; 0A63
+         jsr  HLP_NEXTLN           ; 0A66
          pla                       ; 0A69
          tax                       ; 0A6A
          dex                       ; 0A6B
@@ -145,7 +149,9 @@ L0A61
          stx  $090A                ; 0A76
 L0A79
          rts                       ; 0A79
-sub_0A7A
+
+* help: format one line - frame characters, $14 toggles inverse, inverse digits = indentation ---
+HLP_LINE
          ldy  #$27                 ; 0A7A
          lda  #$1C                 ; 0A7C
          sta  ($B0),y              ; 0A7E
@@ -179,11 +185,11 @@ L0A9E
          sta  $0C76                ; 0AAF
          bcs  L0ABC                ; 0AB2
 L0AB4
-         jsr  entry_A834           ; 0AB4
+         jsr  ATA2SCR              ; 0AB4
          ora  $0C76                ; 0AB7
          sta  ($B0),y              ; 0ABA
 L0ABC
-         jmp  sub_0C47             ; 0ABC
+         jmp  HLP_INCTXT           ; 0ABC
 L0ABF
          rts                       ; 0ABF
 L0AC0
@@ -208,19 +214,19 @@ L0AD3
          beq  L0B02                ; 0ADD
          cmp  #$14                 ; 0ADF
          beq  L0B0B                ; 0AE1
-         jsr  entry_A834           ; 0AE3
+         jsr  ATA2SCR              ; 0AE3
          ora  $0C76                ; 0AE6
          sta  ($B0),y              ; 0AE9
          iny                       ; 0AEB
 L0AEC
-         jsr  sub_0C47             ; 0AEC
+         jsr  HLP_INCTXT           ; 0AEC
          jmp  L0A90                ; 0AEF
 L0AF2
          lda  $0C75                ; 0AF2
          bmi  L0AEC                ; 0AF5
          lda  #$2F                 ; 0AF7
 L0AF9
-         jsr  sub_0C47             ; 0AF9
+         jsr  HLP_INCTXT           ; 0AF9
          cmp  ($B2,x)              ; 0AFC
          bne  L0AF9                ; 0AFE
          beq  L0AEC                ; 0B00
@@ -234,9 +240,11 @@ L0B0B
          eor  #$80                 ; 0B0E
          sta  $0C76                ; 0B10
          jmp  L0AEC                ; 0B13
-sub_0B16
-         jsr  sub_0C1C             ; 0B16
-         jsr  sub_0C40             ; 0B19
+
+* help: copy the help screen buffer ------------------------
+HLP_COPY
+         jsr  HLP_PTRSCR           ; 0B16
+         jsr  HLP_WAIT             ; 0B19
          ldy  #$00                 ; 0B1C
 L0B1E
          lda  ($B2),y              ; 0B1E
@@ -258,13 +266,15 @@ L0B34
          iny                       ; 0B38
          bpl  L0B34                ; 0B39
          rts                       ; 0B3B
-sub_0B3C
+
+* help: previous page (only if not at the start, marker $0909) ---
+HLP_PREV
          lda  $0909                ; 0B3C
          bne  L0B42                ; 0B3F
          rts                       ; 0B41
 L0B42
-         jsr  entry_A813           ; 0B42
-         jsr  sub_0C2D             ; 0B45
+         jsr  CLICK                ; 0B42
+         jsr  HLP_PTRTXT           ; 0B45
 L0B48
          dec  $B3                  ; 0B48
          ldy  #$FF                 ; 0B4A
@@ -281,13 +291,15 @@ L0B5B
          lda  #$D0                 ; 0B5B
          ldx  #$0B                 ; 0B5D
          jmp  L0B81                ; 0B5F
-sub_0B62
+
+* help: next page (only if more text, marker $090A) --------
+HLP_NEXT
          lda  $090A                ; 0B62
          bne  L0B68                ; 0B65
          rts                       ; 0B67
 L0B68
-         jsr  entry_A813           ; 0B68
-         jsr  sub_0C2D             ; 0B6B
+         jsr  CLICK                ; 0B68
+         jsr  HLP_PTRTXT           ; 0B6B
          ldy  #$01                 ; 0B6E
 L0B70
          lda  ($B2),y              ; 0B70
@@ -310,26 +322,28 @@ L0B81
          lda  #$00                 ; 0B8E
          adc  $B3                  ; 0B90
          sta  $0C78                ; 0B92
-         jsr  sub_0A3F             ; 0B95
+         jsr  HLP_PAGE             ; 0B95
          lda  #$26                 ; 0B98
          sta  $B6                  ; 0B9A
          lda  #$01                 ; 0B9C
          sta  $B7                  ; 0B9E
 L0BA0
-         jsr  sub_0C1C             ; 0BA0
+         jsr  HLP_PTRSCR           ; 0BA0
          lda  #$60                 ; 0BA3
 L0BA5
          cmp  VCOUNT               ; 0BA5
          bne  L0BA5                ; 0BA8
-         jsr  sub_0BC5             ; 0BAA
+         jsr  HLP_CLRBUF           ; 0BAA
          ldx  #$10                 ; 0BAD
 L0BAF
          txa                       ; 0BAF
          pha                       ; 0BB0
-sub_0BB1
-         jsr  sub_0BB1             ; 0BB1
-         jsr  sub_0C55             ; 0BB4
-         jsr  sub_0C61             ; 0BB7
+
+* help: scroll animation -----------------------------------
+HLP_SCROLL
+         jsr  HLP_SCROLL           ; 0BB1
+         jsr  HLP_NEXTLN           ; 0BB4
+         jsr  HLP_NEXTSRC          ; 0BB7
          pla                       ; 0BBA
          tax                       ; 0BBB
          dex                       ; 0BBC
@@ -337,7 +351,9 @@ sub_0BB1
          inc  $B7                  ; 0BBF
          dec  $B6                  ; 0BC1
          bne  L0BA0                ; 0BC3
-sub_0BC5
+
+* help: clear the line buffer $0956 ------------------------
+HLP_CLRBUF
          ldy  #$26                 ; 0BC5
          lda  #$00                 ; 0BC7
 L0BC9
@@ -350,7 +366,9 @@ L0BC9
          dta $05,$91,$B0,$99,$56,$09,$60,$A0,$26,$C4,$B7,$F0,$09,$88,$B1,$B0 ; 0BF0
          dta $C8,$91,$B0,$88,$10,$F3,$B1,$B2,$91,$B0,$88,$D0,$F9,$A9,$1C,$A4 ; 0C00
          dta $B7,$C8,$C0,$27,$B0,$05,$91,$B0,$99,$56,$09,$60 ; 0C10
-sub_0C1C
+
+* help: pointers to the screen buffers ---------------------
+HLP_PTRSCR
          lda  #$80                 ; 0C1C
          sta  $B2                  ; 0C1E
          lda  #$B8                 ; 0C20
@@ -360,7 +378,9 @@ sub_0C1C
          lda  #$B6                 ; 0C28
          sta  $B1                  ; 0C2A
          rts                       ; 0C2C
-sub_0C2D
+
+* help: pointers to the screen and the text position -------
+HLP_PTRTXT
          lda  #$80                 ; 0C2D
          sta  $B0                  ; 0C2F
          lda  #$B8                 ; 0C31
@@ -370,20 +390,26 @@ sub_0C2D
          lda  $0C78                ; 0C3A
          sta  $B3                  ; 0C3D
          rts                       ; 0C3F
-sub_0C40
+
+* help: wait for the next frame ----------------------------
+HLP_WAIT
          lda  RTCLOK+2             ; 0C40
 L0C42
          cmp  RTCLOK+2             ; 0C42
          beq  L0C42                ; 0C44
          rts                       ; 0C46
-sub_0C47
+
+* help: advance the text pointer ---------------------------
+HLP_INCTXT
          inc  $B2                  ; 0C47
          bne  L0C4D                ; 0C49
          inc  $B3                  ; 0C4B
 L0C4D
          rts                       ; 0C4D
          dta $E6,$B0,$D0,$02,$E6,$B1,$60              ; 0C4E
-sub_0C55
+
+* help: next screen line (+40) -----------------------------
+HLP_NEXTLN
          clc                       ; 0C55
          lda  #$28                 ; 0C56
          adc  $B0                  ; 0C58
@@ -392,7 +418,9 @@ sub_0C55
          inc  $B1                  ; 0C5E
 L0C60
          rts                       ; 0C60
-sub_0C61
+
+* help: next source line (+40) -----------------------------
+HLP_NEXTSRC
          clc                       ; 0C61
          lda  #$28                 ; 0C62
          adc  $B2                  ; 0C64

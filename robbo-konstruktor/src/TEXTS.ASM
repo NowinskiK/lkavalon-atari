@@ -51,7 +51,9 @@
          dta d'magnetofon       ',$4B,$4C,d'                     ' ; A2DB
 ; 
          dta d'                    '                  ; A303
-         dta $FF                                      ; A317
+
+* editor state in the text block ---
+CUR_MSG          dta $FF                              ; A317 number of the message in the status line
 ; klawisz HELP-instrukcja
          dta c'klawisz HELP-instrukcja',$00 ; A318
 ; strzał: kontynuacja,  ESC: menu
@@ -168,7 +170,8 @@
          dta c'blaster',$00 ; A7C1
 ; teleportacja 
          dta c'teleportacja ' ; A7C9
-         dta $06,$00                                  ; A7D6
+CUR_ELEM         dta $06                              ; A7D6 palette entry whose name is shown
+         dta $00                                      ; A7D7
 ;  wczytać zapisaćskasowaćkasetowe
          dta c' wczyta',$03,c' zapisa',$03,c'skasowa',$03,c'kasetowe' ; A7D8
          dta $80,$8F,$AD,$FE,$FF,$00,$15,$16,$17,$18,$19,$1A ; A7F8
