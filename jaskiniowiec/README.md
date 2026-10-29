@@ -10,6 +10,7 @@ then (later) annotate it the same way as Dangerous City's `DC.ASM`.
 
 | File | Purpose |
 |---|---|
+| [NOTES.md](NOTES.md) | How the analysis was done, findings, lessons, open questions |
 | `main.asm` | MADS file linking all blocks from `src/` back into the game memory image |
 | `src/` | The game split into blocks (see [Source blocks](#source-blocks)) |
 | `game.bin` | 64 KB memory image as it is when the game starts (after loader, depacker and snapshot restore) |
