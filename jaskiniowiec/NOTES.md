@@ -551,6 +551,12 @@ Verified: MADS and `asm.py` builds byte-exact after regeneration.
 
 ## Open questions
 
+- Hidden texts (`py -3 util/findtext.py jaskiniowiec/src`, 2026-10-29, see robbo-konstruktor NOTES section 18):
+  the trainer screen $63D0-$6450 (">>>CAMOsoft<<< presents", "JASKINIOWIEC", "Unlimited lives ?") is still `dta`
+  bytes in `TRAINER.ASM`, and `TEXTS.DTA` ($9FDB-$A4E8) is still a binary block – convert both to strings, put the
+  remaining candidates (tables) into `jaskiniowiec/findtext-ignore.txt`. The CAMOsoft intro is XOR-encrypted ($A2)
+  – the tool cannot see it.
+
 - Teach the disassembler the undocumented opcodes used ($AB LXA in `CHAR_ADDR`), so that code is not `dta`.
 - Protection flags `$9F` / `$AA` (trap conditions): where are they set? Name them.
 

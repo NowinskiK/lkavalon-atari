@@ -319,7 +319,7 @@ L9719
          lda  #$03                 ; 9719
          jsr  MESSAGE              ; 971B
          ldx  $9F8C                ; 971E
-         lda  $9F7D,x              ; 9721
+         lda  HDR_BUF+2,x          ; 9721
          tay                       ; 9724
          pha                       ; 9725
          and  #$0F                 ; 9726
@@ -368,9 +368,9 @@ L9762
          tay                       ; 9772
 L9773
          tya                       ; 9773
-         cmp  $9F7D,x              ; 9774
+         cmp  HDR_BUF+2,x          ; 9774
          beq  L977F                ; 9777
-         sta  $9F7D,x              ; 9779
+         sta  HDR_BUF+2,x          ; 9779
          jsr  CLICK                ; 977C
 L977F
          jsr  COLS_DEFAULT         ; 977F
@@ -1196,7 +1196,7 @@ L9CE7
          adc  #$1E                 ; 9CEC
          cmp  #$2A                 ; 9CEE
          bne  L9CFC                ; 9CF0
-         lda  $9F7F,x              ; 9CF2
+         lda  HDR_BUF+4,x          ; 9CF2
          beq  L9CFA                ; 9CF5
          jsr  PLANET_CLR           ; 9CF7
 L9CFA
@@ -1332,13 +1332,13 @@ ED_COLORS_
          sta  $9DCA                ; 9DC5
 L9DC8
          lda  $51F0,x              ; 9DC8
-         sta  $9F7B,x              ; 9DCB
+         sta  HDR_BUF,x            ; 9DCB
          dex                       ; 9DCE
          bpl  L9DC8                ; 9DCF
          bmi  L9DDC                ; 9DD1
 L9DD3
          lda  $9F83,x              ; 9DD3
-         sta  $9F7B,x              ; 9DD6
+         sta  HDR_BUF,x            ; 9DD6
          dex                       ; 9DD9
          bpl  L9DD3                ; 9DDA
 L9DDC
@@ -1346,7 +1346,7 @@ L9DDC
          bpl  L9DDC                ; 9DDF
          ldx  #$04                 ; 9DE1
 L9DE3
-         lda  $9F7D,x              ; 9DE3
+         lda  HDR_BUF+2,x          ; 9DE3
          sta  COLOR0,x             ; 9DE6
          sta  COLPF0,x             ; 9DE9
          dex                       ; 9DEC
@@ -1358,7 +1358,7 @@ L9DF4
          sta  COLPM0,x             ; 9DF7
          dex                       ; 9DFA
          bpl  L9DF4                ; 9DFB
-         lda  $9F82                ; 9DFD
+         lda  HDR_BUF+7            ; 9DFD
          sta  $02C3                ; 9E00
          rts                       ; 9E03
 
@@ -1370,7 +1370,7 @@ COLS_DEFAULT
          sta  $9E13                ; 9E09
          ldx  #$07                 ; 9E0C
 L9E0E
-         lda  $9F7B,x              ; 9E0E
+         lda  HDR_BUF,x            ; 9E0E
          sta  $51F0,x              ; 9E11
          dex                       ; 9E14
          bpl  L9E0E                ; 9E15

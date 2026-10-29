@@ -3,10 +3,13 @@
 
          org $9F7B
 
-         dta $1F,$04,$6B,$6F,$6C,$6F,$72,$79,$00,$00,$00,$08,$0E,$02,$00,$04 ; 9F7B
-         dta $00,$00,$00,$9E,$97,$C9,$97,$8F,$96,$B5,$99,$26,$96,$3A,$A8,$14 ; 9F8B
-         dta $98,$3E,$9C,$EB,$9B,$26,$96,$06,$03,$07,$07,$08,$09,$09,$0A,$0B ; 9F9B
-         dta $0B,$02,$03,$04,$05,$03,$05,$02,$03,$02,$05,$14,$3C,$64,$8C,$B4 ; 9FAB
+
+* editor state in the text block ---
+HDR_BUF          dta $1F,$04,$6B,$6F,$6C,$6F,$72,$79  ; 9F7B header of the current planet (bytes 2-6 COLOR0-4, 7 PCOLR3); initial bytes spell "kolory" - not a text
+         dta $00,$00,$00,$08,$0E,$02,$00,$04,$00,$00,$00,$9E,$97,$C9,$97,$8F ; 9F83
+         dta $96,$B5,$99,$26,$96,$3A,$A8,$14,$98,$3E,$9C,$EB,$9B,$26,$96,$06 ; 9F93
+         dta $03,$07,$07,$08,$09,$09,$0A,$0B,$0B,$02,$03,$04,$05,$03,$05,$02 ; 9FA3
+         dta $03,$02,$05,$14,$3C,$64,$8C,$B4          ; 9FB3
 ;  test planety        strona tytułowa
          dta d' test planety        strona tytu]owa    ' ; 9FBB
 ;  czyść planetę       kolejność planet
@@ -51,8 +54,6 @@
          dta d'magnetofon       ',$4B,$4C,d'                     ' ; A2DB
 ; 
          dta d'                    '                  ; A303
-
-* editor state in the text block ---
 CUR_MSG          dta $FF                              ; A317 number of the message in the status line
 ; klawisz HELP-instrukcja
          dta c'klawisz HELP-instrukcja',$00 ; A318

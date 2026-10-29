@@ -9,6 +9,8 @@ Sources of LK Avalon (and related) games for 8-bit Atari, assembled with MADS. O
   included in `main.asm` with `opt h-` + `ins`.
 - `make test` must prove the build is byte-exact (md5 checksums or a verify script).
 - Keep the style of the existing sources: MADS syntax, lower-case mnemonics, labels in column 1.
+- No texts hidden in data bytes: after regenerating or annotating sources run `py -3 util/findtext.py <game>/src`;
+  every candidate becomes a string or is listed with its reason in `<game>/findtext-ignore.txt` (0 candidates).
 - Texts in data go into the `.ASM` source as strings, not binary files: `dta c'…'` (ATASCII) or `dta d'…'` (screen
   codes), `*` = inverse, other bytes as `$xx`, with the decoded text as a comment (example: `robbo/d1/TITLE.ASM`).
 - Add a new game to the list in the root `README.md`.
@@ -59,6 +61,10 @@ Sources of LK Avalon (and related) games for 8-bit Atari, assembled with MADS. O
   `"$MADS"` (Git Bash) / `& $env:MADS` (PowerShell), never by a hard-coded path. If the variable is empty,
   tell the user and point to "MADS location" in the root `README.md` (example value on this machine:
   `x:\ATARI\Tools\Mad-Assembler-2.1.5\mads.exe`, MADS 2.1.5).
+- The Altirra emulator is in the **`ALTIRRA` environment variable** (`Altirra64.exe`), used by the VS Code tasks
+  in `.vscode/tasks.json` (run original / build + verify / run build); see "Altirra location" in the root
+  `README.md`. If a session does not see `MADS` / `ALTIRRA` (it started before they were set), read the value
+  from the user environment (`[Environment]::GetEnvironmentVariable('MADS','User')`), never hard-code it.
 - Atari colours → RGB: use `util/palette/XFormer.act` (default; matches the reference screenshot) or
   `jakub.act` – 256 × RGB from Atari800, see `util/palette/README.md`. Never an approximation.
 - GNU make is **not installed** – run the Makefile commands directly. `md5sum` is available (Git Bash).

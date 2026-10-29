@@ -48,6 +48,9 @@ Then steps 6-8. For step 8 a screenshot of the editor (and the main menu) from X
 | 2026-10-29 | ABOUT.md: what the program is about, users, usage, elements, Polish–English glossary (section 13) |
 | 2026-10-29 | Engine leftovers named (5.5): 58 labels, 17 variables, engine and title-page texts; no generated labels left (section 14) |
 | 2026-10-29 | The last 30 "not analysed yet" engine routines described from Robbo's source and comments (section 15) |
+| 2026-10-29 | Running in Altirra from VS Code: tasks, `util/mkatr.py` (section 16) |
+| 2026-10-29 | Help screen credits found ("autor: Janusz Pelc", "Laboratorium Komputerowe Avalon") and written as strings (section 17) |
+| 2026-10-29 | Hidden-text scan (`util/findtext.py`): two more texts as strings, `HDR_BUF`, reviewed ranges; 0 candidates (section 18) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -536,6 +539,82 @@ Findings worth keeping:
 
 Builds: MADS byte-exact.
 
+## 16. Running the game from VS Code (2026-10-29)
+
+Asked by the user. **`.vscode/tasks.json`** (repository root) has three tasks, run with PowerShell 7 in
+`robbo-konstruktor/`: *run original* (boots the original ATR), *build + verify* (default build task: MADS, then
+`verify.py`), *run build* (build → `util/mkatr.py` → boot `bin/build.atr`). Altirra comes from the new **`ALTIRRA`**
+environment variable (set for the user: `…\Altirra-4.40\Altirra64.exe`), started through `Start-Process` with
+`/singleinstance`, so the task ends at once and a running Altirra is reused (checked: one process after both runs).
+
+**Why a tool**: `bin/game.obx` is a memory image in segments (main.asm says it is not runnable). `util/mkatr.py`
+copies the original disk and writes the build back into it: boot sectors 1-3 from $0500-$067F, and the data bytes of
+each segment of the program file (chain from sector 4) from the build's memory at the same addresses; headers, links,
+byte counts and the other sectors (saved planet sets) are kept. Checks: the byte-exact build gives a disk identical to
+the original; a build with one byte changed ($A9A7) gives a disk differing in exactly 1 byte. Limitation: the segment
+layout is fixed – code growing past a segment end needs a new file layout.
+
+Altirra's window title showed "ATOS" – Altirra's own OS replacement is in use, as no Atari OS ROM is configured in
+Altirra *(to check: does the program run on it as on the real OS?)*.
+
+## 17. The help screen credits (2026-10-29)
+
+The user showed a screenshot of the panel under the help pages ("Robbo Konstruktor / autor: Janusz Pelc" with a
+planet and a Robbo icon) and could not find the text in the sources. **Search**: every word in ATASCII and screen
+code, normal and inverse, in `game.bin` and the ATR (scratch script) – "autor", "Janusz", "Pelc" in screen code at
+$0871-$0882, i.e. in `EDIT08.ASM`, in the region still listed as "data to classify" (`$0803-$09A5`), so the source only
+had `dta $xx` bytes. ("Janusz"/"Pelc" also occur in ATASCII on the disk, in sector 360 – the text-only VTOC of section 1: a drawing
+"Robbo Konstruktor … by Janusz Pelc", next to the "directory" label in 361.)
+
+**What the region is**: `$0803` = the help screen's display list (`$10 $70`, mode 2 with LMS $092E = frame line, LMS
+$B600 + 16 lines = the help page, LMS $0956 = frame, `$20`, mode F lines from $BD50 / $BD00 = the dotted lines, LMS
+$083E + 4 lines = panel, LMS $0906 = key hints, `$41 $03 $08` = JVB). The panel lines are 40 characters:
+$083E title with icons, $0866 author, $088E empty, $08B6 "©1990 Laboratorium Komputerowe", $08DE "Avalon", $0906 "←→:
+zmiana strony, strzał: menu". They are now `TEXTS` (screen-pl) in `split.py`, with comments for the display list and
+the frame lines $092E-$09A5.
+
+**Font check** (characters drawn from `game.bin`, font $4C00): `$0F` is a **©** – this answers the open question about
+"/1990 Avalon" on the title page; `$5E $5F` are arrows ← →; `$45-$48` / `$49-$4C` are the 2 × 2-character planet and
+Robbo icons of the screenshot. In font $3C00 these codes are empty or element shapes, so the help screen uses $4C00.
+
+**Findings for ABOUT.md**: the author is **Janusz Pelc** (the program's own credits), and "L.K." in "L.K. Avalon"
+stands for **Laboratorium Komputerowe** (Computer Laboratory) Avalon.
+
+Builds: MADS byte-exact.
+
+Lesson (guide): when a known on-screen text is not in the sources, search the memory image for it in every character
+coding (ATASCII, screen code, inverse) – it is often inside a region still emitted as `dta` bytes.
+
+## 18. Scanning for hidden texts (2026-10-29)
+
+The user asked how to make sure no text like the help credits (section 17) is missed again. Texts had been found only
+where they were already expected. **New tool `util/findtext.py`** (repository level, for every game): reads the
+`dta $xx … ; ADDR` lines of a game's sources, decodes each run of data bytes as ATASCII and as screen code (inverse
+too; Polish letters as CONTROL codes or Robbo's glyphs) and reports sentence-like pieces made mostly of word-like
+letter groups. It is a candidate list for a person; ranges checked and found not to be texts go into
+`findtext-ignore.txt` with the reason.
+
+First runs: the first heuristic (letters vs. length of the whole run) gave 51 / 59 candidates, mostly tables; judging
+sentence-like pieces with word-shaped groups (lower case / Capitalised / capitals, a vowel) left 10-20, and found
+everything known plus what was missed.
+
+**Results here**:
+
+| Address | Found | Done |
+|---|---|---|
+| $9043-$9053 | slot signatures " RKdata " (inverse) / " unused " | strings (`EDIT90.ASM`) |
+| $A957-$A9A6 | "tekst początkowy:" / "tekst gratulacyjny:", headers of the title-page editor, copied at $B34E | strings (`EDITOR2.ASM`) |
+| $9F7B-$9F82 | "kolory" – **not a text**: the header buffer of the current planet (copied to / from `$51F0 + 2n`, colours to COLOR0-4 at $9DE3, PCOLR3 from $9F82); its initial bytes happen to spell "kolory" | variable `HDR_BUF` |
+| $29D3, $2AA8, $31D5 | Robbo's object-code tables written as letters (`NSPS`, `WBPO`, `NEXT`) | `findtext-ignore.txt` |
+| $3440, $93D9, $B550 | pointer table, undisassembled code in `EDIT90`, palette / glyph tables | `findtext-ignore.txt` |
+
+Result: `py -3 util/findtext.py robbo-konstruktor/src` → 0 candidates. MADS build byte-exact. The rule is in
+`CLAUDE.md` and in the guide (step 7 gate, definition of done). The README "first look" line naming menu words
+"kolory", "test"… at $94E0-$9F7A predates this and only lists words of the menu.
+
+Tool lesson (again): a Python heredoc turned the regex `\b` into a backspace byte – edit Python code with the editor,
+not with shell-quoted strings.
+
 ## Open questions
 
 
@@ -543,7 +622,7 @@ Builds: MADS byte-exact.
   The singles 256, 388, 520, 652, 784 are 132 sectors apart.
 - Boot record init address $19DD – the program has no code there at boot time; what is it for?
 - `JMP $F556` in the jump table – an OS ROM routine or RAM under the OS?
-- Data to classify: `$0803-$09A5` (display list + tables), `$3155-$31EE` (shape table of `DRAW_ROW`, `NEXT` $31D5),
+- Data to classify: `$092E-$09A5` (frame lines of the help screen – which characters), `$3155-$31EE` (shape table of `DRAW_ROW`, `NEXT` $31D5),
   `$32B1-$3333` (Robbo `WHAT`), `$3937-$395B` (title page colours), `$391F` (logo bitmap),
   `$4000-$47FF`; help-text preamble `$0C77`: `79 0C 80 01`; tables in `TEXTS.ASM` ($9FA2, $9FAC, $A7F8, $A7FE).
 - Palette entry 21 (switch) and the placeholders 22-29: which codes do bats, gun, laser, blaster and teleport use?

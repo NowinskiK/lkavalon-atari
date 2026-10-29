@@ -20,6 +20,7 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [util/emu.py](util/emu.py) | 6502 emulator (from Jaskiniowiec) with an SIO hook serving disk sectors from the ATR |
 | [util/planets.py](util/planets.py) | loads the saved planet sets by running the program's own loader in the emulator |
 | [util/render.py](util/render.py) | renders the palette and planets the way the editor draws them (XFormer palette) |
+| [util/mkatr.py](util/mkatr.py) | writes a build into a copy of the original disk (`bin/build.atr`) to boot it in an emulator |
 | [util/split.py](util/split.py) | splits `game.bin` into `src/` and writes `main.asm`; tables `BLOCKS`, `ENTRIES` (+ dispatch tables), `NOFOLLOW`, `VARIABLES`, `COMMENTS`, `NAMES`, `POKES` |
 | `util/xex.py`, `rdis.py`, `asm.py`, `verify.py` | from [../jaskiniowiec/util/](../jaskiniowiec/util/); `rdis.py` here also finds entries written into self-modified jumps and VBIs installed with SETVBV |
 | `main.asm`, `src/` | generated sources (see below) |
@@ -77,6 +78,10 @@ py -3 util/verify.py bin/game.obx                                               
 
 `konstruktor.xex` is an intermediate (ignored by git, rebuilt from the disk).
 
+Run in the emulator: `py -3 util/mkatr.py bin/game.obx "bin\Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr" bin/build.atr`
+puts the build back on a copy of the disk (identical to the original while the build is byte-exact); the VS Code
+tasks do this and start Altirra (root README, "Altirra location").
+
 ## Disk structure
 
 1,040 sectors × 128 bytes (enhanced density), 250 sectors used. **No DOS**: a boot disk with its own loader.
@@ -85,7 +90,7 @@ py -3 util/verify.py bin/game.obx                                               
 |---|---|
 | 1-3 | boot record + loader, loaded to $0500 (boot record: 3 sectors, load $0500, init $19DD) |
 | 4-222 | the program: one binary file (27,285 bytes) as a DOS 2-style sector chain |
-| 360-361 | VTOC / "directory" – only text: "Robbo Konstruktor by L.K.Avalon --- fast hack by Mr.Bacardi" |
+| 360-361 | VTOC / "directory" – only text: 360 "Robbo Konstruktor … by Janusz Pelc", 361 "Robbo Konstruktor by L.K.Avalon --- fast hack by Mr.Bacardi" |
 | 256, 260-264, 388, 392-396, 520, 524-532, 652, 784, 974, 989 | not in the program chain – probably saved boards (slots 132 sectors apart); not analysed yet |
 
 ## Boot loader ($0500-$067F)
@@ -131,6 +136,19 @@ they are typed as CONTROL + a, c, e, l, n, o, s, z (help page 8 lists them in th
 `$1C-$1F` = arrows ↑↓←→. Control codes for the viewer: **`$14` toggles inverse video** (titles), inverse digits
 `$B1-$B9` = indentation.
 
+The help screen (display list $0803) frames the page and shows a bottom panel from `EDIT08.ASM`, screen codes,
+40 characters per line, font $4C00:
+
+| Address | Text | English |
+|---|---|---|
+| $083E | *(planet icon)* Robbo Konstruktor *(Robbo icon)* | |
+| $0866 | autor: Janusz Pelc | author: Janusz Pelc |
+| $08B6 | ©1990 Laboratorium Komputerowe | © 1990 Computer Laboratory |
+| $08DE | Avalon | |
+| $0906 | ←→: zmiana strony, strzał: menu | ←→: change page, fire: menu |
+
+Icons are characters `$45-$48` (planet) and `$49-$4C` (Robbo), the arrows `$5E $5F`, © = `$0F`.
+
 | Page | Title | Function |
 |---|---|---|
 | 0-1 | – | introduction, HELP key, messages at the bottom of the screen, Avalon's address (P.O. box 702, Rzeszów) |
@@ -157,6 +175,8 @@ Two encodings in one block (written as `dta d'…'` / `dta c'…'` strings in `s
 | $9F7B-$9FBA | – | tables: menu dispatch $9F8E (10 handlers), $9FA2 / $9FAC (10 bytes each), menu column offsets $9FB6 (20, 60, 100, 140, 180) |
 | $9FBB-$A316 | screen code, `$00` = space; Polish letters on the glyphs `@ \ [ ] _ { ^ \|` (as in Robbo's TITLE.ASM) | editor screens: main menu (5 rows × 2 columns of 20: basic functions left, additional right), title "Robbo Konstruktor /1990 by Avalon", planet legend ("planety: – zła – dobra – pusta", "K:", "R:"), disk panel ("zawartość dysku", "pusty", "wczytaj", "zapisz", "skasuj", sets 01-05, "pełny"), save hints for disk and tape |
 | $A317 | – | variable (used by $968F, $9CE4, $9D07, $9DAC) |
+| $9043-$9053 | ATASCII, `$00`-terminated | disk slot signatures " RKdata " (inverse, used) and " unused " (erased) – `EDIT90.ASM` |
+| $A957-$A9A6 | screen code, inverse | title-page editor headers "tekst początkowy:" (start text) and "tekst gratulacyjny:" (congratulation text), 40 characters each – `EDITOR2.ASM` |
 | $A318-$A7D5 | ATASCII, `$00`-terminated, bit 7 = inverse highlight, Polish letters as CONTROL codes | messages: key hints, errors ("błąd: brak robocika!", "…za dużo śrubek! – max: 99", "błąd numer 100!"), questions ("wyczyścić planetę? tak nie"), tape/disk messages, and the **names of the 27 palette elements** (Robbo, śrubka, kapsuła, skrzynka, drzwi, … nietoperz, działko, laser, blaster, teleportacja) |
 | $A7D6 | – | variable (used by $9CDF, $9CE7, $9F52) |
 | $A7D8-$A7F7 | ATASCII | four 8-character labels: " wczytać", " zapisać", "skasować", "kasetowe" |
@@ -197,7 +217,7 @@ routine corresponds (NOTES.md sections 5 and 14).
 Engine texts (screen codes, `dta d'…'`): info line $1E8E "BREAK: powrót do Robbo Konstruktora" (BREAK: back to
 Robbo Konstruktor) and $1EB6 "Wciśnięcie strzału przerywa demonstrację" (pressing fire stops the demo); title page
 $3603 "Ta gra powstała przy pomocy Robbo Konstruktora /1990 Avalon" (this game was made with Robbo Konstruktor,
-(c) 1990 Avalon – `/` is probably the © glyph of the font) or, in "test Robbo", $3643 "wciśnij klawisz BREAK aby
+© 1990 Avalon – screen code `$0F` (`/`) is a © in the font at $4C00) or, in "test Robbo", $3643 "wciśnij klawisz BREAK aby
 wrócić do Robbo Konstruktora" (press BREAK to return to Robbo Konstruktor).
 
 ## Planet format and disk slots

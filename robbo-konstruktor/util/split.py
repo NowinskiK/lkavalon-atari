@@ -63,6 +63,12 @@ def entries(mem):
 # data written as strings: first -> (last, format); 'help' = ATASCII, bit 7 = a space follows, $00 nn = page
 # marker, Polish letters as CONTROL codes; 'screen' = ANTIC screen codes (dta d'...')
 TEXTS = {
+    0x083E: (0x0865, 'screen-pl'),  # help screen, bottom panel (40 characters per line): title with icons
+    0x0866: (0x088D, 'screen-pl'),  #   author
+    0x088E: (0x08B5, 'screen-pl'),  #   empty line
+    0x08B6: (0x08DD, 'screen-pl'),  #   copyright, Laboratorium Komputerowe
+    0x08DE: (0x0905, 'screen-pl'),  #   Avalon
+    0x0906: (0x092D, 'screen-pl'),  #   key hints
     0x0C7B: (0x1DD0, 'help'),       # help pages 0-15 (after the preamble $0C6D-$0C7A)
     0x9FBB: (0xA316, 'screen-pl'),  # editor screens: main menu, title, planet legend, disk panel, save hints
     0x1E8E: (0x1EDD, 'screen-pl'),  # engine info-line texts: BREAK back to the Konstruktor / end of the demo
@@ -70,6 +76,10 @@ TEXTS = {
     0x3623: (0x3642, 'screen-pl'),  #   line 2
     0x3643: (0x3662, 'screen-pl'),  # title page bottom lines, "test Robbo" from the Konstruktor: line 1
     0x3663: (0x3682, 'screen-pl'),  #   line 2
+    0x9043: (0x904A, 'strings'),    # disk slot signatures: used (inverse) / erased
+    0x904B: (0x9053, 'strings'),
+    0xA957: (0xA97E, 'screen-pl'),  # title-page editor: header line of the start text (copied at $B34E)
+    0xA97F: (0xA9A6, 'screen-pl'),  #   header line of the congratulation text
     0xA318: (0xA7D5, 'strings'),    # editor messages, errors, element names ($A317 is a variable)
     0xA7D8: (0xA7F7, 'strings'),    # tape/disk labels, 8 characters each (read with lda $A7D8,x)
     0xA804: (0xA808, 'strings'),    # "Robbo"
@@ -117,6 +127,7 @@ VARIABLES = [
     (0x00CE, 1, 'HELP_PAGE', 'help page shown by the HELP key (2 = menu, 3-12 = functions)'),
     (0x00CF, 1, 'PANEL_ST', 'lower screen panel state (PANEL)'),
     '* editor state in the text block ---',
+    (0x9F7B, 8, 'HDR_BUF', 'header of the current planet (bytes 2-6 COLOR0-4, 7 PCOLR3); initial bytes spell "kolory" - not a text'),
     (0xA317, 1, 'CUR_MSG', 'number of the message in the status line'),
     (0xA7D6, 1, 'CUR_ELEM', 'palette entry whose name is shown'),
     '* input ------------------------',
@@ -260,6 +271,9 @@ COMMENTS = {
     0x2FF6: 'end of the VBI',   # Robbo $2DFD (name from call sites)
     0x9EEB: 'display digits',   # Robbo $2E8F (name from call sites)
     0x0800: 'HELP: show the help text, page by page (entered from HELP_KEY)',
+    0x0803: 'help screen display list: frame $092E, help page $B600 (17 lines), frame $0956, panel $083E (5 lines) and $0906 between graphics lines $BD00 / $BD50',
+    0x083E: 'help screen bottom panel (credits) and key hints - screen codes',
+    0x092E: 'frame lines around the help page (frame characters of the font)',
     0x0A3F: 'help: draw one page (16 lines) from the text pointer $0C77',
     0x0A7A: 'help: format one line - frame characters, $14 toggles inverse, inverse digits = indentation',
     0x0B16: 'help: copy the help screen buffer',

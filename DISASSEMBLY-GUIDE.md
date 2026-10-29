@@ -137,7 +137,11 @@ the end of every variable line.
   **Identify the logic first, then name it.**
 - `COMMENTS` – a `* what it does ---` header above every routine and data block.
 - `POKES` – init tables written as `dta a(NAME),$vv`.
-- **Gate:** no generated `sub_XXXX` labels left; byte-exact; names unique (`split.py` checks).
+- **Gate:** no generated `sub_XXXX` labels left; byte-exact; names unique (`split.py` checks); **no hidden texts**:
+  `py -3 util/findtext.py <game>/src` reports words in the bytes still written as `dta $xx` (ATASCII / screen code,
+  inverse, Polish letters) – each candidate becomes a string (`TEXTS`) or goes into `<game>/findtext-ignore.txt`
+  with the reason it is not a text, until the tool says "0 candidate(s)". Texts the tool cannot see: packed or
+  encrypted ones (decode them first) and texts in unusual codings – also look at every screen of the running game.
 
 ### Step 8 – Graphics and verification against the real game
 
@@ -269,6 +273,8 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
   unfinishable. Compare repeated code patterns (five loaders alike, one different) to spot such damage.
 - Don't trust guessed sizes: the logo was 24 lines, not 28 – the display list told the truth.
 - Words matter: the "treasures" were food (the status-line bar is labelled "JEDZENIE").
+- A text seen on screen but not found in the sources: search the memory image for it in every coding (ATASCII,
+  screen code, inverse) – it is usually in a region still emitted as `dta` bytes (Robbo Konstruktor's credits).
 
 ### 6.4 Verification
 - A real screenshot is the best test: exact colours trace back to Atari colour values; the palette that matched
@@ -295,6 +301,7 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
 
 - [ ] Sources reassemble byte for byte with MADS (`make test` or the documented commands).
 - [ ] Every block, routine and variable has a name and a comment; no generated `sub_XXXX` labels.
+- [ ] `util/findtext.py <game>/src` reports 0 candidates (texts are strings, the rest is in `findtext-ignore.txt`).
 - [ ] README: files, blocks, boot chain, memory map, game structure, known addresses, images.
 - [ ] ABOUT.md: what the game is about, players, elements, glossary (other language → English).
 - [ ] NOTES: dated sections with evidence, Timeline, Open questions; damage/oddities explained.

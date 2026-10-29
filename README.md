@@ -57,6 +57,26 @@ it inherits that application's old environment – close and reopen the applicat
 export MADS="$HOME/tools/mads/mads"
 ```
 
+### Altirra location (running from VS Code)
+
+The VS Code tasks in [.vscode/tasks.json](.vscode/tasks.json) start the
+[Altirra](https://www.virtualdub.org/altirra.html) emulator from the `ALTIRRA` environment variable (full path to
+`Altirra64.exe`), set the same way as `MADS` (example path – use your own Altirra folder):
+
+```powershell
+[Environment]::SetEnvironmentVariable('ALTIRRA', 'C:\Users\kamil\OneDrive\ATARI\Altirra-4.40\Altirra64.exe', 'User')
+```
+
+Restart VS Code afterwards. Tasks (Terminal → Run Task; Ctrl+Shift+B runs the build):
+
+| Task | What it does |
+|---|---|
+| Robbo Konstruktor: run original | boots the original disk in Altirra |
+| Robbo Konstruktor: build + verify | MADS build, compared with `game.bin` byte for byte |
+| Robbo Konstruktor: run build | builds, writes the build into a copy of the disk (`bin/build.atr`, ignored by git) and boots it |
+
+Altirra is started with `/singleinstance`, so a running Altirra window is reused.
+
 Windows environment variables are also visible in Git Bash (under the same restart rule); the Windows path
 works there as is: `"$MADS" main.asm -o:game.xex`.
 

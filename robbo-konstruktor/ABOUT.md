@@ -7,7 +7,8 @@ those sources.
 
 ## Overview
 
-**Robbo Konstruktor** (L.K. Avalon, 1990) is a **construction kit for the game Robbo**. The help text introduces it
+**Robbo Konstruktor** (L.K. Avalon, 1990; author **Janusz Pelc**, from the credits under the help pages) is a
+**construction kit for the game Robbo**. The help text introduces it
 as "the first widely available utility program by Avalon" ("pierwszy szeroko dostępny program użytkowy firmy
 Avalon"). With it you build your own *planets* – Robbo's levels – test them, arrange them into a game, and save a
 **stand-alone version of Robbo** with your planets that runs without the Konstruktor.
@@ -130,6 +131,9 @@ Codes are Robbo's level characters (README "Palette").
 | podpowiedź | hint | help (HELP key) |
 | komunikat | message | the line at the bottom of the screen |
 | instrukcja | instructions | |
+| autor | author | credits under the help pages |
+| Laboratorium Komputerowe (Avalon) | Computer Laboratory (Avalon) | the "L.K." of L.K. Avalon (credits) |
+| zmiana strony | change of page | help viewer: ← → |
 
 ### Messages and answers
 

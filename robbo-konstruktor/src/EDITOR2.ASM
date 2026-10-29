@@ -62,12 +62,11 @@ TRIG_LAST        dta $00                              ; A845 previous fire / con
          dta $BD,$0F,$0F,$42,$28,$B8,$02,$02,$02,$02,$02,$02,$02,$4F,$00,$BD ; A926
          dta $0F,$0F,$20,$4F,$50,$BD,$0F,$0F,$42,$00,$BC,$02,$02,$02,$02,$4F ; A936
          dta $00,$BD,$0F,$0F,$0F,$0F,$42,$C8,$BC,$4F,$00,$BD,$0F,$0F,$41,$00 ; A946
-         dta $A9,$80,$80,$80,$80,$DD,$80,$80,$80,$80,$80,$80,$F4,$E5,$EB,$F3 ; A956
-         dta $F4,$80,$F0,$EF,$E3,$FA,$A0,$F4,$EB,$EF,$F7,$F9,$9A,$80,$80,$80 ; A966
-         dta $80,$80,$80,$80,$DD,$80,$80,$80,$80,$80,$80,$80,$80,$DD,$80,$80 ; A976
-         dta $80,$80,$80,$F4,$E5,$EB,$F3,$F4,$80,$E7,$F2,$E1,$F4,$F5,$EC,$E1 ; A986
-         dta $E3,$F9,$EA,$EE,$F9,$9A,$80,$80,$80,$80,$80,$80,$DD,$80,$80,$80 ; A996
-         dta $80                                      ; A9A6
+         dta $A9                                      ; A956
+;     ·      tekst początkowy:       ·
+         dta d'    '*,$DD,d'      tekst pocz@tkowy:       '*,$DD,d'    '* ; A957
+;     ·     tekst gratulacyjny:      ·
+         dta d'    '*,$DD,d'     tekst gratulacyjny:      '*,$DD,d'    '* ; A97F
 
 * start: stack, init, then the main loop -------------------
 START_
