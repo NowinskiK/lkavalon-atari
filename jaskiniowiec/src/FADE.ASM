@@ -5,11 +5,11 @@
 
 
 * fade out and clear the screens ---------------------------
-sub_96C8
+FADE_OUT
          ldy  #$07                 ; 96C8
 L96CA
-         jsr  sub_8FB8             ; 96CA
-         jsr  sub_96EB             ; 96CD
+         jsr  WAIT_FRAME           ; 96CA
+         jsr  FADE_STEP            ; 96CD
          dey                       ; 96D0
          bne  L96CA                ; 96D1
          lda  #$00                 ; 96D3
@@ -21,14 +21,14 @@ L96D6
          bpl  L96D6                ; 96DD
          ldy  #$07                 ; 96DF
 L96E1
-         jsr  sub_8FB8             ; 96E1
-         jsr  sub_96EB             ; 96E4
+         jsr  WAIT_FRAME           ; 96E1
+         jsr  FADE_STEP            ; 96E4
          dey                       ; 96E7
          bne  L96E1                ; 96E8
          rts                       ; 96EA
 
 * one fade-out step ----------------------------------------
-sub_96EB
+FADE_STEP
          ldx  #$01                 ; 96EB
          dec  COL_PF               ; 96ED
          lda  COL_PF               ; 96EF
@@ -59,7 +59,7 @@ L9715
          dta $4C,$77,$E4                              ; 9726
 
 * fade in (status line colour fixed) -----------------------
-sub_9729
+FADE_IN2
          lda  TARGET_COLS          ; 9729
          and  #$F0                 ; 972C
          sta  COL_PF               ; 972E
@@ -74,7 +74,7 @@ sub_9729
          bne  L9760                ; 9742
 
 * fade in to TARGET_COLS -----------------------------------
-sub_9744
+FADE_IN
          lda  TARGET_COLS          ; 9744
          and  #$F0                 ; 9747
          sta  COL_PF               ; 9749
@@ -90,7 +90,7 @@ sub_9744
 L9760
          ldy  #$0F                 ; 9760
 L9762
-         jsr  sub_8FB8             ; 9762
+         jsr  WAIT_FRAME           ; 9762
          lda  COL_PF               ; 9765
          cmp  TARGET_COLS          ; 9767
          beq  L976E                ; 976A

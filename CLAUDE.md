@@ -72,8 +72,10 @@ Read `jaskiniowiec/README.md` (reference) and `jaskiniowiec/NOTES.md` (process, 
   The result must be "matches game.bin byte for byte". MADS is the authority; `asm.py` is only a fallback
   where MADS is unavailable.
 - Names and comments also come from `util/split.py`: `VARIABLES` (`'* group ----'` headers and
-  `(address, size, NAME, comment)`), `COMMENTS` (address → `* text ---` above a routine or data block) and
-  `POKES` (init tables written as `dta a(NAME),$vv`). Style follows `robbo/d1/R1.ASM`: upper-case names with `_`,
+  `(address, size, NAME, comment)`), `COMMENTS` (address → `* text ---` above a routine or data block),
+  `NAMES` (address → routine name; module prefixes `TR_ SPR_ DLI_ PL_ EN_ CAVE_ FADE_ FOOD_ LOAD_ SCR_ END_ CMC_`),
+  `POKES` (init tables written as `dta a(NAME),$vv`) and `NOFOLLOW` (JMP/JSR with self-modified operands).
+  Every routine needs a name and a comment; identify a routine's logic before naming it. Style follows `robbo/d1/R1.ASM`: upper-case names with `_`,
   a variable inside an `.ASM` block is defined where it lives (`NAME dta ... ; comment`), others as
   `NAME equ $addr ; comment` in `JOINT.ASM`; every variable has an end-of-line comment saying what it is.
   When a new variable or routine is understood, add it to these tables (with evidence in `NOTES.md`) and regenerate.

@@ -8,8 +8,12 @@ def hw(a):
     return 0xD000 <= a < 0xD800
 
 
-def analyze(mem, entries):
-    """Follow code from the entry points. Returns (code: addr -> length, labels: addr -> name)."""
+VECTOR_LO = (0x0200, 0x0222, 0x0224, 0xFFFA, 0xFFFE)   # VDSLST, VVBLKI, VVBLKD, NMI, IRQ (low bytes)
+
+
+def analyze(mem, entries, nofollow=()):
+    """Follow code from the entry points. Returns (code: addr -> length, labels: addr -> name).
+    nofollow: addresses of JMP/JSR instructions whose operand is self-modified (target not followed)."""
     code = {}
     labels = {}
     for e in entries: labels[e] = 'entry_%04X' % e
@@ -27,20 +31,30 @@ def analyze(mem, entries):
             if mode == 'rel':
                 t = (pc + 2 + (b1 - 256 if b1 > 127 else b1)) & 0xFFFF
                 labels.setdefault(t, 'L%04X' % t); work.append(t)
-            if mn in ('JMP', 'JSR') and mode == 'abs':
+            if mn in ('JMP', 'JSR') and mode == 'abs' and pc not in nofollow:
                 labels.setdefault(w, ('sub_%04X' if mn == 'JSR' else 'L%04X') % w)
                 if not (w >= 0xE400 and w < 0xE480): work.append(w)
-            # vector set-ups: LDA #<x / LDX #<x ... STA VDSLST/VVBLKD etc. -> follow immediate pairs
+            # vector set-ups (LDA/LDX/LDY #... then STA/STX/STY VDSLST, VVBLKD ...): track which register
+            # holds which immediate value and pair the stores to the vector's low and high byte
             if mn in ('LDA', 'LDX', 'LDY') and mode == 'imm':
-                o2 = mem[pc + 2]
-                if o2 in M and M[o2][1] == 'imm' and M[o2][0] in ('LDA', 'LDX', 'LDY'):
-                    cand = b1 | mem[pc + 3] << 8
-                    # look ahead for a store into a known vector
-                    for k in range(pc + 4, pc + 16):
-                        if mem[k] in (0x8D, 0x8E, 0x8C) and (mem[k+1] | mem[k+2] << 8) in (0x0200, 0x0201, 0x0222, 0x0223, 0x0224, 0x0225, 0xFFFA, 0xFFFE):
-                            if cand not in seen_vec:
-                                seen_vec.add(cand); labels.setdefault(cand, 'irq_%04X' % cand); work.append(cand)
-                            break
+                regs, lo, hi, k = {}, {}, {}, pc
+                for _ in range(8):
+                    if mem[k] not in M: break
+                    kmn, kmode = M[mem[k]]
+                    kw = mem[k + 1] | mem[k + 2] << 8
+                    if kmn in ('LDA', 'LDX', 'LDY') and kmode == 'imm':
+                        regs[kmn[2]] = mem[k + 1]
+                    elif kmn in ('STA', 'STX', 'STY') and kmode == 'abs' and kmn[2] in regs:
+                        if kw in VECTOR_LO: lo[kw] = regs[kmn[2]]
+                        if kw - 1 in VECTOR_LO: hi[kw - 1] = regs[kmn[2]]
+                    elif kmn not in ('STA', 'STX', 'STY'):
+                        break
+                    k += SZ[kmode]
+                for v in lo:
+                    if v in hi:
+                        cand = lo[v] | hi[v] << 8
+                        if cand not in seen_vec:
+                            seen_vec.add(cand); labels.setdefault(cand, 'irq_%04X' % cand); work.append(cand)
             if mn in ('RTS', 'RTI', 'BRK') or (mn == 'JMP'): break
             pc += n
     return code, labels

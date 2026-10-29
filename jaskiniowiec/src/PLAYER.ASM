@@ -5,7 +5,7 @@
 
 
 * clear the P/M players $CC00-$CFFF ------------------------
-sub_8A4D
+CLR_PM
          lda  #$00                 ; 8A4D
          tay                       ; 8A4F
 L8A50
@@ -19,18 +19,18 @@ L8A50
          dta $D0,$FE,$F0,$FE                          ; 8A60
 
 * music on / off (OPTION) ----------------------------------
-sub_8A64
+MUSIC_TGL
          bne  L8A8E                ; 8A64
          lda  $8A6F                ; 8A66
          eor  #$02                 ; 8A69
          sta  $8A6F                ; 8A6B
          ldx  #$02                 ; 8A6E
          lda  $8A60,x              ; 8A70
-         sta  sub_8A64             ; 8A73
+         sta  MUSIC_TGL            ; 8A73
          cmp  $8A60                ; 8A76
          beq  L8A8E                ; 8A79
          lda  #$40                 ; 8A7B
-         jsr  entry_F2E4           ; 8A7D
+         jsr  CMC_CMD              ; 8A7D
          lda  $8A7C                ; 8A80
          eor  #$20                 ; 8A83
          sta  $8A7C                ; 8A85
@@ -41,17 +41,17 @@ L8A8E
          rts                       ; 8A8E
 
 * player control - deferred VBI (VVBLKD) -------------------
-entry_8A8F
+PLAYER
          lda  RTCLOK+2             ; 8A8F
          and  #$01                 ; 8A91
          bne  L8A9B                ; 8A93
-         jsr  sub_8C2F             ; 8A95
+         jsr  PL_MOVE              ; 8A95
          jmp  L8AA6                ; 8A98
 L8A9B
          lda  CONSOL               ; 8A9B
          and  #$04                 ; 8A9E
-         jsr  sub_8A64             ; 8AA0
-         jsr  sub_8F08             ; 8AA3
+         jsr  MUSIC_TGL            ; 8AA0
+         jsr  SFX                  ; 8AA3
 L8AA6
          lda  #$00                 ; 8AA6
          sta  $A8                  ; 8AA8
@@ -141,7 +141,9 @@ L8C25
          dey                       ; 8C29
          bne  L8C25                ; 8C2A
          jmp  L8BEC                ; 8C2C
-sub_8C2F
+
+* player physics: falling off the bottom (-1 life), jump, landing, club swing ---
+PL_MOVE
          lda  COUNTER              ; 8C2F
          beq  L8C34                ; 8C31
          rts                       ; 8C33
@@ -161,7 +163,7 @@ L8C34
          lda  #$21                 ; 8C50
          ldx  #$18                 ; 8C52
          ldy  #$14                 ; 8C54
-         jmp  entry_F2E4           ; 8C56
+         jmp  CMC_CMD              ; 8C56
 L8C59
          lda  #$00                 ; 8C59
          beq  L8C61                ; 8C5B
@@ -174,7 +176,7 @@ L8C61
          sta  PLAYER_Y             ; 8C6A
          rts                       ; 8C6D
 L8C6E
-         jsr  sub_8D41             ; 8C6E
+         jsr  PL_STICK             ; 8C6E
          lda  PLAYER_Y             ; 8C71
          and  #$0F                 ; 8C74
          bne  L8CB9                ; 8C76
@@ -255,7 +257,9 @@ L8CFA
          dta $BD,$3D,$8A,$8D,$CA,$95,$20,$B2,$95,$A9,$0A,$85,$D3,$C6,$D3,$F0 ; 8D20
          dta $DF,$20,$BC,$95,$20,$AD,$87,$10,$F4,$20,$4E,$8E,$10,$EF,$4C,$D5 ; 8D30
          dta $BD                                      ; 8D40
-sub_8D41
+
+* joystick: walk left / right, start a jump ----------------
+PL_STICK
          lda  STICK0               ; 8D41
          ldx  JUMP_STATE           ; 8D44
          beq  L8D4E                ; 8D47

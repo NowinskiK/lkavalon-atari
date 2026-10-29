@@ -5,7 +5,7 @@
 
 
 * ending: build pixel table at $2C00 -----------------------
-sub_AB7D
+END_PIXTAB
          ldx  #$00                 ; AB7D
 LAB7F
          txa                       ; AB7F
@@ -61,7 +61,7 @@ LAB7F
          dta $04,$01,$02,$03,$05,$09,$05,$07,$08,$0A,$0E,$0B,$0C,$0D,$0F,$00 ; ABCA
 
 * ending DLI -----------------------------------------------
-irq_ABDA
+END_DLI
          pha                       ; ABDA
          sta  WSYNC                ; ABDB
          lda  $B4                  ; ABDE
@@ -154,9 +154,9 @@ LAC1C
          dta $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00 ; AEDC
          dta $00,$00,$00,$00                          ; AEEC
 
-* ending sequence ------------------------------------------
-LAEF0
-         jsr  sub_B24C             ; AEF0
+* ending sequence: five objects on sine curves, colour cycling, scroller ---
+END_MAIN
+         jsr  END_VBL              ; AEF0
          lda  #$40                 ; AEF3
          sta  NMIEN                ; AEF5
          lda  #$00                 ; AEF8
@@ -166,21 +166,21 @@ LAEF0
          ldy  #$9E                 ; AF02
          stx  VVBLKD               ; AF04
          sty  VVBLKD+1             ; AF07
-         jsr  sub_B2B9             ; AF0A
-         jsr  sub_B24C             ; AF0D
-         jsr  sub_B253             ; AF10
-         jsr  sub_B269             ; AF13
-         jsr  sub_AB7D             ; AF16
-         jsr  sub_AFEE             ; AF19
-         jsr  sub_B311             ; AF1C
-         jsr  sub_B30B             ; AF1F
+         jsr  END_CLEAR            ; AF0A
+         jsr  END_VBL              ; AF0D
+         jsr  END_SWAPDL           ; AF10
+         jsr  END_SETUP            ; AF13
+         jsr  END_PIXTAB           ; AF16
+         jsr  END_LINES            ; AF19
+         jsr  END_PHASES           ; AF1C
+         jsr  END_CLRLEN           ; AF1F
 LAF22
-         jsr  sub_B389             ; AF22
-         jsr  sub_B3B4             ; AF25
-         jsr  sub_B24C             ; AF28
+         jsr  END_DRAW             ; AF22
+         jsr  END_MOVE             ; AF25
+         jsr  END_VBL              ; AF28
          lda  $13                  ; AF2B
          bne  LAF32                ; AF2D
-         jsr  sub_AF6A             ; AF2F
+         jsr  END_COLORS           ; AF2F
 LAF32
          lda  SKCTL                ; AF32
          and  #$04                 ; AF35
@@ -188,7 +188,9 @@ LAF32
          lda  #$00                 ; AF39
          sta  $13                  ; AF3B
          beq  LAF22                ; AF3D
-sub_AF3F
+
+* ending: cycle the colours $B0-$B3 ------------------------
+END_COLCYC
          ldx  #$0F                 ; AF3F
          inc  $B1                  ; AF41
          lda  $B1                  ; AF43
@@ -215,9 +217,11 @@ LAF5F
          stx  $B0                  ; AF67
 LAF69
          rts                       ; AF69
-sub_AF6A
-         jsr  sub_AF3F             ; AF6A
-         jsr  sub_AF3F             ; AF6D
+
+* ending: colour cycling and flashes -----------------------
+END_COLORS
+         jsr  END_COLCYC           ; AF6A
+         jsr  END_COLCYC           ; AF6D
          ldx  $B3                  ; AF70
          inx                       ; AF72
          and  #$0F                 ; AF73
@@ -227,8 +231,8 @@ LAF78
          lda  $ABD9                ; AF78
          eor  #$0F                 ; AF7B
          sta  $ABD9                ; AF7D
-         jsr  sub_B2B9             ; AF80
-         jsr  sub_AB7D             ; AF83
+         jsr  END_CLEAR            ; AF80
+         jsr  END_PIXTAB           ; AF83
          lda  $D2CA                ; AF86
          and  #$0F                 ; AF89
          ldx  $D2AA                ; AF8B
@@ -276,14 +280,16 @@ LAFBC
          adc  #$4E                 ; AFDA
          sta  $B3                  ; AFDC
 LAFDE
-         jsr  sub_B24C             ; AFDE
+         jsr  END_VBL              ; AFDE
          dec  $B0                  ; AFE1
          lda  $B0                  ; AFE3
          and  #$0F                 ; AFE5
          cmp  #$02                 ; AFE7
          bne  LAFDE                ; AFE9
-         jmp  sub_B311             ; AFEB
-sub_AFEE
+         jmp  END_PHASES           ; AFEB
+
+* ending: line address table $2D00 / $2E00 (40 bytes per line) ---
+END_LINES
          ldx  #$00                 ; AFEE
          stx  $2D00                ; AFF0
          stx  $2E00                ; AFF3
@@ -300,7 +306,9 @@ LAFF7
          cpx  #$A0                 ; B009
          bne  LAFF7                ; B00B
          rts                       ; B00D
-sub_B00E
+
+* ending: draw one object ----------------------------------
+END_OBJECT
          lda  #$00                 ; B00E
          sta  $C1                  ; B010
          sta  $C3                  ; B012
@@ -348,161 +356,163 @@ LB044
          ldy  #$00                 ; B05D
          lda  ($C4),y              ; B05F
          sta  $B5                  ; B061
-         jsr  sub_B1C6             ; B063
+         jsr  END_PLOT             ; B063
          ldy  #$01                 ; B066
          lda  ($C4),y              ; B068
          sta  $B5                  ; B06A
-         jsr  sub_B1C6             ; B06C
+         jsr  END_PLOT             ; B06C
          ldy  #$02                 ; B06F
          lda  ($C4),y              ; B071
          sta  $B5                  ; B073
-         jsr  sub_B1C6             ; B075
-         jsr  sub_B229             ; B078
+         jsr  END_PLOT             ; B075
+         jsr  END_NEXTROW          ; B078
          ldy  #$00                 ; B07B
          lda  ($C4),y              ; B07D
          sta  $B5                  ; B07F
-         jsr  sub_B1C6             ; B081
+         jsr  END_PLOT             ; B081
          ldy  #$01                 ; B084
          lda  ($C4),y              ; B086
          sta  $B5                  ; B088
-         jsr  sub_B1C6             ; B08A
+         jsr  END_PLOT             ; B08A
          ldy  #$02                 ; B08D
          lda  ($C4),y              ; B08F
          sta  $B5                  ; B091
-         jsr  sub_B1C6             ; B093
-         jsr  sub_B229             ; B096
+         jsr  END_PLOT             ; B093
+         jsr  END_NEXTROW          ; B096
          ldy  #$00                 ; B099
          lda  ($C4),y              ; B09B
          sta  $B5                  ; B09D
-         jsr  sub_B1C6             ; B09F
+         jsr  END_PLOT             ; B09F
          ldy  #$01                 ; B0A2
          lda  ($C4),y              ; B0A4
          sta  $B5                  ; B0A6
-         jsr  sub_B1C6             ; B0A8
+         jsr  END_PLOT             ; B0A8
          ldy  #$02                 ; B0AB
          lda  ($C4),y              ; B0AD
          sta  $B5                  ; B0AF
-         jsr  sub_B1C6             ; B0B1
-         jsr  sub_B229             ; B0B4
+         jsr  END_PLOT             ; B0B1
+         jsr  END_NEXTROW          ; B0B4
          ldy  #$00                 ; B0B7
          lda  ($C4),y              ; B0B9
          sta  $B5                  ; B0BB
-         jsr  sub_B1C6             ; B0BD
+         jsr  END_PLOT             ; B0BD
          ldy  #$01                 ; B0C0
          lda  ($C4),y              ; B0C2
          sta  $B5                  ; B0C4
-         jsr  sub_B1C6             ; B0C6
+         jsr  END_PLOT             ; B0C6
          ldy  #$02                 ; B0C9
          lda  ($C4),y              ; B0CB
          sta  $B5                  ; B0CD
-         jsr  sub_B1C6             ; B0CF
-         jsr  sub_B229             ; B0D2
+         jsr  END_PLOT             ; B0CF
+         jsr  END_NEXTROW          ; B0D2
          ldy  #$00                 ; B0D5
          lda  ($C4),y              ; B0D7
          sta  $B5                  ; B0D9
-         jsr  sub_B1C6             ; B0DB
+         jsr  END_PLOT             ; B0DB
          ldy  #$01                 ; B0DE
          lda  ($C4),y              ; B0E0
          sta  $B5                  ; B0E2
-         jsr  sub_B1C6             ; B0E4
+         jsr  END_PLOT             ; B0E4
          ldy  #$02                 ; B0E7
          lda  ($C4),y              ; B0E9
          sta  $B5                  ; B0EB
-         jsr  sub_B1C6             ; B0ED
-         jsr  sub_B229             ; B0F0
+         jsr  END_PLOT             ; B0ED
+         jsr  END_NEXTROW          ; B0F0
          ldy  #$00                 ; B0F3
          lda  ($C4),y              ; B0F5
          sta  $B5                  ; B0F7
-         jsr  sub_B1C6             ; B0F9
+         jsr  END_PLOT             ; B0F9
          ldy  #$01                 ; B0FC
          lda  ($C4),y              ; B0FE
          sta  $B5                  ; B100
-         jsr  sub_B1C6             ; B102
+         jsr  END_PLOT             ; B102
          ldy  #$02                 ; B105
          lda  ($C4),y              ; B107
          sta  $B5                  ; B109
-         jsr  sub_B1C6             ; B10B
-         jsr  sub_B229             ; B10E
+         jsr  END_PLOT             ; B10B
+         jsr  END_NEXTROW          ; B10E
          ldy  #$00                 ; B111
          lda  ($C4),y              ; B113
          sta  $B5                  ; B115
-         jsr  sub_B1C6             ; B117
+         jsr  END_PLOT             ; B117
          ldy  #$01                 ; B11A
          lda  ($C4),y              ; B11C
          sta  $B5                  ; B11E
-         jsr  sub_B1C6             ; B120
+         jsr  END_PLOT             ; B120
          ldy  #$02                 ; B123
          lda  ($C4),y              ; B125
          sta  $B5                  ; B127
-         jsr  sub_B1C6             ; B129
-         jsr  sub_B229             ; B12C
+         jsr  END_PLOT             ; B129
+         jsr  END_NEXTROW          ; B12C
          ldy  #$00                 ; B12F
          lda  ($C4),y              ; B131
          sta  $B5                  ; B133
-         jsr  sub_B1C6             ; B135
+         jsr  END_PLOT             ; B135
          ldy  #$01                 ; B138
          lda  ($C4),y              ; B13A
          sta  $B5                  ; B13C
-         jsr  sub_B1C6             ; B13E
+         jsr  END_PLOT             ; B13E
          ldy  #$02                 ; B141
          lda  ($C4),y              ; B143
          sta  $B5                  ; B145
-         jsr  sub_B1C6             ; B147
-         jsr  sub_B229             ; B14A
+         jsr  END_PLOT             ; B147
+         jsr  END_NEXTROW          ; B14A
          ldy  #$00                 ; B14D
          lda  ($C4),y              ; B14F
          sta  $B5                  ; B151
-         jsr  sub_B1C6             ; B153
+         jsr  END_PLOT             ; B153
          ldy  #$01                 ; B156
          lda  ($C4),y              ; B158
          sta  $B5                  ; B15A
-         jsr  sub_B1C6             ; B15C
+         jsr  END_PLOT             ; B15C
          ldy  #$02                 ; B15F
          lda  ($C4),y              ; B161
          sta  $B5                  ; B163
-         jsr  sub_B1C6             ; B165
-         jsr  sub_B229             ; B168
+         jsr  END_PLOT             ; B165
+         jsr  END_NEXTROW          ; B168
          ldy  #$00                 ; B16B
          lda  ($C4),y              ; B16D
          sta  $B5                  ; B16F
-         jsr  sub_B1C6             ; B171
+         jsr  END_PLOT             ; B171
          ldy  #$01                 ; B174
          lda  ($C4),y              ; B176
          sta  $B5                  ; B178
-         jsr  sub_B1C6             ; B17A
+         jsr  END_PLOT             ; B17A
          ldy  #$02                 ; B17D
          lda  ($C4),y              ; B17F
          sta  $B5                  ; B181
-         jsr  sub_B1C6             ; B183
-         jsr  sub_B229             ; B186
+         jsr  END_PLOT             ; B183
+         jsr  END_NEXTROW          ; B186
          ldy  #$00                 ; B189
          lda  ($C4),y              ; B18B
          sta  $B5                  ; B18D
-         jsr  sub_B1C6             ; B18F
+         jsr  END_PLOT             ; B18F
          ldy  #$01                 ; B192
          lda  ($C4),y              ; B194
          sta  $B5                  ; B196
-         jsr  sub_B1C6             ; B198
+         jsr  END_PLOT             ; B198
          ldy  #$02                 ; B19B
          lda  ($C4),y              ; B19D
          sta  $B5                  ; B19F
-         jsr  sub_B1C6             ; B1A1
-         jsr  sub_B229             ; B1A4
+         jsr  END_PLOT             ; B1A1
+         jsr  END_NEXTROW          ; B1A4
          ldy  #$00                 ; B1A7
          lda  ($C4),y              ; B1A9
          sta  $B5                  ; B1AB
-         jsr  sub_B1C6             ; B1AD
+         jsr  END_PLOT             ; B1AD
          ldy  #$01                 ; B1B0
          lda  ($C4),y              ; B1B2
          sta  $B5                  ; B1B4
-         jsr  sub_B1C6             ; B1B6
+         jsr  END_PLOT             ; B1B6
          ldy  #$02                 ; B1B9
          lda  ($C4),y              ; B1BB
          sta  $B5                  ; B1BD
-         jsr  sub_B1C6             ; B1BF
-         jsr  sub_B229             ; B1C2
+         jsr  END_PLOT             ; B1BF
+         jsr  END_NEXTROW          ; B1C2
          rts                       ; B1C5
-sub_B1C6
+
+* ending: merge two pixels into the bitmap (table $2C00) ---
+END_PLOT
          lda  $B5                  ; B1C6
          eor  #$FF                 ; B1C8
          sta  $B6                  ; B1CA
@@ -561,7 +571,9 @@ sub_B1C6
          ora  $B9                  ; B224
          sta  ($C2),y              ; B226
          rts                       ; B228
-sub_B229
+
+* ending: next bitmap line ---------------------------------
+END_NEXTROW
          ldx  $C1                  ; B229
          lda  $C3                  ; B22B
          stx  $C3                  ; B22D
@@ -583,13 +595,17 @@ LB240
          inc  $C5                  ; B249
 LB24B
          rts                       ; B24B
-sub_B24C
+
+* ending: wait for the next frame --------------------------
+END_VBL
          lda  RTCLOK+2             ; B24C
 LB24E
          cmp  RTCLOK+2             ; B24E
          beq  LB24E                ; B250
          rts                       ; B252
-sub_B253
+
+* ending: swap display lists $AC28 / $ACFC -----------------
+END_SWAPDL
          lda  RTCLOK+2             ; B253
          lsr                       ; B255
          ldx  #$28                 ; B256
@@ -602,7 +618,9 @@ LB260
          sty  SDLSTH               ; B263
          rts                       ; B266
          dta $10,$30                                  ; B267
-sub_B269
+
+* ending set-up: colours, DLI, scroller VBI, font $6C00 ----
+END_SETUP
          lda  #$76                 ; B269
          ldx  #$7A                 ; B26B
          ldy  #$7E                 ; B26D
@@ -615,7 +633,7 @@ sub_B269
          sta  $B0                  ; B27C
          lda  #$00                 ; B27E
          sta  $B4                  ; B280
-         jsr  sub_B24C             ; B282
+         jsr  END_VBL              ; B282
          lda  #$22                 ; B285
          sta  SDMCTL               ; B287
          lda  #$DA                 ; B28A
@@ -639,7 +657,9 @@ sub_B269
          lda  #$14                 ; B2B4
          sta  $BF                  ; B2B6
          rts                       ; B2B8
-sub_B2B9
+
+* ending: clear the bitmaps --------------------------------
+END_CLEAR
          lda  #$00                 ; B2B9
          ldy  #$10                 ; B2BB
          sty  $C1                  ; B2BD
@@ -669,11 +689,15 @@ LB2DB
          dta $A0,$27,$A2,$03,$8A,$09,$00,$99,$D8,$29,$99,$D8,$49,$8D,$11,$B3 ; B2E5
          dta $AD,$0B,$D4,$D0,$FB,$AD,$0B,$D4,$F0,$FB,$8A,$0A,$0A,$AA,$D0,$0B ; B2F5
          dta $8D,$11,$B3,$88,$10,$02                  ; B305
-sub_B30B
+
+* ending: patch the clear length in the bitmap clear (cpy #$D8) ---
+END_CLRLEN
          lda  #$D8                 ; B30B
          sta  $B2E1                ; B30D
          rts                       ; B310
-sub_B311
+
+* ending: start phases of the five objects -----------------
+END_PHASES
          lda  $AED0                ; B311
          clc                       ; B314
          adc  $BC                  ; B315
@@ -733,7 +757,9 @@ sub_B311
 LB386
          sty  $13                  ; B386
          rts                       ; B388
-sub_B389
+
+* ending: draw the five objects (positions from the sine table $ADD0) ---
+END_DRAW
          ldy  #$04                 ; B389
 LB38B
          ldx  $AEE0,y              ; B38B
@@ -749,12 +775,14 @@ LB38B
          adc  $ADD0,x              ; B3A4
          sta  $BA                  ; B3A7
          sty  $C6                  ; B3A9
-         jsr  sub_B00E             ; B3AB
+         jsr  END_OBJECT           ; B3AB
          ldy  $C6                  ; B3AE
          dey                       ; B3B0
          bpl  LB38B                ; B3B1
          rts                       ; B3B3
-sub_B3B4
+
+* ending: move the five objects ----------------------------
+END_MOVE
          ldy  #$04                 ; B3B4
 LB3B6
          lda  $AED0,y              ; B3B6

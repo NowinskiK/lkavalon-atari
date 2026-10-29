@@ -5,14 +5,14 @@
 
 
 * player contact with hazards and enemies ------------------
-sub_9796
+CONTACT
          lda  PROBE_TILE           ; 9796
          and  #$08                 ; 9799
          beq  L97A6                ; 979B
          lda  FRAME                ; 979D
          and  #$01                 ; 979F
          bne  L97A6                ; 97A1
-         jsr  sub_9802             ; 97A3
+         jsr  HIT                  ; 97A3
 L97A6
          ldx  #$03                 ; 97A6
 L97A8
@@ -34,7 +34,7 @@ L97A8
          bcc  L97D4                ; 97CA
          lda  SWING                ; 97CC
          bne  L97D8                ; 97CF
-         jsr  sub_9802             ; 97D1
+         jsr  HIT                  ; 97D1
 L97D4
          dex                       ; 97D4
          bpl  L97A8                ; 97D5
@@ -64,14 +64,14 @@ L97EB
          rts                       ; 9801
 
 * lose energy; at 0 lose a life ----------------------------
-sub_9802
+HIT
          stx  $9813                ; 9802
          lda  MUSIC_OFF            ; 9805
          bne  L9812                ; 9807
          lda  #$21                 ; 9809
          ldx  #$0C                 ; 980B
          ldy  #$16                 ; 980D
-         jsr  entry_F2E4           ; 980F
+         jsr  CMC_CMD              ; 980F
 L9812
          ldx  #$00                 ; 9812
          dec  ENERGY               ; 9814
@@ -85,7 +85,7 @@ L981B
          lda  #$21                 ; 9822
          ldx  #$18                 ; 9824
          ldy  #$14                 ; 9826
-         jsr  entry_F2E4           ; 9828
+         jsr  CMC_CMD              ; 9828
 L982B
          ldx  #$00                 ; 982B
          dec  LIVES                ; 982D
@@ -95,12 +95,12 @@ L982B
          dta $00,$00,$00                              ; 9834
 
 * draw the two food items of a cave room -------------------
-sub_9837
+FOOD_DRAW
          lda  $9834                ; 9837
          asl                       ; 983A
          asl                       ; 983B
          tay                       ; 983C
-         jsr  sub_9883             ; 983D
+         jsr  ITEM_DRAW            ; 983D
          lda  $E0                  ; 9840
          sta  $99A4                ; 9842
          lda  $C2                  ; 9845
@@ -115,7 +115,7 @@ sub_9837
          asl                       ; 985B
          asl                       ; 985C
          tay                       ; 985D
-         jsr  sub_9883             ; 985E
+         jsr  ITEM_DRAW            ; 985E
          lda  $E0                  ; 9861
          sta  $99BD                ; 9863
          lda  $C2                  ; 9866
@@ -135,7 +135,7 @@ L987A
          rts                       ; 9882
 
 * draw one food item into the screen -----------------------
-sub_9883
+ITEM_DRAW
          lda  $A4E9,y              ; 9883
          beq  L987A                ; 9886
          lda  RANDOM               ; 9888
@@ -179,11 +179,11 @@ sub_9883
          adc  #$BC                 ; 98D4
          sta  $C3                  ; 98D6
          ldy  #$00                 ; 98D8
-         jsr  sub_99D5             ; 98DA
+         jsr  CHAR_ADDR            ; 98DA
          sty  $D0                  ; 98DD
          sta  $D1                  ; 98DF
          ldy  #$01                 ; 98E1
-         jsr  sub_99D5             ; 98E3
+         jsr  CHAR_ADDR            ; 98E3
          sty  $D2                  ; 98E6
          sta  $D3                  ; 98E8
          ldy  #$00                 ; 98EA
@@ -206,7 +206,7 @@ sub_9883
          dec  $C3                  ; 9908
          dec  $C3                  ; 990A
          ldy  #$00                 ; 990C
-         jsr  sub_99D5             ; 990E
+         jsr  CHAR_ADDR            ; 990E
          sty  $C8                  ; 9911
          sty  $D4                  ; 9913
          sta  $C9                  ; 9915
@@ -214,7 +214,7 @@ sub_9883
          ora  #$E0                 ; 9918
          sta  $D5                  ; 991A
          ldy  #$01                 ; 991C
-         jsr  sub_99D5             ; 991E
+         jsr  CHAR_ADDR            ; 991E
          sty  $CA                  ; 9921
          sty  $CE                  ; 9923
          sta  $CB                  ; 9925
@@ -251,7 +251,7 @@ L993D
          iny                       ; 995F
          cpy  #$08                 ; 9960
          bne  L9967                ; 9962
-         jsr  sub_7F92             ; 9964
+         jsr  SPR_HALF2            ; 9964
 L9967
          cpy  #$10                 ; 9967
          bcs  L996E                ; 9969
@@ -260,7 +260,7 @@ L996E
          rts                       ; 996E
 
 * is the player on a food item? ----------------------------
-sub_996F
+FOOD_CHECK
          lda  PLAYER_Y             ; 996F
          clc                       ; 9972
          adc  #$04                 ; 9973
@@ -268,7 +268,7 @@ sub_996F
          lda  PLAYER_X             ; 9976
          clc                       ; 9979
          adc  #$02                 ; 997A
-         jsr  sub_912F             ; 997C
+         jsr  MAP_TILE             ; 997C
          ldy  #$00                 ; 997F
          ldx  $9836                ; 9981
          lda  MAP_PTR              ; 9984
@@ -293,10 +293,12 @@ L99A3
          and  #$FD                 ; 99A9
          sta  $C603,x              ; 99AB
          pla                       ; 99AE
-         jsr  sub_99B4             ; 99AF
+         jsr  FOOD1_ERASE          ; 99AF
          ora  #$01                 ; 99B2
-sub_99B4
-         sta  sub_99B4,y           ; 99B4
+
+* erase food item 1 (STA operands patched with its screen address by $9837) ---
+FOOD1_ERASE
+         sta  FOOD1_ERASE,y        ; 99B4
          sta  $99B7,y              ; 99B7
          iny                       ; 99BA
          rts                       ; 99BB
@@ -307,23 +309,27 @@ L99BC
          and  #$FE                 ; 99C2
          sta  $C603,x              ; 99C4
          pla                       ; 99C7
-         jsr  sub_99CD             ; 99C8
+         jsr  FOOD2_ERASE          ; 99C8
          ora  #$01                 ; 99CB
-sub_99CD
-         sta  sub_99CD,y           ; 99CD
+
+* erase food item 2 (STA operands patched by $9837) --------
+FOOD2_ERASE
+         sta  FOOD2_ERASE,y        ; 99CD
          sta  $99D0,y              ; 99D0
          iny                       ; 99D3
          rts                       ; 99D4
-sub_99D5
+
+* font address of the character at ($C2),Y - uses the undocumented opcode $AB (LXA) ---
+CHAR_ADDR
          lda  ($C2),y              ; 99D5
          dta $AB,$7F,$BD,$00,$C3,$A8,$BD,$80,$C3,$AA,$09,$D8,$60 ; 99D7
 
 * pick up food: FOOD + 1 -----------------------------------
-sub_99E4
+FOOD_PICK
          lda  PROBE_TILE           ; 99E4
          and  #$20                 ; 99E7
          beq  L99FF                ; 99E9
-         jsr  sub_996F             ; 99EB
+         jsr  FOOD_CHECK           ; 99EB
          beq  L99FF                ; 99EE
          inc  FOOD                 ; 99F0
          lda  MUSIC_OFF            ; 99F2
@@ -331,6 +337,6 @@ sub_99E4
          lda  #$21                 ; 99F6
          ldx  #$24                 ; 99F8
          ldy  #$15                 ; 99FA
-         jsr  entry_F2E4           ; 99FC
+         jsr  CMC_CMD              ; 99FC
 L99FF
          rts                       ; 99FF

@@ -5,7 +5,7 @@
 
 
 * level loaders: enemies -> $C500, cave rooms -> $C600, map, font, colours (level 1) ---
-sub_9A00
+LOAD_L1
          ldy  #$00                 ; 9A00
 L9A02
          lda  $A517,y              ; 9A02
@@ -30,7 +30,7 @@ L9A19
          bne  L9A5A                ; 9A26
 
 * level 3 loader (cave-room copy broken, NOTES.md section 17) ---
-sub_9A28
+LOAD_L3
          ldy  #$00                 ; 9A28
 L9A2A
          lda  $A5E7,y              ; 9A2A
@@ -69,16 +69,16 @@ L9A5A
          ldx  #$70                 ; 9A62
          sta  $8DF5                ; 9A64
          stx  $8DF6                ; 9A67
-         jsr  sub_9A79             ; 9A6A
+         jsr  COLS_A               ; 9A6A
          lda  $9F                  ; 9A6D
          cmp  #$01                 ; 9A6F
          beq  L9A76                ; 9A71
-         jsr  sub_7E1C             ; 9A73
+         jsr  TRAP_MAIN            ; 9A73
 L9A76
-         jmp  L9221                ; 9A76
+         jmp  FONT_A               ; 9A76
 
 * colours of the font-A levels -----------------------------
-sub_9A79
+COLS_A
          lda  #$B6                 ; 9A79
          sta  TARGET_COLS          ; 9A7B
          lda  #$F4                 ; 9A7E
@@ -90,7 +90,7 @@ sub_9A79
          rts                       ; 9A8D
 
 * level 5 loader -------------------------------------------
-sub_9A8E
+LOAD_L5
          ldy  #$00                 ; 9A8E
 L9A90
          lda  $A6B7,y              ; 9A90
@@ -115,7 +115,7 @@ L9AA7
          bne  L9A5A                ; 9AB4
 
 * level 4 loader -------------------------------------------
-sub_9AB6
+LOAD_L4
          ldy  #$00                 ; 9AB6
 L9AB8
          lda  $A787,y              ; 9AB8
@@ -140,7 +140,7 @@ L9ACF
          bne  L9B06                ; 9ADC
 
 * level 6 loader -------------------------------------------
-sub_9ADE
+LOAD_L6
          ldy  #$00                 ; 9ADE
 L9AE0
          lda  $A857,y              ; 9AE0
@@ -178,10 +178,10 @@ L9B06
          sta  TARGET_COLS+2        ; 9B22
          lda  #$7E                 ; 9B25
          sta  TARGET_COLS+3        ; 9B27
-         jmp  L9239                ; 9B2A
+         jmp  FONT_B               ; 9B2A
 
 * level 2 loader -------------------------------------------
-sub_9B2D
+LOAD_L2
          ldy  #$00                 ; 9B2D
 L9B2F
          lda  $A927,y              ; 9B2F
@@ -206,60 +206,60 @@ L9B46
          bne  L9B06                ; 9B53
 
 * text screen: intro ---------------------------------------
-sub_9B55
-         jsr  sub_96C8             ; 9B55
+SCR_INTRO
+         jsr  FADE_OUT             ; 9B55
          lda  #$B6                 ; 9B58
          sta  COUNTER              ; 9B5A
          sta  PLAYER_X             ; 9B5C
          lda  #$70                 ; 9B5F
          sta  PLAYER_Y             ; 9B61
-         jsr  sub_8A4D             ; 9B64
+         jsr  CLR_PM               ; 9B64
          ldx  #$00                 ; 9B67
-         jsr  sub_9215             ; 9B69
+         jsr  TEXT_SETUP           ; 9B69
          lda  #$00                 ; 9B6C
-         jsr  sub_9C5A             ; 9B6E
+         jsr  SCR_SHOW             ; 9B6E
          rts                       ; 9B71
 
 * text screen: next level ----------------------------------
-sub_9B72
-         jsr  sub_96C8             ; 9B72
+SCR_NEXT
+         jsr  FADE_OUT             ; 9B72
          lda  #$B6                 ; 9B75
          sta  COUNTER              ; 9B77
          sta  PLAYER_X             ; 9B79
          lda  #$70                 ; 9B7C
          sta  PLAYER_Y             ; 9B7E
-         jsr  sub_8A4D             ; 9B81
+         jsr  CLR_PM               ; 9B81
          ldx  #$07                 ; 9B84
-         jsr  sub_9215             ; 9B86
+         jsr  TEXT_SETUP           ; 9B86
          lda  #$01                 ; 9B89
-         jsr  sub_9C5A             ; 9B8B
+         jsr  SCR_SHOW             ; 9B8B
          rts                       ; 9B8E
 
 * text screen: game over -----------------------------------
-sub_9B8F
-         jsr  sub_96C8             ; 9B8F
+SCR_OVER
+         jsr  FADE_OUT             ; 9B8F
          lda  #$B6                 ; 9B92
          sta  COUNTER              ; 9B94
          sta  PLAYER_X             ; 9B96
          lda  #$70                 ; 9B99
          sta  PLAYER_Y             ; 9B9B
-         jsr  sub_8A4D             ; 9B9E
+         jsr  CLR_PM               ; 9B9E
          ldx  #$07                 ; 9BA1
-         jsr  sub_9215             ; 9BA3
+         jsr  TEXT_SETUP           ; 9BA3
          lda  #$02                 ; 9BA6
          inc  LEVEL                ; 9BA8
-         jsr  sub_9C5A             ; 9BAB
+         jsr  SCR_SHOW             ; 9BAB
          rts                       ; 9BAE
 
 * text screen: victory -------------------------------------
-sub_9BAF
-         jsr  sub_96C8             ; 9BAF
+SCR_WIN
+         jsr  FADE_OUT             ; 9BAF
          lda  #$B6                 ; 9BB2
          sta  COUNTER              ; 9BB4
          sta  PLAYER_X             ; 9BB6
          lda  #$70                 ; 9BB9
          sta  PLAYER_Y             ; 9BBB
-         jsr  sub_8A4D             ; 9BBE
+         jsr  CLR_PM               ; 9BBE
          lda  $9CED                ; 9BC1
          sta  $9CEB                ; 9BC4
          lda  $9CEE                ; 9BC7
@@ -267,13 +267,13 @@ sub_9BAF
          lda  #$01                 ; 9BCD
          sta  LEVEL                ; 9BCF
          ldx  #$07                 ; 9BD2
-         jsr  sub_9215             ; 9BD4
+         jsr  TEXT_SETUP           ; 9BD4
          lda  #$03                 ; 9BD7
-         jsr  sub_9C5A             ; 9BD9
+         jsr  SCR_SHOW             ; 9BD9
          rts                       ; 9BDC
 
 * text screen colours --------------------------------------
-sub_9BDD
+SCR_COLS
          lda  #$16                 ; 9BDD
          sta  TARGET_COLS          ; 9BDF
          lda  #$24                 ; 9BE2
@@ -285,7 +285,7 @@ sub_9BDD
          rts                       ; 9BF1
 
 * draw a 20x10-tile text page ------------------------------
-sub_9BF2
+SCR_PAGE
          stx  $C0                  ; 9BF2
          sty  $C1                  ; 9BF4
          ldx  #$00                 ; 9BF6
@@ -323,7 +323,7 @@ L9C11
          dta $74,$88,$75,$18,$77,$E0,$77,$50,$76,$A8,$78,$70,$79,$38,$7A ; 9C4B
 
 * text screen driver: pages, fade, wait for fire -----------
-sub_9C5A
+SCR_SHOW
          asl                       ; 9C5A
          asl                       ; 9C5B
          tax                       ; 9C5C
@@ -333,7 +333,7 @@ sub_9C5A
          sta  $C3                  ; 9C65
          lda  $9C3C,x              ; 9C67
          sta  $E8                  ; 9C6A
-         jsr  sub_8FB8             ; 9C6C
+         jsr  WAIT_FRAME           ; 9C6C
          lda  #$00                 ; 9C6F
          sta  $13                  ; 9C71
          sta  RTCLOK+2             ; 9C73
@@ -349,9 +349,9 @@ L9C7A
          lda  ($C2),y              ; 9C83
          tay                       ; 9C85
          ldx  $C0                  ; 9C86
-         jsr  sub_9BF2             ; 9C88
-         jsr  sub_9BDD             ; 9C8B
-         jsr  sub_9744             ; 9C8E
+         jsr  SCR_PAGE             ; 9C88
+         jsr  SCR_COLS             ; 9C8B
+         jsr  FADE_IN              ; 9C8E
 L9C91
          lda  STRIG0               ; 9C91
          and  #$01                 ; 9C94
@@ -364,7 +364,7 @@ L9C99
          lda  LEVEL                ; 9C9F
          cmp  #$01                 ; 9CA2
          bne  L9CA9                ; 9CA4
-         jsr  sub_9CCC             ; 9CA6
+         jsr  STATUS_TXT           ; 9CA6
 L9CA9
          lda  STRIG0               ; 9CA9
          and  #$01                 ; 9CAC
@@ -376,7 +376,7 @@ L9CB1
          bne  L9CA9                ; 9CB5
          lda  #$00                 ; 9CB7
          sta  $13                  ; 9CB9
-         jsr  sub_96C8             ; 9CBB
+         jsr  FADE_OUT             ; 9CBB
          inc  $E5                  ; 9CBE
          lda  $E5                  ; 9CC0
          cmp  $E8                  ; 9CC2
@@ -386,7 +386,7 @@ L9CB1
          beq  L9C7A                ; 9CCA
 
 * switch the status-line text ------------------------------
-sub_9CCC
+STATUS_TXT
          lda  #$00                 ; 9CCC
          asl                       ; 9CCE
          tax                       ; 9CCF
@@ -403,7 +403,7 @@ sub_9CCC
          dta $29,$A1,$A1,$A1,$19,$A2,$91,$A2,$09,$A3,$81,$A3,$F9,$A3,$71,$A4 ; 9CEB
 
 * ending scroller (VBI, installed by the ending at $B299) ---
-irq_9CFB
+END_SCROLL
          lda  #$00                 ; 9CFB
          beq  L9D33                ; 9CFD
          ldx  #$FF                 ; 9CFF
@@ -465,7 +465,7 @@ L9D69
          rts                       ; 9D6C
 
 * level completion: exit + 32 food -> next level, after 6 -> ending ---
-sub_9D6D
+LEVEL_DONE
          lda  PROBE_TILE           ; 9D6D
          and  #$10                 ; 9D70
          bne  L9D75                ; 9D72
@@ -482,14 +482,14 @@ L9D7C
          bne  L9D89                ; 9D84
          jmp  L9E43                ; 9D86
 L9D89
-         jsr  sub_9B72             ; 9D89
-         jsr  sub_96C8             ; 9D8C
+         jsr  SCR_NEXT             ; 9D89
+         jsr  FADE_OUT             ; 9D8C
          lda  #$B6                 ; 9D8F
          sta  COUNTER              ; 9D91
          sta  PLAYER_X             ; 9D93
          lda  #$70                 ; 9D96
          sta  PLAYER_Y             ; 9D98
-         jsr  sub_8A4D             ; 9D9B
+         jsr  CLR_PM               ; 9D9B
          lda  #$40                 ; 9D9E
          sta  RESPAWN_X            ; 9DA0
          lda  #$70                 ; 9DA3
@@ -511,7 +511,7 @@ L9D89
          lda  #$60                 ; 9DCF
          sta  ENERGY               ; 9DD1
          inc  LIVES                ; 9DD3
-         jsr  sub_8DF8             ; 9DD5
+         jsr  STATUS               ; 9DD5
          ldx  LEVEL                ; 9DD8
          lda  LEVEL_DIGITS,x       ; 9DDB
          sta  DIGIT_DONE           ; 9DDE
@@ -521,38 +521,38 @@ L9D89
          lda  LEVEL                ; 9DE8
          cmp  #$02                 ; 9DEB
          bne  L9DF5                ; 9DED
-         jsr  sub_9B2D             ; 9DEF
+         jsr  LOAD_L2              ; 9DEF
          jmp  L9E1D                ; 9DF2
 L9DF5
          cmp  #$03                 ; 9DF5
          bne  L9DFF                ; 9DF7
-         jsr  sub_9A28             ; 9DF9
+         jsr  LOAD_L3              ; 9DF9
          jmp  L9E1D                ; 9DFC
 L9DFF
          cmp  #$04                 ; 9DFF
          bne  L9E09                ; 9E01
-         jsr  sub_9AB6             ; 9E03
+         jsr  LOAD_L4              ; 9E03
          jmp  L9E1D                ; 9E06
 L9E09
          cmp  #$05                 ; 9E09
          bne  L9E13                ; 9E0B
-         jsr  sub_9A8E             ; 9E0D
+         jsr  LOAD_L5              ; 9E0D
          jmp  L9E1D                ; 9E10
 L9E13
          cmp  #$06                 ; 9E13
          bne  L9E1D                ; 9E15
-         jsr  sub_9ADE             ; 9E17
+         jsr  LOAD_L6              ; 9E17
          jmp  L9E1D                ; 9E1A
 L9E1D
-         jsr  sub_8FC7             ; 9E1D
+         jsr  DRAW_MAP             ; 9E1D
          lda  #$AB                 ; 9E20
          sta  $89D0                ; 9E22
          sta  $8A34                ; 9E25
          lda  #$A0                 ; 9E28
          sta  $89D1                ; 9E2A
          sta  $8A35                ; 9E2D
-         jsr  sub_9151             ; 9E30
-         jsr  sub_9744             ; 9E33
+         jsr  EN_SPAWN             ; 9E30
+         jsr  FADE_IN              ; 9E33
          lda  #$40                 ; 9E36
          sta  PLAYER_X             ; 9E38
          lda  RTCLOK+2             ; 9E3B
@@ -561,13 +561,15 @@ L9E1D
          sta  NEXT_TICK            ; 9E40
          rts                       ; 9E42
 L9E43
-         jsr  sub_9BAF             ; 9E43
-         jmp  LAEF0                ; 9E46
+         jsr  SCR_WIN              ; 9E43
+         jmp  END_MAIN             ; 9E46
 LEVEL_DIGITS     dta $00,$74,$77,$7E,$6A,$76,$6B,$7F  ; 9E49 digit tiles: [LEVEL] -> DIGIT_DONE, [LEVEL+1] -> DIGIT_NEXT
          dta $6D,$75,$20,$BF,$8F,$78,$A9,$00,$8D,$00,$D4,$8D,$0E,$D4,$A9,$FE ; 9E51
          dta $8D,$01,$D3,$A2,$AE,$A0,$9E,$8E,$FA,$FF,$8C,$FB,$FF,$A2,$C7,$A0 ; 9E61
          dta $9E,$8E,$FC,$FF,$8C,$FD,$FF,$8E,$00,$02,$8C,$01,$02,$A2,$C8,$A0 ; 9E71
          dta $9E,$8E,$FE,$FF,$8C,$FF,$FF,$A2,$96,$A0,$9E,$8E,$24,$02,$8C,$25 ; 9E81
          dta $02,$58,$20,$A6,$C5                      ; 9E91
-irq_9E96
+
+* empty VBI (VVBLKD while nothing else runs) ---------------
+VBI_NONE
          rts                       ; 9E96

@@ -25,6 +25,7 @@ and **why** things are the way they are.
 | 2026-10-29 | `LEVEL.ASM` walked through; level 3 cave-room bug, text pages, logo height (section 17) |
 | 2026-10-29 | Variable block $9349-$93C6 and init table $930A decoded (section 18) |
 | 2026-10-29 | Named variables, group comments and readable init tables generated into the sources (section 19) |
+| 2026-10-29 | All routines named; disassembler vector bug fixed; self-modified CMC jumps (section 20) |
 
 ## 1. From XEX to memory image
 
@@ -506,15 +507,56 @@ Verified: regenerated, MADS build and `asm.py` build both match `game.bin` byte 
 do not change the bytes). Routine labels are still the generated `sub_XXXX` / `Lxxxx`; naming them is the next
 step (the `COMMENTS` table already says what each one does).
 
+## 20. Routine names (2026-10-29)
+
+Goal: replace all generated `sub_XXXX` / `entry_XXXX` / `irq_XXXX` with short names. Of 115 routines, 69 were
+already understood (`COMMENTS`); the other 46 were identified first by reading each one (scratch script dumping
+a routine up to its first `rts`/`rti`/`jmp`).
+
+**Mechanism:** `NAMES` in `util/split.py` (address → name), applied to the analyser's labels; `split.py`
+asserts names are unique and do not clash with variable or OS names, and warns about a name with no label.
+Jump targets that act as routines are named too (`MAIN_LOOP`, `NEW_GAME`, `SWAP_BUF`, `SCROLL_R/L`,
+`FONT_A/B`, `SPR_FRAME`, `SPR_COPY`, `END_MAIN`). Upper case with `_`, a prefix per module: `TR_` trainer,
+`SPR_`/`SHAPE` sprite engine, `DLI_`, `PL_` player, `EN_` enemies, `CAVE_`, `FADE_`, `FOOD_`, `LOAD_Ln`, `SCR_`
+text screens, `END_` ending, `CMC_` music. Every routine also got a `* comment ---` header (`COMMENTS`).
+Result: no generated routine labels left; branch targets inside routines stay `Lxxxx`.
+
+**Identified on the way** (evidence):
+
+- **Disassembler bug fixed** (`util/rdis.py`): the vector heuristic paired an immediate X/Y load with the next
+  store to a vector even when that store used other registers. False result 1: the trainer's display list
+  `$6385` (`ldx #$85 / ldy #$63 / stx SDLSTL`, followed by `stx VDSLST` of another pair) was disassembled as
+  code (`bvs / bvs / brk`). False result 2: `irq_C0AB` inside a binary block, from `lda #$DA / ldx #$AB /
+  ldy #$C0 / sta VDSLST / stx VDSLST+1` (the real target is `$ABDA`). Now the heuristic tracks which register
+  holds which immediate value and pairs the stores to the vector's low and high byte. Code found: 10,682 bytes.
+- **Self-modified CMC jumps**: `jmp $5968` ($F372) and `jsr $5B73` ($F654) – their operands are patched at run
+  time ($F655/$F656 are written by the player), the stored targets are leftovers. Listed in `NOFOLLOW`, so the
+  false "routines" in the maps (`L5968`, `sub_5B73`) are gone (answers the old open question).
+- **Undocumented opcode**: `CHAR_ADDR` ($99D5) contains `$AB $7F` (LXA #imm) – `lda ($C2),y / lxa #$7F /
+  lda $C300,x / tay / lda $C380,x / tax / ora #$D8 / rts` returns the font address of a screen character. The
+  opcode table has no undocumented opcodes, so that part stays `dta` (bytes are still exact).
+- **Second copy-protection trap**: `TRAP_MAIN` ($7E1C) zeroes $8E80-$8F7F (new game + main loop); level loaders
+  call it when `$9F` ≠ 1; `SPR_INIT` ($7C03) does the same when `$AA` ≠ 1.
+- **Self-modifying food erase**: `FOOD1_ERASE` / `FOOD2_ERASE` ($99B4 / $99CD) are `sta abs,y` whose operands
+  `FOOD_DRAW` ($9837) patches with the food items' screen addresses.
+- **Shape routines** = flip variants chosen by enemy flags: bit 7 mirror (pixel-mirror table $C100), bit 6
+  vertical flip (rows reversed): `SHAPE_HV`, `SHAPE_H`, `SHAPE_V`, `SHAPE`.
+- **Player**: `PL_MOVE` ($8C2F, every other frame) – falling below Y = $90 costs a life (`dec LIVES`, frame $0F),
+  then jump/landing/club swing; `PL_STICK` ($8D41) – joystick walk and jump start.
+- **Ending**: five objects moving on sine curves (table $ADD0, phases $AED0-$AEEC) drawn into a double-buffered
+  bitmap (`END_OBJECT` / `END_PLOT`, display lists swapped by `END_SWAPDL`), colour cycling (`END_COLCYC`),
+  with the advert scroller (`END_SCROLL`) as VBI.
+
+Verified: MADS and `asm.py` builds byte-exact after regeneration.
+
 ## Open questions
 
-- Name the routines (`sub_XXXX` → e.g. `MAIN_LOOP`, `DRAW_MAP`) the same way as the variables (a `NAMES`
-  table in `split.py`).
+- Teach the disassembler the undocumented opcodes used ($AB LXA in `CHAR_ADDR`), so that code is not `dta`.
+- Protection flags `$9F` / `$AA` (trap conditions): where are they set? Name them.
 
 - Commit the original XEX to `bin/` (needs an exception in `.gitignore`)? User's decision.
 - Draw enemy start positions, treasures and cave-room entrances onto the level maps (`LEVELDAT.DTA`).
 - `D0500.DTA` ($0500-$07FF) and `D2800.DTA` ($2800-$2BFF, $2F00-$2FFF) – unknown.
-- `CMC.ASM`: `JMP $5968` ($F372) and `JSR $5B73` ($F654) point into the maps – probably player tables taken as code.
 - Confirm in an emulator that level 3 has no cave rooms (section 17); restore with `$9A4A-$9A4C` = `40 B9 38`?
 - Split `PICTURE.DTA` into the logo ($7100-$74BF) and the text pages ($74C0-$7BFF)? Render the text pages.
 - Runnable XEX: needs a loader for the blocks under the OS ROM and the hardware state.

@@ -24,7 +24,7 @@ then (later) annotate it the same way as Dangerous City's `DC.ASM`.
 | [util/emu.py](util/emu.py) | Minimal 6502 emulator that runs the XEX load sequence (INITAD/RUNAD) and dumps memory at a stop address |
 | [util/resume.py](util/resume.py) | Continues from `mem.bin` at $0480 (snapshot restore) until `RTI`, prints the resume PC, writes `game.bin` |
 | [util/rdis.py](util/rdis.py) | Recursive-descent disassembler (follows JMP/JSR/branches and DLI/VBI vector setups) → MADS-style listing |
-| [util/split.py](util/split.py) | Splits `game.bin` into the blocks of `src/` and writes `main.asm`. Tables at the top: `BLOCKS` (files), `VARIABLES` (named variables with groups and comments), `COMMENTS` (group comments above routines), `POKES` (init tables) |
+| [util/split.py](util/split.py) | Splits `game.bin` into the blocks of `src/` and writes `main.asm`. Tables at the top: `BLOCKS` (files), `VARIABLES` (named variables with groups and comments), `COMMENTS` (group comments above routines), `NAMES` (routine names), `POKES` (init tables), `NOFOLLOW` (self-modified jumps) |
 | [util/asm.py](util/asm.py) | Minimal assembler for the MADS subset `split.py` writes – checks the split without MADS |
 | [util/verify.py](util/verify.py) | Compares an assembled segment file with `game.bin` byte for byte |
 | [util/levels.py](util/levels.py) | Renders the 6 level maps and the title logo to PNG ([img/levels/](img/levels/)) |
@@ -240,5 +240,4 @@ so they are listed as entry points explicitly.
 - Identify `D0500.DTA` and `D2800.DTA`.
 - Level 2 map rows 0-2 ($6200-$646F) are cleared after the trainer – the original tiles there are lost in this
   version (other maps have 10-40 tiles in these rows); compare with another dump of the game.
-- `CMC.ASM` has `JMP $5968` ($F372) and `JSR $5B73` ($F654) into the maps – probably player tables disassembled as code.
 - Add a loader so `main.asm` builds a runnable XEX (copy blocks under the OS ROM, restore hardware state, `JMP $8E67`).

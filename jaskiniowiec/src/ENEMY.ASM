@@ -5,7 +5,7 @@
 
 
 * move the 4 enemies, then draw sprites and swap buffers ---
-sub_9027
+ENEMIES
          ldx  #$04                 ; 9027
 L9029
          dex                       ; 9029
@@ -13,23 +13,23 @@ L9029
          stx  $C1                  ; 902C
          lda  ENEMY_TYPE,x         ; 902E
          bne  L9039                ; 9031
-         jsr  sub_909D             ; 9033
+         jsr  EN_WALK              ; 9033
          jmp  L9055                ; 9036
 L9039
          bpl  L9048                ; 9039
          lda  PROT_FLAG            ; 903B
          bmi  L9042                ; 903D
-         jsr  sub_8820             ; 903F
+         jsr  TRAP_SHAPE           ; 903F
 L9042
-         jsr  sub_9102             ; 9042
+         jsr  EN_VERT              ; 9042
          jmp  L9055                ; 9045
 L9048
          cmp  #$40                 ; 9048
          bne  L9052                ; 904A
-         jsr  sub_912E             ; 904C
+         jsr  EN_STATIC            ; 904C
          jmp  L9055                ; 904F
 L9052
-         jsr  sub_90E5             ; 9052
+         jsr  EN_FLY               ; 9052
 L9055
          lda  FONT_PAGE            ; 9055
          cmp  #$E0                 ; 9057
@@ -49,12 +49,12 @@ L9055
          sta  ENEMY_FRAME,x        ; 9077
          jmp  L9029                ; 907A
 L907D
-         jmp  L7C7B                ; 907D
+         jmp  SPR_FRAME            ; 907D
          dta $8D,$0B,$03,$A9,$31,$8D,$00,$03,$A9,$07,$8D,$06,$03,$A9,$52,$8D ; 9080
          dta $02,$03,$A9,$80,$8D,$08,$03,$A9,$00,$8D,$09,$03,$60 ; 9090
 
 * enemy: walker (turns at walls and edges) -----------------
-sub_909D
+EN_WALK
          lda  ENEMY_X,x            ; 909D
          sec                       ; 90A0
          sbc  ENEMY_SPEED,x        ; 90A1
@@ -70,13 +70,13 @@ L90AE
          cmp  #$A2                 ; 90B5
          bcs  L90D2                ; 90B7
          ldy  ENEMY_Y,x            ; 90B9
-         jsr  sub_912F             ; 90BC
-         jsr  sub_8DF0             ; 90BF
+         jsr  MAP_TILE             ; 90BC
+         jsr  TILE_ATTR            ; 90BF
          and  #$01                 ; 90C2
          beq  L90D2                ; 90C4
          ldy  #$51                 ; 90C6
          lda  (MAP_PTR),y          ; 90C8
-         jsr  sub_8DF0             ; 90CA
+         jsr  TILE_ATTR            ; 90CA
          and  #$01                 ; 90CD
          beq  L90D2                ; 90CF
          rts                       ; 90D1
@@ -91,7 +91,7 @@ L90D2
          rts                       ; 90E4
 
 * enemy: flyer (horizontal) --------------------------------
-sub_90E5
+EN_FLY
          lda  ENEMY_X,x            ; 90E5
          sec                       ; 90E8
          sbc  ENEMY_SPEED,x        ; 90E9
@@ -109,7 +109,7 @@ L90F6
          rts                       ; 9101
 
 * enemy: vertical ------------------------------------------
-sub_9102
+EN_VERT
          lda  ENEMY_Y,x            ; 9102
          sec                       ; 9105
          sbc  ENEMY_SPEED,x        ; 9106
@@ -133,11 +133,13 @@ L9123
          eor  #$FE                 ; 9128
          sta  ENEMY_SPEED,x        ; 912A
          rts                       ; 912D
-sub_912E
+
+* enemy: static (does nothing) -----------------------------
+EN_STATIC
          rts                       ; 912E
 
 * map pointer / tile under X (A) and Y ---------------------
-sub_912F
+MAP_TILE
          clc                       ; 912F
          adc  #$01                 ; 9130
          lsr                       ; 9132
@@ -161,7 +163,7 @@ sub_912F
          rts                       ; 9150
 
 * spawn the enemies of the current screen ------------------
-sub_9151
+EN_SPAWN
          ldx  #$03                 ; 9151
 L9153
          ldy  #$80                 ; 9153
@@ -239,7 +241,7 @@ L917D
          sta  ENEMY_TYPE+3         ; 91EF
          ldx  #$A4                 ; 91F2
          ldy  #$93                 ; 91F4
-         jsr  sub_7C03             ; 91F6
+         jsr  SPR_INIT             ; 91F6
          lda  RTCLOK+2             ; 91F9
          sta  NEXT_TICK            ; 91FB
          inc  NEXT_TICK            ; 91FD

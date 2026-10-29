@@ -5,7 +5,7 @@
 
 
 * DLI: colours below the logo ------------------------------
-entry_8874
+DLI_TOP
          sta  $88A4                ; 8874
          stx  $88A6                ; 8877
          sty  $88A8                ; 887A
@@ -30,7 +30,7 @@ entry_8874
          rti                       ; 88A9
 
 * DLI: top half of a map row (font, sky colours, status line) ---
-entry_88AA
+DLI_UPPER
          pha                       ; 88AA
          txa                       ; 88AB
          pha                       ; 88AC
@@ -96,7 +96,7 @@ L891B
          rti                       ; 8928
 
 * DLI: bottom half of a map row (font + $400) --------------
-entry_8929
+DLI_LOWER
          pha                       ; 8929
          txa                       ; 892A
          pha                       ; 892B

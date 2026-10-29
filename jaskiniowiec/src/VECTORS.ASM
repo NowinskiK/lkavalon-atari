@@ -3,6 +3,6 @@
 
          org $FFFA
 
-         dta a(entry_9EAE)                            ; NMI
+         dta a(NMI_HND)                               ; NMI
          dta a($9EC7)                                 ; RESET
-         dta a(entry_9EC8)                            ; IRQ
+         dta a(IRQ_HND)                               ; IRQ

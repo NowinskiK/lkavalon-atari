@@ -5,35 +5,35 @@
 
 
 * text screen set-up: music position, text font to $D800 / $E000 ---
-sub_9215
+TEXT_SETUP
          lda  #$10                 ; 9215
-         jsr  entry_F2E4           ; 9217
+         jsr  CMC_CMD              ; 9217
          lda  #$00                 ; 921A
          ldx  #$18                 ; 921C
          jmp  L924E                ; 921E
 
 * copy level font A ($0800) --------------------------------
-L9221
+FONT_A
          lda  #$00                 ; 9221
          ldx  #$01                 ; 9223
-         jsr  entry_F2E4           ; 9225
+         jsr  CMC_CMD              ; 9225
          lda  #$00                 ; 9228
-         jsr  sub_8A64             ; 922A
+         jsr  MUSIC_TGL            ; 922A
          lda  #$00                 ; 922D
-         jsr  sub_8A64             ; 922F
+         jsr  MUSIC_TGL            ; 922F
          lda  #$00                 ; 9232
          ldx  #$08                 ; 9234
          jmp  L924E                ; 9236
 
 * copy level font B ($1000) --------------------------------
-L9239
+FONT_B
          lda  #$00                 ; 9239
          ldx  #$01                 ; 923B
-         jsr  entry_F2E4           ; 923D
+         jsr  CMC_CMD              ; 923D
          lda  #$00                 ; 9240
-         jsr  sub_8A64             ; 9242
+         jsr  MUSIC_TGL            ; 9242
          lda  #$00                 ; 9245
-         jsr  sub_8A64             ; 9247
+         jsr  MUSIC_TGL            ; 9247
          lda  #$00                 ; 924A
          ldx  #$10                 ; 924C
 L924E
@@ -65,8 +65,8 @@ L9266
          rts                       ; 927C
 
 * apply the hardware / display init table ------------------
-sub_927D
-         jsr  sub_8FBF             ; 927D
+INIT_HW
+         jsr  WAIT_VCOUNT          ; 927D
          ldy  #$00                 ; 9280
          ldx  #$00                 ; 9282
 L9284
@@ -113,8 +113,8 @@ L9284
          dta a(AUDF1),$C0                     ; 92E9 
 
 * apply the game-state init table --------------------------
-sub_92EC
-         jsr  sub_8FB8             ; 92EC
+INIT_GAME
+         jsr  WAIT_FRAME           ; 92EC
          ldy  #$00                 ; 92EF
          ldx  #$00                 ; 92F1
 L92F3
@@ -200,7 +200,7 @@ ENEMY_TYPE       dta $00,$00,$00,$00                  ; 93BF type: 0 walker, neg
 ENEMY_HITS       dta $00,$00,$00,$00                  ; 93C3 hits left (3 at spawn), removed at 0
 
 * build the bit-reverse / mirror / mask tables at $C000 (not called) ---
-entry_93C7
+MAKE_TABLES
          ldx  #$00                 ; 93C7
 L93C9
          txa                       ; 93C9

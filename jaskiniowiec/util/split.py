@@ -127,13 +127,33 @@ COMMENTS = {
     # TRAINER.ASM
     0x6200: 'crack stub: DOSINI = trainer, warm start',
     0x6214: 'CAMOsoft trainer: "Unlimited lives ? [Y/N]"',
-    0x62DF: 'trainer DLIs',
+    0x6295: 'trainer: leave through RUNAD',
+    0x629B: 'trainer: random colour, next 32-character text line',
+    0x62B9: 'trainer: fade the text out',
+    0x62C5: 'trainer: fade the text in',
+    0x62D3: 'trainer: wait 2 frames',
+    0x62DF: 'trainer DLI 1',
+    0x6309: 'trainer DLI 2: text colour bars',
+    0x6342: 'trainer DLI 3: background colour bars',
     0x6376: 'trainer patch: NOP the two DEC LIVES ($8C4E, $982D)',
+    0x6385: 'trainer display list',
     # SPRITE.ASM
     0x7C03: 'sprite engine: set up screens, fonts and DLs from a parameter block (X/Y)',
+    0x7C7B: 'one sprite frame: draw enemies, swap buffers, copy characters to the screen',
     0x7C84: 'draw all enemies into the hidden buffer',
-    0x7DB2: 'sprite helpers: screen position, background, character allocation',
-    0x7FE1: 'draw a shape: four variants (mirrored / not, two sizes) - $7FE1, $8243, $84E9, $864B',
+    0x7DB2: 'put one row of sprite characters into the screen, clipped at the edges',
+    0x7DF0: 'screen address of the sprite -> sprite list',
+    0x7E1C: 'copy-protection trap: wipes the main code $8E80-$8F7F',
+    0x7E26: 'offset in the sprite list: entry * 6 + 2 (after a dummy screen read)',
+    0x7E5B: 'offset in the sprite list: entry * 6 + 2',
+    0x7E66: 'pointers to the sprite characters in both font halves ($C300 / $C380)',
+    0x7E8C: 'copy the background rows above the sprite into its characters',
+    0x7EB0: 'next character row of the sprite',
+    0x7F92: 'move the six character pointers to the bottom font half (+$3F8)',
+    0x7FE1: 'shape, mirrored and flipped (flags bit 7 and 6) - via $C100, rows reversed',
+    0x8243: 'shape, mirrored (flags bit 7) - via $C100',
+    0x84E9: 'shape, flipped vertically (flags bit 6) - rows reversed',
+    0x864B: 'shape, as is',
     0x87CC: 'copy the sprite characters into the screen',
     0x8820: 'copy-protection trap: wipes the shape routine at $84E9',
     0x882C: 'wait for VBL, swap screen / font / display list buffers',
@@ -147,6 +167,8 @@ COMMENTS = {
     0x8A4D: 'clear the P/M players $CC00-$CFFF',
     0x8A64: 'music on / off (OPTION)',
     0x8A8F: 'player control - deferred VBI (VVBLKD)',
+    0x8C2F: 'player physics: falling off the bottom (-1 life), jump, landing, club swing',
+    0x8D41: 'joystick: walk left / right, start a jump',
     # MAIN.ASM
     0x8DF0: 'tile attributes of tile A',
     0x8DF8: 'status line: food bar, energy bar, lives digit',
@@ -164,6 +186,7 @@ COMMENTS = {
     0x909D: 'enemy: walker (turns at walls and edges)',
     0x90E5: 'enemy: flyer (horizontal)',
     0x9102: 'enemy: vertical',
+    0x912E: 'enemy: static (does nothing)',
     0x912F: 'map pointer / tile under X (A) and Y',
     0x9151: 'spawn the enemies of the current screen',
     # INIT.ASM
@@ -179,6 +202,7 @@ COMMENTS = {
     0x948F: 'probe the map around the player -> PROBE_FLOOR / PROBE_TILE / PROBE_WALL',
     0x94F7: 'cave room: own loop until the player walks out',
     0x95D5: 'draw the cave room screen',
+    0x9605: 'put a character into both screen buffers',
     0x9615: 'find the cave room of this screen, choose its food',
     0x9699: 'spawn the cave room enemies',
     # FADE.ASM
@@ -192,6 +216,9 @@ COMMENTS = {
     0x9837: 'draw the two food items of a cave room',
     0x9883: 'draw one food item into the screen',
     0x996F: 'is the player on a food item?',
+    0x99B4: 'erase food item 1 (STA operands patched with its screen address by $9837)',
+    0x99CD: 'erase food item 2 (STA operands patched by $9837)',
+    0x99D5: 'font address of the character at ($C2),Y - uses the undocumented opcode $AB (LXA)',
     0x99E4: 'pick up food: FOOD + 1',
     # LEVEL.ASM
     0x9A00: 'level loaders: enemies -> $C500, cave rooms -> $C600, map, font, colours (level 1)',
@@ -211,6 +238,7 @@ COMMENTS = {
     0x9CCC: 'switch the status-line text',
     0x9CFB: 'ending scroller (VBI, installed by the ending at $B299)',
     0x9D6D: 'level completion: exit + 32 food -> next level, after 6 -> ending',
+    0x9E96: 'empty VBI (VVBLKD while nothing else runs)',
     # IRQ.ASM
     0x9E97: 'music init',
     0x9EAE: 'NMI: DLI -> (VDSLST), else VBI',
@@ -221,9 +249,76 @@ COMMENTS = {
     0xAB7D: 'ending: build pixel table at $2C00',
     0xABDA: 'ending DLI',
     0xACFC: 'ending display list',
-    0xAEF0: 'ending sequence',
+    0xAEF0: 'ending sequence: five objects on sine curves, colour cycling, scroller',
+    0xAF3F: 'ending: cycle the colours $B0-$B3',
+    0xAF6A: 'ending: colour cycling and flashes',
+    0xAFEE: 'ending: line address table $2D00 / $2E00 (40 bytes per line)',
+    0xB00E: 'ending: draw one object',
+    0xB1C6: 'ending: merge two pixels into the bitmap (table $2C00)',
+    0xB229: 'ending: next bitmap line',
+    0xB24C: 'ending: wait for the next frame',
+    0xB253: 'ending: swap display lists $AC28 / $ACFC',
+    0xB269: 'ending set-up: colours, DLI, scroller VBI, font $6C00',
+    0xB2B9: 'ending: clear the bitmaps',
+    0xB30B: 'ending: patch the clear length in the bitmap clear (cpy #$D8)',
+    0xB311: 'ending: start phases of the five objects',
+    0xB389: 'ending: draw the five objects (positions from the sine table $ADD0)',
+    0xB3B4: 'ending: move the five objects',
     # CMC.ASM
     0xF2E1: 'CMC music player: init (+0), command (+3), play (+6)',
+    0xF484: 'CMC: start an instrument on a channel',
+}
+
+# Routine names: address -> short name for procedures (JSR targets) and jump targets used as routines.
+# Upper case with '_'; prefixes group them by module. Evidence: COMMENTS above and NOTES.md.
+NAMES = {
+    # trainer
+    0x6214: 'TRAINER', 0x6295: 'TR_RUN', 0x629B: 'TR_NEXTLINE', 0x62B9: 'TR_FADEOUT', 0x62C5: 'TR_FADEIN',
+    0x62D3: 'TR_WAIT2', 0x62DF: 'TR_DLI1', 0x6309: 'TR_DLI2', 0x6342: 'TR_DLI3',
+    # sprite engine
+    0x7C03: 'SPR_INIT', 0x7C7B: 'SPR_FRAME', 0x7C84: 'SPR_DRAWALL', 0x7DB2: 'SPR_PUTROW', 0x7DF0: 'SPR_SCRADR',
+    0x7E1C: 'TRAP_MAIN', 0x7E26: 'SPR_OFS_RD', 0x7E5B: 'SPR_OFS', 0x7E66: 'SPR_CHARPTR', 0x7E8C: 'SPR_BGTOP',
+    0x7EB0: 'SPR_NEXTROW', 0x7F92: 'SPR_HALF2', 0x7FE1: 'SHAPE_HV', 0x8243: 'SHAPE_H', 0x84E9: 'SHAPE_V',
+    0x864B: 'SHAPE', 0x87CC: 'SPR_COPY', 0x8820: 'TRAP_SHAPE', 0x882C: 'SWAP_BUF',
+    # DLIs, player
+    0x8874: 'DLI_TOP', 0x88AA: 'DLI_UPPER', 0x8929: 'DLI_LOWER',
+    0x8A4D: 'CLR_PM', 0x8A64: 'MUSIC_TGL', 0x8A8F: 'PLAYER', 0x8C2F: 'PL_MOVE', 0x8D41: 'PL_STICK',
+    # main
+    0x8DF0: 'TILE_ATTR', 0x8DF8: 'STATUS', 0x8E67: 'GAME_START', 0x8E80: 'NEW_GAME', 0x8EC3: 'MAIN_LOOP',
+    0x8F08: 'SFX', 0x8F4C: 'SCROLL_R', 0x8F82: 'SCROLL_L', 0x8FB8: 'WAIT_FRAME', 0x8FBF: 'WAIT_VCOUNT',
+    0x8FC7: 'DRAW_MAP',
+    # enemies
+    0x9027: 'ENEMIES', 0x909D: 'EN_WALK', 0x90E5: 'EN_FLY', 0x9102: 'EN_VERT', 0x912E: 'EN_STATIC',
+    0x912F: 'MAP_TILE', 0x9151: 'EN_SPAWN',
+    # init
+    0x9215: 'TEXT_SETUP', 0x9221: 'FONT_A', 0x9239: 'FONT_B', 0x927D: 'INIT_HW', 0x92EC: 'INIT_GAME',
+    0x93C7: 'MAKE_TABLES',
+    # cave rooms, fades, items
+    0x948F: 'PROBE', 0x94F7: 'CAVE', 0x95D5: 'CAVE_DRAW', 0x9605: 'PUT_2SCR', 0x9615: 'CAVE_FIND',
+    0x9699: 'CAVE_ENEMY',
+    0x96C8: 'FADE_OUT', 0x96EB: 'FADE_STEP', 0x9729: 'FADE_IN2', 0x9744: 'FADE_IN',
+    0x9796: 'CONTACT', 0x9802: 'HIT', 0x9837: 'FOOD_DRAW', 0x9883: 'ITEM_DRAW', 0x996F: 'FOOD_CHECK',
+    0x99B4: 'FOOD1_ERASE', 0x99CD: 'FOOD2_ERASE', 0x99D5: 'CHAR_ADDR', 0x99E4: 'FOOD_PICK',
+    # levels, text screens
+    0x9A00: 'LOAD_L1', 0x9A28: 'LOAD_L3', 0x9A79: 'COLS_A', 0x9A8E: 'LOAD_L5', 0x9AB6: 'LOAD_L4',
+    0x9ADE: 'LOAD_L6', 0x9B2D: 'LOAD_L2', 0x9B55: 'SCR_INTRO', 0x9B72: 'SCR_NEXT', 0x9B8F: 'SCR_OVER',
+    0x9BAF: 'SCR_WIN', 0x9BDD: 'SCR_COLS', 0x9BF2: 'SCR_PAGE', 0x9C5A: 'SCR_SHOW', 0x9CCC: 'STATUS_TXT',
+    0x9CFB: 'END_SCROLL', 0x9D6D: 'LEVEL_DONE', 0x9E96: 'VBI_NONE',
+    # interrupts
+    0x9E97: 'MUSIC_INIT', 0x9EAE: 'NMI_HND', 0x9EC8: 'IRQ_HND', 0x9ED6: 'VBI_HND', 0x9F7E: 'CLR_SCREENS',
+    # ending
+    0xAB7D: 'END_PIXTAB', 0xABDA: 'END_DLI', 0xAEF0: 'END_MAIN', 0xAF3F: 'END_COLCYC', 0xAF6A: 'END_COLORS',
+    0xAFEE: 'END_LINES', 0xB00E: 'END_OBJECT', 0xB1C6: 'END_PLOT', 0xB229: 'END_NEXTROW', 0xB24C: 'END_VBL',
+    0xB253: 'END_SWAPDL', 0xB269: 'END_SETUP', 0xB2B9: 'END_CLEAR', 0xB30B: 'END_CLRLEN', 0xB311: 'END_PHASES',
+    0xB389: 'END_DRAW', 0xB3B4: 'END_MOVE',
+    # music
+    0xF2E1: 'CMC_INIT', 0xF2E4: 'CMC_CMD', 0xF2E7: 'CMC_PLAY', 0xF484: 'CMC_INSTR',
+}
+
+# JMP/JSR instructions with self-modified operands: their stored target is a leftover, not followed
+NOFOLLOW = {
+    0xF372,   # CMC: jmp $5968, operand patched by the command routine
+    0xF654,   # CMC: jsr $5B73, operand patched at run time ($F655/$F656)
 }
 
 # init poke tables: address -> number of (lo, hi, value) entries
@@ -241,7 +336,13 @@ def header(name, lo, hi, desc):
 
 def main():
     mem = open(sys.argv[1], 'rb').read()
-    code, labels = analyze(mem, [int(a, 16) for a in sys.argv[2:]])
+    code, labels = analyze(mem, [int(a, 16) for a in sys.argv[2:]], NOFOLLOW)
+    taken = {v[2].upper() for v in VARIABLES if not isinstance(v, str)} | {n.upper() for n in L.values()}
+    assert len(set(NAMES.values())) == len(NAMES), 'duplicate routine names'
+    for a, n in NAMES.items():
+        assert n.upper() not in taken, '%s clashes with a variable or OS name' % n
+        if a in labels: labels[a] = n
+        else: print('WARNING: name %s for $%04X - no label there' % (n, a))
     lst = Lister(mem, code, labels, VARIABLES, POKES, COMMENTS)
     os.makedirs(SRC, exist_ok=True)
 

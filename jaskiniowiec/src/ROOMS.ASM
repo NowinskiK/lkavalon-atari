@@ -5,7 +5,7 @@
 
 
 * probe the map around the player -> PROBE_FLOOR / PROBE_TILE / PROBE_WALL ---
-sub_948F
+PROBE
          lda  PLAYER_Y             ; 948F
          clc                       ; 9492
          adc  #$04                 ; 9493
@@ -13,21 +13,21 @@ sub_948F
          lda  PLAYER_X             ; 9496
          clc                       ; 9499
          adc  #$04                 ; 949A
-         jsr  sub_912F             ; 949C
-         jsr  sub_8DF0             ; 949F
+         jsr  MAP_TILE             ; 949C
+         jsr  TILE_ATTR            ; 949F
          sta  PROBE_FLOOR          ; 94A2
          ldy  #$51                 ; 94A5
          lda  (MAP_PTR),y          ; 94A7
-         jsr  sub_8DF0             ; 94A9
+         jsr  TILE_ATTR            ; 94A9
          ora  PROBE_FLOOR          ; 94AC
          sta  PROBE_FLOOR          ; 94AF
          ldy  #$28                 ; 94B2
          lda  (MAP_PTR),y          ; 94B4
-         jsr  sub_8DF0             ; 94B6
+         jsr  TILE_ATTR            ; 94B6
          sta  PROBE_TILE           ; 94B9
          ldy  #$29                 ; 94BC
          lda  (MAP_PTR),y          ; 94BE
-         jsr  sub_8DF0             ; 94C0
+         jsr  TILE_ATTR            ; 94C0
          ora  PROBE_TILE           ; 94C3
          sta  PROBE_TILE           ; 94C6
          ldy  PLAYER_Y             ; 94C9
@@ -39,12 +39,12 @@ sub_948F
          lda  PLAYER_X             ; 94D6
          clc                       ; 94D9
          adc  #$04                 ; 94DA
-         jsr  sub_912F             ; 94DC
-         jsr  sub_8DF0             ; 94DF
+         jsr  MAP_TILE             ; 94DC
+         jsr  TILE_ATTR            ; 94DF
          sta  PROBE_WALL           ; 94E2
          ldy  #$51                 ; 94E5
          lda  (MAP_PTR),y          ; 94E7
-         jsr  sub_8DF0             ; 94E9
+         jsr  TILE_ATTR            ; 94E9
          ora  PROBE_WALL           ; 94EC
 L94EF
          sta  PROBE_WALL           ; 94EF
@@ -53,7 +53,7 @@ L94EF
          rts                       ; 94F6
 
 * cave room: own loop until the player walks out -----------
-sub_94F7
+CAVE
          lda  CAVE_FLAG            ; 94F7
          bne  L94FC                ; 94F9
          rts                       ; 94FB
@@ -66,13 +66,13 @@ L94FC
          sta  PLAYER_X             ; 950A
          lda  #$6E                 ; 950D
          sta  PLAYER_Y             ; 950F
-         jsr  sub_96C8             ; 9512
-         jsr  sub_8A4D             ; 9515
-         jsr  sub_95D5             ; 9518
-         jsr  sub_9615             ; 951B
-         jsr  sub_9837             ; 951E
-         jsr  sub_9699             ; 9521
-         jsr  sub_9729             ; 9524
+         jsr  FADE_OUT             ; 9512
+         jsr  CLR_PM               ; 9515
+         jsr  CAVE_DRAW            ; 9518
+         jsr  CAVE_FIND            ; 951B
+         jsr  FOOD_DRAW            ; 951E
+         jsr  CAVE_ENEMY           ; 9521
+         jsr  FADE_IN2             ; 9524
          lda  #$08                 ; 9527
          sta  PLAYER_X             ; 9529
          lda  #$70                 ; 952C
@@ -91,12 +91,12 @@ L953D
          clc                       ; 9543
          adc  #$03                 ; 9544
          sta  NEXT_TICK            ; 9546
-         jsr  sub_9027             ; 9548
-         jsr  sub_8F08             ; 954B
-         jsr  sub_948F             ; 954E
-         jsr  sub_9796             ; 9551
-         jsr  sub_8DF8             ; 9554
-         jsr  sub_99E4             ; 9557
+         jsr  ENEMIES              ; 9548
+         jsr  SFX                  ; 954B
+         jsr  PROBE                ; 954E
+         jsr  CONTACT              ; 9551
+         jsr  STATUS               ; 9554
+         jsr  FOOD_PICK            ; 9557
          lda  LIVES                ; 955A
          beq  L95AD                ; 955C
          lda  PLAYER_X             ; 955E
@@ -109,10 +109,10 @@ L9569
          sta  PLAYER_Y             ; 956B
          lda  #$C0                 ; 956E
          sta  PLAYER_X             ; 9570
-         jsr  sub_96C8             ; 9573
-         jsr  sub_8A4D             ; 9576
-         jsr  sub_8FC7             ; 9579
-         jsr  sub_9744             ; 957C
+         jsr  FADE_OUT             ; 9573
+         jsr  CLR_PM               ; 9576
+         jsr  DRAW_MAP             ; 9579
+         jsr  FADE_IN              ; 957C
          dec  $9593                ; 957F
          dec  $9593                ; 9582
          lda  #$00                 ; 9585
@@ -122,7 +122,7 @@ L9569
          sta  PROBE_FLOOR          ; 958F
          ldy  #$00                 ; 9592
          sty  PLAYER_Y             ; 9594
-         jsr  sub_8A4D             ; 9597
+         jsr  CLR_PM               ; 9597
          ldx  #$00                 ; 959A
          stx  PLAYER_X             ; 959C
          lda  #$00                 ; 959F
@@ -131,7 +131,7 @@ L9569
          clc                       ; 95A5
          adc  #$04                 ; 95A6
          sta  NEXT_TICK            ; 95A8
-         jmp  sub_9151             ; 95AA
+         jmp  EN_SPAWN             ; 95AA
 L95AD
          pla                       ; 95AD
          pla                       ; 95AE
@@ -141,7 +141,7 @@ L95AD
          dta $ED,$7E,$60                              ; 95D2
 
 * draw the cave room screen --------------------------------
-sub_95D5
+CAVE_DRAW
          lda  #$E3                 ; 95D5
          sta  $C0                  ; 95D7
          lda  #$9F                 ; 95D9
@@ -158,15 +158,17 @@ sub_95D5
 L95F3
          lda  ($C0),y              ; 95F3
          asl                       ; 95F5
-         jsr  sub_9605             ; 95F6
+         jsr  PUT_2SCR             ; 95F6
          clc                       ; 95F9
          adc  #$01                 ; 95FA
-         jsr  sub_9605             ; 95FC
+         jsr  PUT_2SCR             ; 95FC
          iny                       ; 95FF
          cpy  #$C8                 ; 9600
          bne  L95F3                ; 9602
          rts                       ; 9604
-sub_9605
+
+* put a character into both screen buffers -----------------
+PUT_2SCR
          sta  LBC00,x              ; 9605
          sta  $BE00,x              ; 9608
          inx                       ; 960B
@@ -177,7 +179,7 @@ L9614
          rts                       ; 9614
 
 * find the cave room of this screen, choose its food -------
-sub_9615
+CAVE_FIND
          lda  #$00                 ; 9615
          ldx  #$03                 ; 9617
 L9619
@@ -249,7 +251,7 @@ L9695
          rts                       ; 9698
 
 * spawn the cave room enemies ------------------------------
-sub_9699
+CAVE_ENEMY
          ldy  #$00                 ; 9699
          ldx  #$00                 ; 969B
 L969D
@@ -271,7 +273,7 @@ L969D
 L96BA
          ldx  #$A4                 ; 96BA
          ldy  #$93                 ; 96BC
-         jsr  sub_7C03             ; 96BE
+         jsr  SPR_INIT             ; 96BE
          lda  RTCLOK+2             ; 96C1
          sta  NEXT_TICK            ; 96C3
          inc  NEXT_TICK            ; 96C5

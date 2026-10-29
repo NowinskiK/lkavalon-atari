@@ -5,20 +5,20 @@
 
 
 * music init -----------------------------------------------
-entry_9E97
-         jsr  sub_8FBF             ; 9E97
+MUSIC_INIT
+         jsr  WAIT_VCOUNT          ; 9E97
          lda  #$C0                 ; 9E9A
          sta  NMIEN                ; 9E9C
          ldx  #$00                 ; 9E9F
          ldy  #$EA                 ; 9EA1
          lda  #$70                 ; 9EA3
-         jsr  entry_F2E4           ; 9EA5
+         jsr  CMC_CMD              ; 9EA5
          lda  #$00                 ; 9EA8
          sta  $9F6C                ; 9EAA
          rts                       ; 9EAD
 
 * NMI: DLI -> (VDSLST), else VBI ---------------------------
-entry_9EAE
+NMI_HND
          cld                       ; 9EAE
          bit  NMIST                ; 9EAF
          bpl  L9EB7                ; 9EB2
@@ -30,7 +30,7 @@ L9EB7
          tya                       ; 9EBA
          pha                       ; 9EBB
          sta  NMIST                ; 9EBC
-         jsr  entry_9ED6           ; 9EBF
+         jsr  VBI_HND              ; 9EBF
          pla                       ; 9EC2
          tay                       ; 9EC3
          pla                       ; 9EC4
@@ -39,7 +39,7 @@ L9EB7
          rti                       ; 9EC7
 
 * IRQ: disable POKEY interrupts ----------------------------
-entry_9EC8
+IRQ_HND
          pha                       ; 9EC8
          lda  IRQEN                ; 9EC9
          lda  #$00                 ; 9ECC
@@ -49,7 +49,7 @@ entry_9EC8
          rti                       ; 9ED5
 
 * VBI: shadow registers, joystick, cheat keys, music -------
-entry_9ED6
+VBI_HND
          lda  #$FF                 ; 9ED6
          sta  PORTB                ; 9ED8
          lda  $D20D                ; 9EDB
@@ -125,7 +125,7 @@ L9F66
 L9F6B
          lda  #$01                 ; 9F6B
          bne  L9F72                ; 9F6D
-         jsr  entry_F2E7           ; 9F6F
+         jsr  CMC_PLAY             ; 9F6F
 L9F72
          jmp  (VVBLKD)             ; 9F72
 
@@ -134,7 +134,7 @@ CHEAT_KEYS       dta $4A,$4D,$6A,$68,$6E,$7E,$57,$6B  ; 9F75 KBCODEs of "PIERWSZ
          dta $4D                                      ; 9F7D
 
 * clear screens and level fonts ----------------------------
-sub_9F7E
+CLR_SCREENS
          ldx  #$00                 ; 9F7E
          txa                       ; 9F80
 L9F81

@@ -97,8 +97,3 @@ BAR_ENERGY     equ $A107  ; +17 energy bar, a quarter character per unit
 * text screens ------------------
 DIGIT_DONE     equ $7788  ; level digit in "etap N kompletny" (next-level page 1)
 DIGIT_NEXT     equ $7879  ; level digit in "powodzenia w etapie N" (next-level page 2)
-
-; labels not at an instruction boundary or outside the source blocks
-
-L5968      equ $5968
-sub_5B73   equ $5B73

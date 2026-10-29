@@ -5,11 +5,11 @@
 
 
 * CMC music player: init (+0), command (+3), play (+6) -----
-entry_F2E1
+CMC_INIT
          jmp  LFA3B                ; F2E1
-entry_F2E4
+CMC_CMD
          jmp  LF344                ; F2E4
-entry_F2E7
+CMC_PLAY
          jmp  LF59C                ; F2E7
          dta $00,$00,$00,$08,$03,$4C,$C6,$5F,$C2,$07,$00,$C0,$A0,$00,$18,$71 ; F2EA
          dta $47,$FF,$00,$19,$71,$47,$FF,$70,$47,$08,$01,$23,$80,$80,$A0,$FF ; F2FA
@@ -37,7 +37,7 @@ LF344
          ldy  $F334                ; F369
          ldx  $F333                ; F36C
          lda  $F332                ; F36F
-         jmp  L5968                ; F372
+         jmp  $5968                ; F372
          dta $85,$F3,$B0,$F3,$73,$F4,$0F,$F4,$49,$F4,$64,$F4,$6F,$F4,$16,$F4 ; F375
          dta $AD,$3B,$F3,$85,$FC,$AD,$3C,$F3,$85,$FD,$A0,$00,$8A,$F0,$1C,$B1 ; F385
          dta $FC,$C9,$8F,$F0,$04,$C9,$EF,$D0,$0C,$CA,$D0,$09,$C8,$C0,$54,$B0 ; F395
@@ -55,7 +55,9 @@ LF344
          dta $C0,$03,$B0,$08,$99,$EA,$F2,$A9,$FF,$99,$09,$F3,$88,$10,$EC,$A9 ; F455
          dta $80,$A2,$03,$9D,$2B,$F3,$CA,$10,$FA,$60,$A9,$00,$F0,$F3,$AD,$32 ; F465
          dta $F3,$29,$03,$AA,$A9,$80,$9D,$2B,$F3,$AC,$34,$F3,$AD,$33,$F3 ; F475
-sub_F484
+
+* CMC: start an instrument on a channel --------------------
+CMC_INSTR
          sta  $F332                ; F484
          sty  $F334                ; F487
          lda  #$00                 ; F48A
@@ -300,7 +302,7 @@ LF632
          sta  $F656                ; F64C
          lda  $F320                ; F64F
          sta  $FE                  ; F652
-         jsr  sub_5B73             ; F654
+         jsr  $5B73                ; F654
          sty  $F2EE                ; F657
          cpy  #$55                 ; F65A
          bcs  LF663                ; F65C
@@ -360,7 +362,7 @@ LF71A
          lda  ($FE),y              ; F71E
          and  #$3F                 ; F720
          ldy  $F328,x              ; F722
-         jsr  sub_F484             ; F725
+         jsr  CMC_INSTR            ; F725
          jmp  LF736                ; F728
 LF72B
          cmp  #$80                 ; F72B
