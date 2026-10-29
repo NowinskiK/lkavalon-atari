@@ -110,7 +110,13 @@ Work top-down; the order below finds the structure fastest.
    (if not → interrupt).
 7. Write every finding with addresses into `NOTES.md` as you go.
 
-- **Gate:** every routine has a one-line description (`COMMENTS`), the main loop and interrupts are explained.
+8. **Understand the application, not only the code** – write `ABOUT.md`: overview, goal, players / users, how it
+   is played or used, elements / objects, and a **glossary** mapping the game's terms to English (when it uses
+   another language) – from the code, the texts (help, messages, title screens), the manual and related sources;
+   mark interpretations. Example: `robbo-konstruktor/ABOUT.md`.
+
+- **Gate:** every routine has a one-line description (`COMMENTS`), the main loop and interrupts are explained,
+  `ABOUT.md` describes what the game is about.
 
 ### Step 6 – Regroup blocks into modules
 
@@ -131,7 +137,11 @@ the end of every variable line.
   **Identify the logic first, then name it.**
 - `COMMENTS` – a `* what it does ---` header above every routine and data block.
 - `POKES` – init tables written as `dta a(NAME),$vv`.
-- **Gate:** no generated `sub_XXXX` labels left; byte-exact; names unique (`split.py` checks).
+- **Gate:** no generated `sub_XXXX` labels left; byte-exact; names unique (`split.py` checks); **no hidden texts**:
+  `py -3 util/findtext.py <game>/src` reports words in the bytes still written as `dta $xx` (ATASCII / screen code,
+  inverse, Polish letters) – each candidate becomes a string (`TEXTS`) or goes into `<game>/findtext-ignore.txt`
+  with the reason it is not a text, until the tool says "0 candidate(s)". Texts the tool cannot see: packed or
+  encrypted ones (decode them first) and texts in unusual codings – also look at every screen of the running game.
 
 ### Step 8 – Graphics and verification against the real game
 
@@ -163,7 +173,7 @@ Copy into the game's `NOTES.md` as the first section and tick off.
 | 2 | Memory image | game.bin, boot chain | odd regions explained | [ ] |
 | 3 | Entry points + disassembly | entry list, code ranges | gaps looked at | [ ] |
 | 4 | Blocks + byte-exact build | src/, main.asm, Makefile | MADS: byte for byte | [ ] |
-| 5 | Understand code | call graph, main loop, interrupts, init tables | every routine described | [ ] |
+| 5 | Understand code and application | call graph, main loop, interrupts, init tables; ABOUT.md with glossary | every routine described, ABOUT.md | [ ] |
 | 6 | Modules | BLOCKS regrouped, data named | byte-exact, README block table | [ ] |
 | 7 | Names + comments | VARIABLES, NAMES, COMMENTS, POKES | no sub_XXXX, byte-exact | [ ] |
 | 8 | Graphics + verification | renders, screenshot in img/ | renders match screenshot | [ ] |
@@ -212,6 +222,10 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
   Background "colour" is per scanline: read the DLIs before rendering.
 - **Init tables:** `(lo, hi, value)` triples applied in a loop (`lda tab,x / sta ($C0),y`) – decode them early.
 - **Text** is often in screen codes of a custom font, or in tiles – a plain ATASCII search finds nothing.
+  Two codings: ATASCII (OS, keyboard; MADS `c'…'`) and the screen code ANTIC reads (MADS `d'…'`): ATASCII `$00-$1F`
+  +$40, `$20-$5F` −$20, `$60-$7F` same, bit 7 = inverse (`*`). Write found texts as such strings in the source with
+  the decoded text as a comment. Polish letters: CONTROL + a,c,e,l,n,o,s,z (ATASCII `$01`…`$1A`) with replaced
+  glyphs (Robbo Konstruktor), or glyphs on `@ \ [ ] _ { ^ |` (Robbo TITLE.ASM).
 - **Keyboard:** KBCODE values (+$40 = Shift) – a table compared with KBCODE in the VBI is likely a cheat code.
 - **Music:** CMC players use `jmp` table at +0 (init), +3 (command: A=$70 init tune with X/Y = address,
   $10 = song position, $40 = stop), +6 (play, from the VBI).
@@ -240,12 +254,41 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
 - MADS chooses zero page automatically; forcing absolute with `.w` works only for LDA/LDX/LDY/STA/STX/STY – emit
   `dta $op,a(addr)` for the others. Check such facts in the local MADS docs (`doc/mads_eng.html`).
 
+- If related sources exist (same author/publisher), use them: assemble them with MADS `-t` for a label table,
+  match routines by **instruction shape** (opcodes + immediate/zero-page/relative operands, ignoring absolute
+  operands, which change with the address), then **propagate names through call sites** of matched pairs
+  (accept only when all call sites agree). Robbo Konstruktor got 110 original routine names and the zero-page
+  layout this way (see `robbo-konstruktor/NOTES.md` section 5).
+- Dispatch tables that copy a handler address into the operand of the next JSR/JMP are common; treat the operands
+  of such self-modified jumps as vectors – every immediate address written there is an entry point. But do not call
+  such a target an interrupt handler: `lda #lo / sta op / lda #hi / sta op+1` looks like a vector set-up, so check
+  the store address (Robbo Konstruktor's "irq_2470" was a loop body behind a self-modified `JMP`).
+- When the matching fails because the related code was changed, compare **dispatch tables** entry by entry with the
+  original ones (handler of object code n ↔ original handler n) – Robbo Konstruktor's object table named 27 handlers
+  this way; then read the reworked routines side by side with the original source.
+
 ### 6.3 Data and the crack
 - A crack can damage the game: the trainer was loaded over level 2's map rows, and in the level 3 loader three
   bytes of the cave-room copy were NOPed (`A0 EA EA EA AA` instead of `A0 40 B9 38 AA`) – probably making level 3
   unfinishable. Compare repeated code patterns (five loaders alike, one different) to spot such damage.
 - Don't trust guessed sizes: the logo was 24 lines, not 28 – the display list told the truth.
 - Words matter: the "treasures" were food (the status-line bar is labelled "JEDZENIE").
+- Copy protections hide their reads: a value written once and never read by its address is read through an
+  indexed access whose base + index reach it (Robbo Konstruktor: `lda HDR_BUF+4,x` with X = 12); pointers can be
+  built by arithmetic so no address appears in the code. Find the check from its effect (who calls the routine
+  that does the damage). User reports and forum threads give the symptoms and often the addresses.
+- Protections also lock by **patching code**: one stored opcode turns an `RTS` followed by innocent-looking bytes
+  into a `JMP` (Robbo Konstruktor: `$4C` at `$ACB3` → `JMP WAIT_VBL`), and hide addresses as operands fixed up on
+  the first run (`lsr` halves `$0A00` to `$0500`). Compare memory before and after the trigger; look for stores
+  into code.
+- An OS call that fails on one machine only: disassemble it in each OS ROM. OS-B's `DSKINV` treats only `W` as a
+  write, the XL/XE OS also `P` – a program using `P` cannot save under OS-B (Robbo Konstruktor: error 139).
+- A jump into the OS ROM at an undocumented address: disassemble it in each candidate ROM (400/800 OS-B, XL/XE) –
+  only one has a routine *start* there (check the instruction before it ends a routine); that names the routine and
+  tells which OS the game was written for (Robbo Konstruktor's `$F556` = the XL/XE buzzer). AltirraOS keeps only the
+  documented entries.
+- A text seen on screen but not found in the sources: search the memory image for it in every coding (ATASCII,
+  screen code, inverse) – it is usually in a region still emitted as `dta` bytes (Robbo Konstruktor's credits).
 
 ### 6.4 Verification
 - A real screenshot is the best test: exact colours trace back to Atari colour values; the palette that matched
@@ -261,6 +304,9 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
 - A new user environment variable is not seen by running programs or their child processes; VS Code (and its
   terminals) must be restarted. Test set-up instructions before documenting them.
 - Clean after every change (build outputs, intermediates, caches, stale files) – delete exact paths only.
+- On Windows, Python's default text encoding is the ANSI code page: writing Polish letters without
+  `encoding='utf-8'` raises an error *after* the file was opened for writing – the file is left empty. Always pass
+  the encoding (or set `PYTHONUTF8=1`), and check file sizes after scripted edits.
 - Keep instructions in `CLAUDE.md` (travels with the repo), findings in `NOTES.md`, reference in `README.md`.
 
 ---
@@ -269,7 +315,9 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
 
 - [ ] Sources reassemble byte for byte with MADS (`make test` or the documented commands).
 - [ ] Every block, routine and variable has a name and a comment; no generated `sub_XXXX` labels.
+- [ ] `util/findtext.py <game>/src` reports 0 candidates (texts are strings, the rest is in `findtext-ignore.txt`).
 - [ ] README: files, blocks, boot chain, memory map, game structure, known addresses, images.
+- [ ] ABOUT.md: what the game is about, players, elements, glossary (other language → English).
 - [ ] NOTES: dated sections with evidence, Timeline, Open questions; damage/oddities explained.
 - [ ] Renders verified against a real screenshot (`img/<game>.png`).
 - [ ] Root README lists the game; repo clean; changes committed.

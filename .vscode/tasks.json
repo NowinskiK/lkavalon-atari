@@ -1,0 +1,41 @@
+{
+  // Robbo Konstruktor: build, verify and run in Altirra (Terminal > Run Task, or Ctrl+Shift+B for the build).
+  // Needs the environment variables MADS (mads.exe) and ALTIRRA (Altirra64.exe) - see README.md
+  // "MADS location" and "Altirra location"; VS Code sees new values only after it is restarted.
+  "version": "2.0.0",
+  "options": {
+    "cwd": "${workspaceFolder}/robbo-konstruktor",
+    "shell": { "executable": "pwsh.exe", "args": ["-NoProfile", "-Command"] }
+  },
+  "tasks": [
+    {
+      "label": "Robbo Konstruktor: RUN ORIGINAL",
+      "detail": "boot the original disk in Altirra",
+      "type": "shell",
+      "command": "if (-not $env:ALTIRRA) { throw 'ALTIRRA is not set - see README.md, Altirra location' }; Start-Process $env:ALTIRRA -ArgumentList '/singleinstance', '\"bin\\Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr\"'",
+      "problemMatcher": []
+    },
+    {
+      "label": "Robbo Konstruktor: BUILD + VERIFY",
+      "detail": "MADS build, then compare with game.bin byte for byte",
+      "type": "shell",
+      "command": "if (-not $env:MADS) { throw 'MADS is not set - see README.md, MADS location' }; & $env:MADS main.asm -o:bin/game.obx; if ($LASTEXITCODE) { exit $LASTEXITCODE }; py -3 util/verify.py bin/game.obx",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Robbo Konstruktor: RUN BUILD",
+      "detail": "build, write it into a copy of the disk (bin/build.atr), boot that in Altirra",
+      "type": "shell",
+      "command": "if (-not $env:MADS) { throw 'MADS is not set - see README.md, MADS location' }; if (-not $env:ALTIRRA) { throw 'ALTIRRA is not set - see README.md, Altirra location' }; & $env:MADS main.asm -o:bin/game.obx; if ($LASTEXITCODE) { exit $LASTEXITCODE }; py -3 util/mkatr.py bin/game.obx 'bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr' bin/build.atr; if ($LASTEXITCODE) { exit $LASTEXITCODE }; Start-Process $env:ALTIRRA -ArgumentList '/singleinstance', '\"bin\\build.atr\"'",
+      "problemMatcher": []
+    },
+    {
+      "label": "Robbo Konstruktor: RUN BUILD (PROTECTION OFF)",
+      "detail": "build nocopyprot.asm (the fixed version), write bin/(...)[cr CAMOsoft 2026].atr, boot it",
+      "type": "shell",
+      "command": "if (-not $env:MADS) { throw 'MADS is not set - see README.md, MADS location' }; if (-not $env:ALTIRRA) { throw 'ALTIRRA is not set - see README.md, Altirra location' }; & $env:MADS nocopyprot.asm -o:bin/nocopyprot.obx; if ($LASTEXITCODE) { exit $LASTEXITCODE }; py -3 util/mkatr.py bin/nocopyprot.obx 'bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL).atr' 'bin/Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr'; if ($LASTEXITCODE) { exit $LASTEXITCODE }; Start-Process $env:ALTIRRA -ArgumentList '/singleinstance', '\"bin\\Robbo Konstruktor (1990)(L.K. Avalon)(PL)[cr CAMOsoft 2026].atr\"'",
+      "problemMatcher": []
+    }
+  ]
+}
