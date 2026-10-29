@@ -20,6 +20,7 @@ and **why** things are the way they are.
 | 2026-10-29 | Atari palette `util/palette/jakub.act` added; prototype renders with real colours (section 12) |
 | 2026-10-29 | Renders verified against a real start-screen screenshot; XFormer palette, black playfield, logo (section 13) |
 | 2026-10-29 | Reference screenshot saved as `img/jaskiniowiec.png` (section 14) |
+| 2026-10-29 | `util/levels.py` added; level maps and logo rendered to `img/levels/` (section 15) |
 
 ## 1. From XEX to memory image
 
@@ -342,7 +343,33 @@ differences are rounding between XFormer and the `.act` file).
 Use it as the reference for any future rendering (levels, logo, status line, sprites): compare layout and
 trace exact colours back to Atari values with `util/palette/XFormer.act`.
 
+## 15. Level pictures in the repo (2026-10-29)
+
+The scratch-pad renders from sections 11-12 were **not** copied: they used the jakub palette and a blue
+playfield background, both wrong according to the screenshot (section 13). Instead the verified rules went
+into a permanent tool, [`util/levels.py`](util/levels.py), and the pictures were regenerated:
+
+```powershell
+py -3 util/levels.py game.bin img/levels
+```
+
+- Output: `img/levels/level1.png` … `level6.png` (4096×160: 256 tiles × 8 mode-4 pixels, each drawn 2×1)
+  and `logo.png` (320×28, `PICTURE.DTA`).
+- Rules: XFormer palette (`util/palette/XFormer.act`, overridable as 3rd argument); per-level font and
+  colours from the level loaders; background from the DLI table $935D for map rows 0-1, black below;
+  logo in COLOR4/COLOR0-2 `$76/$10/$24/$3A`.
+- Level 2: the trainer bytes $6200-$646F are zeroed before rendering, as the crack stub at $BC00 does before
+  the game starts – the picture shows what the player sees (blank sky above the cave ceiling). The garbage
+  version is described in section 11.
+- Checked: level 2 (cave, font B) and level 4 (ice rocks, font B) look consistent; level 1's first screen
+  was already verified against the screenshot.
+- README has a "Level maps" section with all six maps and the logo.
+
+Not drawn: enemies, treasures and cave rooms (`LEVELDAT.DTA`), the player, the status line.
+
 ## Open questions
+
+- Draw enemy start positions, treasures and cave-room entrances onto the level maps (`LEVELDAT.DTA`).
 
 - `D0500.DTA` ($0500-$07FF) and `D2800.DTA` ($2800-$2BFF, $2F00-$2FFF) – unknown.
 - `CMC.ASM`: `JMP $5968` ($F372) and `JSR $5B73` ($F654) point into the maps – probably player tables taken as code.

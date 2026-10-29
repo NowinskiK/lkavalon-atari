@@ -25,6 +25,7 @@ then (later) annotate it the same way as Dangerous City's `DC.ASM`.
 | [util/split.py](util/split.py) | Splits `game.bin` into the blocks of `src/` (block table `BLOCKS` at the top) and writes `main.asm` |
 | [util/asm.py](util/asm.py) | Minimal assembler for the MADS subset `split.py` writes – checks the split without MADS |
 | [util/verify.py](util/verify.py) | Compares an assembled segment file with `game.bin` byte for byte |
+| [util/levels.py](util/levels.py) | Renders the 6 level maps and the title logo to PNG ([img/levels/](img/levels/)) |
 | `Makefile` | `make` builds `bin/game.obx` with MADS, `make test` verifies it |
 
 ## Source blocks
@@ -80,6 +81,24 @@ Data:
 | [src/MUSCOPY.DTA](src/MUSCOPY.DTA) | $B4EE-$BBFF | unused copy of `MUSIC.CMC` with XEX header (loader leftover) |
 | [src/TABLES.DTA](src/TABLES.DTA) | $C000-$C9FF | bit reverse $C000, pixel mirror $C100, masks $C200, current level enemies $C500 / cave rooms $C600, shape pointers $C800 |
 | [src/MUSIC.CMC](src/MUSIC.CMC) | $EA00-$F2E0 | CMC music module |
+
+## Level maps
+
+Rendered from `game.bin` by `py -3 util/levels.py game.bin img/levels` (XFormer palette, verified against
+[img/jaskiniowiec.png](img/jaskiniowiec.png)). Each map is 256 tiles wide = 12.8 screens; enemies, treasures
+and the player are not part of the maps. Level 2's top rows ($6200-$646F) are shown blank, as in the game –
+the original tiles there were overwritten by the crack's trainer.
+
+| Level | Map | Font | Image |
+|---|---|---|---|
+| 1 | $3000 | A | ![Level 1](img/levels/level1.png) |
+| 2 | $6200 | B | ![Level 2](img/levels/level2.png) |
+| 3 | $3A00 | A | ![Level 3](img/levels/level3.png) |
+| 4 | $4E00 | B | ![Level 4](img/levels/level4.png) |
+| 5 | $4400 | A | ![Level 5](img/levels/level5.png) |
+| 6 | $5800 | B | ![Level 6](img/levels/level6.png) |
+
+Title logo (`PICTURE.DTA`): ![Logo](img/levels/logo.png)
 
 ## Game structure
 
@@ -204,8 +223,8 @@ so they are listed as entry points explicitly.
 ## Next steps (ideas)
 
 - Annotate the modules (like `DC.ASM`): replace `Lxxxx` / `$93xx` with names, starting with `PLAYER.ASM` and `MAIN.ASM`.
-- Extract levels to images (maps + level fonts + `TILES.DTA`).
-- Identify `D0500.DTA` and `D2800.DTA`; check which levels use font A / B.
+- Draw enemies, treasures and cave-room entrances (`LEVELDAT.DTA`) onto the level maps.
+- Identify `D0500.DTA` and `D2800.DTA`.
 - Level 2 map rows 0-2 ($6200-$646F) are cleared after the trainer – the original tiles there are lost in this
   version (other maps have 10-40 tiles in these rows); compare with another dump of the game.
 - `CMC.ASM` has `JMP $5968` ($F372) and `JSR $5B73` ($F654) into the maps – probably player tables disassembled as code.
