@@ -2,10 +2,10 @@
 code areas -> src/*.ASM (disassembly), data areas -> binary files with an Atari $FFFF header,
 plus src/JOINT.ASM (common labels) and main.asm (links everything back together).
 
-Usage: py -3 split.py game.bin ENTRY [ENTRY ...]
+Usage: py -3 util/split.py game.bin ENTRY [ENTRY ...]
 Edit BLOCKS to move boundaries or give blocks better names, then run it again."""
 import sys, os
-sys.path.insert(0, '.')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from xex import L
 from rdis import analyze, Lister, hw
 

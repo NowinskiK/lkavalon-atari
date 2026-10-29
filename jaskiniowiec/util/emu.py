@@ -1,7 +1,7 @@
 """Minimal 6502 emulator that runs an Atari XEX load sequence (INIT/RUN vectors)
 and dumps memory once the program reaches a given stop address."""
-import sys
-sys.path.insert(0, '.')
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from xex import M, SZ, segments
 
 class CPU:

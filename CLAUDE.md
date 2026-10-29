@@ -50,14 +50,16 @@ Sources of LK Avalon (and related) games for 8-bit Atari, assembled with MADS. O
 
 Read `jaskiniowiec/README.md` (reference) and `jaskiniowiec/NOTES.md` (process, findings, lessons) first.
 
-- `src/` and `main.asm` are **generated** by `split.py` from `game.bin`. Change block boundaries/names in
-  `BLOCKS` in `split.py` and entry points on its command line, then regenerate. Don't hand-edit `src/` until
+- `src/` and `main.asm` are **generated** by `util/split.py` from `game.bin`. Change block boundaries/names in
+  `BLOCKS` in `util/split.py` and entry points on its command line, then regenerate. Don't hand-edit `src/` until
   annotation work starts (after that, `split.py` must not be rerun over annotated files).
+- Python tools are in `jaskiniowiec/util/` but must be run with `jaskiniowiec/` as the working directory
+  (`py -3 util/<script>.py`) – data paths are relative to the game folder.
 - After every regeneration verify:
   ```
-  py -3 split.py game.bin 6214 9EAE 9EC8 9ED6 62DF 9E97 F2E1 F2E4 F2E7 8A8F 8874 88AA 8929 93C7
+  py -3 util/split.py game.bin 6214 9EAE 9EC8 9ED6 62DF 9E97 F2E1 F2E4 F2E7 8A8F 8874 88AA 8929 93C7
   "$MADS" main.asm -o:bin/game.obx
-  py -3 verify.py bin/game.obx
+  py -3 util/verify.py bin/game.obx
   ```
   The result must be "matches game.bin byte for byte". MADS is the authority; `asm.py` is only a fallback
   where MADS is unavailable.

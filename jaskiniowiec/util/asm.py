@@ -1,6 +1,6 @@
 """Minimal 6502 assembler for the subset of MADS syntax that split.py writes
 (org, equ, opt, icl, ins, dta bytes / a(), labels, instructions). Used to check the
-split without MADS. Usage: py -3 asm.py main.asm out.obx"""
+split without MADS. Usage: py -3 util/asm.py main.asm out.obx"""
 import sys, os, re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from xex import M, segments

@@ -14,20 +14,20 @@ then (later) annotate it the same way as Dangerous City's `DC.ASM`.
 | `main.asm` | MADS file linking all blocks from `src/` back into the game memory image |
 | `src/` | The game split into blocks (see [Source blocks](#source-blocks)) |
 | `game.bin` | 64 KB memory image as it is when the game starts (after loader, depacker and snapshot restore) |
-| `xex.py` | XEX segment parser + linear 6502 disassembler + Atari OS/hardware label table |
-| `emu.py` | Minimal 6502 emulator that runs the XEX load sequence (INITAD/RUNAD) and dumps memory at a stop address |
-| `resume.py` | Continues from `mem.bin` at $0480 (snapshot restore) until `RTI`, prints the resume PC, writes `game.bin` |
-| `rdis.py` | Recursive-descent disassembler (follows JMP/JSR/branches and DLI/VBI vector setups) → MADS-style listing |
-| `split.py` | Splits `game.bin` into the blocks of `src/` (block table `BLOCKS` at the top) and writes `main.asm` |
-| `asm.py` | Minimal assembler for the MADS subset `split.py` writes – checks the split without MADS |
-| `verify.py` | Compares an assembled segment file with `game.bin` byte for byte |
+| [util/xex.py](util/xex.py) | XEX segment parser + linear 6502 disassembler + Atari OS/hardware label table |
+| [util/emu.py](util/emu.py) | Minimal 6502 emulator that runs the XEX load sequence (INITAD/RUNAD) and dumps memory at a stop address |
+| [util/resume.py](util/resume.py) | Continues from `mem.bin` at $0480 (snapshot restore) until `RTI`, prints the resume PC, writes `game.bin` |
+| [util/rdis.py](util/rdis.py) | Recursive-descent disassembler (follows JMP/JSR/branches and DLI/VBI vector setups) → MADS-style listing |
+| [util/split.py](util/split.py) | Splits `game.bin` into the blocks of `src/` (block table `BLOCKS` at the top) and writes `main.asm` |
+| [util/asm.py](util/asm.py) | Minimal assembler for the MADS subset `split.py` writes – checks the split without MADS |
+| [util/verify.py](util/verify.py) | Compares an assembled segment file with `game.bin` byte for byte |
 | `Makefile` | `make` builds `bin/game.obx` with MADS, `make test` verifies it |
 
 ## Source blocks
 
 Like [Misja](../misja) and [Digi Duck](../digi-duck): code areas are disassembled to `.ASM` files,
 data areas are binary files with an Atari `$FFFF` header (included with `OPT h-` / `INS`).
-Names are by address where the content is not understood yet – rename them in `BLOCKS` in `split.py`.
+Names are by address where the content is not understood yet – rename them in `BLOCKS` in `util/split.py`.
 
 Code:
 
@@ -98,15 +98,16 @@ $CA00-$FFF9 outside the blocks and the I/O area $D000-$D7FF are zero in `game.bi
 ## How to regenerate
 
 Requires Python 3 (`py -3`) and the `MADS` environment variable (see "MADS location" in the
-[root README](../README.md)). Run from this folder (scripts import each other from `.`), in PowerShell:
+[root README](../README.md)). The scripts live in `util/` but are run **from this folder**: data paths
+(`game.bin`, `mem.bin`, `src/`, `main.asm`, `bin/`) are relative to it. In PowerShell:
 
 ```powershell
-py -3 xex.py "x:\ATARI\GryKamil\Jaskiniowiec (1995)(StanBit)(PL)[h CAMOsoft][t +1 CAMOsoft].xex"
-py -3 emu.py "x:\ATARI\GryKamil\Jaskiniowiec (1995)(StanBit)(PL)[h CAMOsoft][t +1 CAMOsoft].xex" 0480 mem.bin
-py -3 resume.py
-py -3 split.py game.bin 6214 9EAE 9EC8 9ED6 62DF 9E97 F2E1 F2E4 F2E7 8A8F 8874 88AA 8929 93C7
+py -3 util/xex.py "bin\Jaskiniowiec (1995)(StanBit)(PL)[h CAMOsoft][t +1 CAMOsoft].xex"
+py -3 util/emu.py "bin\Jaskiniowiec (1995)(StanBit)(PL)[h CAMOsoft][t +1 CAMOsoft].xex" 0480 mem.bin
+py -3 util/resume.py
+py -3 util/split.py game.bin 6214 9EAE 9EC8 9ED6 62DF 9E97 F2E1 F2E4 F2E7 8A8F 8874 88AA 8929 93C7
 & $env:MADS main.asm -o:bin/game.obx
-py -3 verify.py bin/game.obx
+py -3 util/verify.py bin/game.obx
 ```
 
 From Git Bash the assembler line is `"$MADS" main.asm -o:bin/game.obx`.
@@ -116,9 +117,9 @@ From Git Bash the assembler line is `"$MADS" main.asm -o:bin/game.obx`.
 3. `resume.py` – runs the snapshot restore → reports `resume PC=$6200` → `game.bin`.
 4. `split.py` – writes `src/*` and `main.asm`. Arguments after `game.bin` are entry points.
 5. MADS + `verify.py` – reassemble and check the result equals `game.bin` (verified with MADS 2.1.5).
-   Without MADS, `py -3 asm.py main.asm bin/game.obx` builds the same image.
+   Without MADS, `py -3 util/asm.py main.asm bin/game.obx` builds the same image.
 
-`py -3 rdis.py game.bin 0000-FFFF <entries>` still writes the whole image as one listing (`0000_FFFF.asm`).
+`py -3 util/rdis.py game.bin 0000-FFFF <entries>` still writes the whole image as one listing (`0000_FFFF.asm`).
 
 ## XEX structure (22 segments)
 

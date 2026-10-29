@@ -14,6 +14,8 @@ and **why** things are the way they are.
 | 2026-10-29 | MADS 2.1.5 provided; real MADS build verified byte for byte (section 6) |
 | 2026-10-29 | MADS path moved to the `MADS` environment variable (section 7) |
 | 2026-10-29 | Local MADS checked against the 2.1.5 tag on GitHub; docs reviewed (section 8) |
+| 2026-10-29 | Python tools moved to `util/` (section 9) |
+| 2026-10-29 | `MADS` env var set-up instructions tested and corrected (section 10) |
 
 ## 1. From XEX to memory image
 
@@ -208,6 +210,38 @@ bytes; a plain raw download matched. Lesson: compare with a raw download before 
 **Switches worth using during annotation:** `-l` (listing with addresses and bytes), `-t` (label table),
 `-u` (warn about unused labels – shows generated labels that annotation made obsolete), `-bc` (branch out of
 range / page-crossing warnings – useful after editing code).
+
+## 9. Python tools moved to `util/` (2026-10-29)
+
+All seven scripts (`xex.py`, `emu.py`, `resume.py`, `rdis.py`, `split.py`, `asm.py`, `verify.py`) moved with
+`git mv` (history kept) to `jaskiniowiec/util/`. The game-specific tools stay in the game folder; the root
+`util/` holds repo-wide tools (`convert-atascii.go`).
+
+- Imports: `sys.path.insert(0, '.')` replaced by the script's own folder
+  (`os.path.dirname(os.path.abspath(__file__))`), so the scripts find each other regardless of the working directory.
+- Data paths unchanged: still relative to the **game folder**, so commands are run from `jaskiniowiec/` as
+  `py -3 util/<script>.py …`. Makefile `test` calls `util/verify.py`.
+- Regenerate commands now use the original XEX from `bin/` instead of `x:\ATARI\GryKamil\…`.
+- Re-tested the whole pipeline from the new location: `game.bin` regenerated with the same MD5
+  (`d1c4962b5bf3f5c958e0653d51adde9b`), `split.py` output unchanged (no git diff in `src/`/`main.asm`),
+  MADS build and `asm.py` build both verify byte for byte.
+
+## 10. Testing the `MADS` environment variable set-up (2026-10-29)
+
+The README's `SetEnvironmentVariable(..., 'User')` line was tested with a throw-away variable `MADS_TEST`
+(removed afterwards):
+
+- The value is written for the user (read back from the User scope: correct path).
+- It is **not** visible in the running session, and **not** in a new process started from that session
+  (`powershell -Command '$env:MADS_TEST'` printed nothing) – child processes inherit the parent's environment.
+  Only programs started fresh afterwards see it, so VS Code / Windows Terminal must be restarted; a new
+  terminal tab is not enough. README corrected (was "open a new terminal afterwards") and now also shows
+  `$env:MADS = '...'` for the current session.
+- PowerShell `& $env:MADS_TEST` and Git Bash `"$MADS_TEST"` both run MADS with the Windows path
+  (`x:\ATARI\...\mads.exe`); a Git Bash build of `main.asm` through the variable verified byte for byte.
+
+Lesson: test set-up instructions before documenting them – "new terminal" is a common but wrong assumption
+for terminals hosted inside an IDE.
 
 ## Open questions
 

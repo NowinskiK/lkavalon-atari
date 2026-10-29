@@ -1,4 +1,4 @@
-import sys; sys.path.insert(0,'.')
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from emu import CPU
 from xex import M
 cpu = CPU(); cpu.m[:] = open('mem.bin','rb').read(); cpu.portb = 0xFF

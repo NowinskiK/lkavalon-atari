@@ -1,6 +1,6 @@
 """Recursive-descent disassembler over a 64K memory image -> MADS-style listing."""
-import sys
-sys.path.insert(0, '.')
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from xex import M, SZ, L
 
 

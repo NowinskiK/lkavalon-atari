@@ -36,17 +36,23 @@ echo "$MADS"                                           # Git Bash / Linux / macO
 If it is empty, set it once (example path – use your own MADS folder):
 
 ```powershell
-# Windows, permanently for the current user (open a new terminal afterwards)
+# Windows, permanently for the current user
 [Environment]::SetEnvironmentVariable('MADS', 'x:\ATARI\Tools\Mad-Assembler-2.1.5\mads.exe', 'User')
+# ...and for the current session too (the line above does not change already running processes)
+$env:MADS = 'x:\ATARI\Tools\Mad-Assembler-2.1.5\mads.exe'
 ```
+
+The permanent value is only seen by programs started **after** it was set. A new terminal tab is not
+enough when the terminal runs inside an application that was already open (VS Code, Windows Terminal):
+it inherits that application's old environment – close and reopen the application (all its windows).
 
 ```bash
 # Linux / macOS (add to ~/.bashrc or ~/.zshrc)
 export MADS="$HOME/tools/mads/mads"
 ```
 
-Windows environment variables are also visible in Git Bash (new session needed), where the path
-can be used as `"$MADS"`.
+Windows environment variables are also visible in Git Bash (under the same restart rule); the Windows path
+works there as is: `"$MADS" main.asm -o:game.xex`.
 
 ## Compilation
 

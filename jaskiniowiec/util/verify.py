@@ -1,7 +1,7 @@
 """Loads a segment file (MADS or asm.py output) into an empty 64K memory and compares it with game.bin.
-Usage: py -3 verify.py bin/game.obx [game.bin]"""
-import sys
-sys.path.insert(0, '.')
+Usage: py -3 util/verify.py bin/game.obx [game.bin]"""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from xex import segments
 
 mem = bytearray(65536)
