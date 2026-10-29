@@ -8,8 +8,8 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 |---|---|---|---|---|
 | 1 | Inventory | disk structure, file chain, segment table, tags decoded | README tables | [x] |
 | 2 | Memory image | game.bin, boot chain | odd regions explained | [x] (other sectors open) |
-| 3 | Entry points + disassembly | entry list, code ranges | gaps looked at | [~] 11.4 KB found, some gaps open |
-| 4 | Blocks + byte-exact build | src/, main.asm, Makefile | MADS: byte for byte | [ ] |
+| 3 | Entry points + disassembly | entry list, code ranges | gaps looked at | [x] 12.5 KB |
+| 4 | Blocks + byte-exact build | src/, main.asm, Makefile | MADS: byte for byte | [x] |
 | 5 | Understand code | call graph, main loop, interrupts, init tables; map shared code to Robbo labels | every routine described | [ ] |
 | 6 | Modules | BLOCKS regrouped, data named | byte-exact, README block table | [ ] |
 | 7 | Names + comments | VARIABLES, NAMES, COMMENTS, POKES (Robbo names where code matches) | no sub_XXXX, byte-exact | [ ] |
@@ -23,6 +23,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 |---|---|
 | 2026-10-29 | Disk read, boot loader understood, program file extracted, memory image built, relation to Robbo found (sections 1-2) |
 | 2026-10-29 | Entry points: jump tables, menu/editor/key dispatch, engine object table; 11.4 KB of code (section 3) |
+| 2026-10-29 | Self-modified jump targets found automatically; sources split, byte-exact MADS build (section 4) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -120,6 +121,35 @@ found by the vector heuristic: `$1EDE $1EFD $1F3C` (engine DLIs) and `$B05F` (ed
 
 Method lessons: false "address tables" are common (instruction bytes look like addresses) – confirm a table by
 finding the code that indexes it; that code also shows the table's base, entry size and the jump mechanism.
+
+## 4. Remaining entries, split and byte-exact build (2026-10-29)
+
+**Closing the gaps.** The unreached code areas had no direct `JSR`/`JMP`; searching their start addresses as
+immediate pairs found how they are reached:
+
+- `$2F54` – the engine's **deferred VBI**: `ldy #$54 / ldx #$2F / lda #$07 / jsr SETVBV` at `$1FEA` (the old VVBLKD
+  is saved to `$3332/$3333` first).
+- `$2470` – written into `$246E/$246F` at `$244D`; `$246D` is `JMP $246D`, a jump to itself that waits until its
+  operand is patched.
+- `$9582`, `$9C06` – written into `$9555/$9556`, the operand of the menu dispatch `jsr` at `$9554` (from `$9566`,
+  `$9D97`, `$9BF2`): commands that set the next command.
+- `$29D3`, `$2A93` are data tables read by code; `$9C04/$9C05` are two variables.
+
+**Disassembler improvement** (`util/rdis.py`, this game's copy): the operands of `NOFOLLOW` jumps are treated
+like vectors – an immediate address written into them (`lda #lo / sta op+1 / lda #hi / sta op+2`, any registers)
+becomes an entry point; and `ldy #lo / ldx #hi / jsr SETVBV` installs a VBI routine. This found `$2470`, `$2F54`,
+`$9582`, `$9643`, `$9A64`, `$9C06` automatically → **12,538 bytes of code**.
+
+**Split** (`util/split.py`, generic part copied from Jaskiniowiec): entry points = `ENTRIES` (hook `$0480`, boot
+`$0506`, `$0800`, engine `$1E00/$1E03`, jump table `$A810-$A83D`, menu handlers) + the dispatch tables read from the
+image (`entries()`: object table `$31EF`, `$902F`, `$9AFA`, key table `$B330`); `NOFOLLOW` = the six self-modified
+jumps. First cut by segments, 17 blocks (README). `$0800` turned out to be `JMP $09A6` (code), so the first block
+starts there. Local OS labels added to `util/xex.py`: `DSKINV`, SIO control block `DDEVIC`…`DAUX2`, `CDTMV3`,
+`DVSTAT` – the boot loader now reads with names.
+
+**Result:** `py -3 util/split.py game.bin` → `"$MADS" main.asm` → **matches game.bin byte for byte** (MADS 2.1.5,
+27,679 bytes written); the `asm.py` fallback matches too. `Makefile` like the other games. Only one label left
+outside the blocks: `$F556` (a jump-table entry into OS ROM).
 
 ## Open questions
 

@@ -11,9 +11,15 @@ def hw(a):
 VECTOR_LO = (0x0200, 0x0222, 0x0224, 0xFFFA, 0xFFFE)   # VDSLST, VVBLKI, VVBLKD, NMI, IRQ (low bytes)
 
 
+SETVBV = 0xE45C
+
+
 def analyze(mem, entries, nofollow=()):
     """Follow code from the entry points. Returns (code: addr -> length, labels: addr -> name).
-    nofollow: addresses of JMP/JSR instructions whose operand is self-modified (target not followed)."""
+    nofollow: addresses of JMP/JSR instructions whose operand is self-modified (target not followed).
+    Their operands are treated like vectors: an immediate address written into them becomes an entry
+    point, as does a VBI installed with LDY #lo / LDX #hi / JSR SETVBV."""
+    vector_lo = set(VECTOR_LO) | {a + 1 for a in nofollow}
     code = {}
     labels = {}
     for e in entries: labels[e] = 'entry_%04X' % e
@@ -45,8 +51,11 @@ def analyze(mem, entries, nofollow=()):
                     if kmn in ('LDA', 'LDX', 'LDY') and kmode == 'imm':
                         regs[kmn[2]] = mem[k + 1]
                     elif kmn in ('STA', 'STX', 'STY') and kmode == 'abs' and kmn[2] in regs:
-                        if kw in VECTOR_LO: lo[kw] = regs[kmn[2]]
-                        if kw - 1 in VECTOR_LO: hi[kw - 1] = regs[kmn[2]]
+                        if kw in vector_lo: lo[kw] = regs[kmn[2]]
+                        if kw - 1 in vector_lo: hi[kw - 1] = regs[kmn[2]]
+                    elif kmn == 'JSR' and kw == SETVBV and 'Y' in regs and 'X' in regs:
+                        lo[SETVBV], hi[SETVBV] = regs['Y'], regs['X']
+                        break
                     elif kmn not in ('STA', 'STX', 'STY'):
                         break
                     k += SZ[kmode]
