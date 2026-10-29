@@ -13,7 +13,7 @@
          icl "src/EDIT08.ASM"       ; $0800-$0C6C code: JMP $09A6 at $0800, tables, routines
 
          opt h-
-         ins "src/D0C6D.DTA"        ; $0C6D-$1DD0 data (4.4 KB, text-like)
+         ins "src/HELP.DTA"         ; $0C6D-$1DD0 help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space
 
          opt h+
          icl "src/ENGINE1.ASM"      ; $1E00-$23FC game engine: jump table $1E00, display list, DLIs

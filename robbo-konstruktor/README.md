@@ -30,7 +30,7 @@ Robbo names** (110 routines, zero page) found by matching against `../robbo/d1/*
 | [src/HOOK.ASM](src/HOOK.ASM) | $0480-$0482 | restart hook: JMP $A810 |
 | [src/BOOT.ASM](src/BOOT.ASM) | $0500-$067F | boot sectors 1-3: boot record and binary-file loader (cracked) |
 | [src/EDIT08.ASM](src/EDIT08.ASM) | $0800-$0C6C | code: JMP $09A6 at $0800, tables, routines |
-| [src/D0C6D.DTA](src/D0C6D.DTA) | $0C6D-$1DD0 | data (4.4 KB, text-like) |
+| [src/HELP.DTA](src/HELP.DTA) | $0C6D-$1DD0 | help text: 16 pages in Polish (HELP key) – see "Help text" below |
 | [src/ENGINE1.ASM](src/ENGINE1.ASM) | $1E00-$23FC | game engine: jump table $1E00, display list, DLIs |
 | [src/ENGINE2.ASM](src/ENGINE2.ASM) | $243D-$35A3 | game engine: object behaviour (table $31EF), VBI $2F54 |
 | [src/ENGINE3.ASM](src/ENGINE3.ASM) | $35C0-$395C | game engine: display list, code |
@@ -117,3 +117,27 @@ The repository has the original Robbo sources ([../robbo/](../robbo/)). Konstruk
 other addresses: three of Robbo's fonts in modified form ($3C00 ≈ `F.FNT`, $4800 ≈ `S.FNT`, $4C00 ≈ `I.FNT`)
 and about 3.7 KB of identical code/data runs (longest: 721, 562, 257, 234 bytes). Where code matches, the
 original label names from `robbo/d1/*.ASM` can be used.
+
+## Help text ($0C77-$1DD0)
+
+The program's manual, shown with the HELP key. Format: `$00 nn` starts page *nn* (the text before marker 1 is
+page 0); a character with **bit 7 set is followed by a space** (simple compression); Polish letters use low codes:
+`$01` ą, `$03` ć, `$05` ę, `$0C` ł, `$0F` ó, `$13` ś, `$1A` ż (also where ź is expected), `$14` = quotation mark,
+`$1C-$1F` = arrows ↑↓←→ (`$0E` probably ń – to confirm).
+
+| Page | Title | Function |
+|---|---|---|
+| 0-1 | – | introduction, HELP key, messages at the bottom of the screen, Avalon's address (P.O. box 702, Rzeszów) |
+| 2 | Menu główne | main menu along the bottom of the screen |
+| 3 | Test planety | test the current planet |
+| 4 | Czyść planetę | clear the planet, restore its colours |
+| 5 | Zmiana kolorów | change the planet's colours |
+| 6 | Operacje (kasetowe/dyskowe) | save / load / delete a set of planets (tape or disk) |
+| 7, 12 | Funkcje dodatkowe / podstawowe | switch between the additional and the basic functions |
+| 8 | Strona tytułowa | edit the start and congratulation texts (CTRL + a,c,e,l,n,o,s,z = Polish letters) |
+| 9 | Kolejność planet | order of the planets in the game |
+| 10 | Test Robbo | test the whole game |
+| 11 | Zapisz Robbo | save a stand-alone Robbo game to tape / disk |
+| 13 | Zbiór elementów składowych planety | the element palette, in the right part of the screen |
+| 14 | Edytor planety | put the selected element at the cursor (fire) |
+| 15 | – | anti-piracy notice: a version with errors "is an illegal copy" |

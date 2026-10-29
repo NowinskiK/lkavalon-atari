@@ -15,7 +15,7 @@ BLOCKS = [
     ('HOOK.ASM',    0x0480, 0x0482, 'restart hook: JMP $A810'),
     ('BOOT.ASM',    0x0500, 0x067F, 'boot sectors 1-3: boot record and binary-file loader (cracked)'),
     ('EDIT08.ASM',  0x0800, 0x0C6C, 'code: JMP $09A6 at $0800, tables, routines'),
-    ('D0C6D.DTA',   0x0C6D, 0x1DD0, 'data (4.4 KB, text-like)'),
+    ('HELP.DTA',    0x0C6D, 0x1DD0, 'help text: 16 pages in Polish (HELP key), packed: bit 7 = add a space'),
     ('ENGINE1.ASM', 0x1E00, 0x23FC, 'game engine: jump table $1E00, display list, DLIs'),
     ('ENGINE2.ASM', 0x243D, 0x35A3, 'game engine: object behaviour (table $31EF), VBI $2F54'),
     ('ENGINE3.ASM', 0x35C0, 0x395C, 'game engine: display list, code'),

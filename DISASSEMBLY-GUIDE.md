@@ -269,6 +269,9 @@ NOFOLLOW  = {0xF372}              # JMP with self-modified operand
 - A new user environment variable is not seen by running programs or their child processes; VS Code (and its
   terminals) must be restarted. Test set-up instructions before documenting them.
 - Clean after every change (build outputs, intermediates, caches, stale files) – delete exact paths only.
+- On Windows, Python's default text encoding is the ANSI code page: writing Polish letters without
+  `encoding='utf-8'` raises an error *after* the file was opened for writing – the file is left empty. Always pass
+  the encoding (or set `PYTHONUTF8=1`), and check file sizes after scripted edits.
 - Keep instructions in `CLAUDE.md` (travels with the repo), findings in `NOTES.md`, reference in `README.md`.
 
 ---

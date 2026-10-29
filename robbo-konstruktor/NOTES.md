@@ -26,6 +26,7 @@ Working log, following [DISASSEMBLY-GUIDE.md](../DISASSEMBLY-GUIDE.md). [README.
 | 2026-10-29 | Self-modified jump targets found automatically; sources split, byte-exact MADS build (section 4) |
 | 2026-10-29 | Engine named from Robbo's sources: 110 routines + zero page (section 5) |
 | 2026-10-29 | Abbreviations translated by the user; comments corrected (section 6) |
+| 2026-10-29 | `$0C6D-$1DD0` = help text, 16 pages decoded – the program's full feature list (section 7) |
 
 ## 1. Inventory – the disk (2026-10-29)
 
@@ -215,6 +216,29 @@ build byte-exact.
 Lesson: don't present a guessed expansion of an abbreviation as fact – describe the behaviour from the code and mark
 the name as unexplained until someone who knows confirms it.
 
+## 7. The help text – Konstruktor's manual (2026-10-29)
+
+The 4.4 KB block `$0C6D-$1DD0` (scored 88 % "text-like" in section 3) printed as 16-byte ATASCII rows is not boards
+but **Polish prose**: "Mamy zaszczyt przedstawić pierwszy szeroko dostępny program użytkowy firmy Avalon – Robbo
+Konstruktor. Pozwala on na tworzenie i testowanie dowolnych planet…" It is the help shown with the HELP key.
+
+Format (from the bytes): 10 zero bytes, `$0C77`: `79 0C 80 01` (not understood yet), then the text. `$00 nn` starts
+page *nn* (16 pages, 0-15); **bit 7 set = the character is followed by a space** (`pierwsz[F9]szeroko` =
+"pierwszy szeroko", `[AE]` = ". "); Polish letters as low codes (`$01` ą, `$03` ć, `$05` ę, `$0C` ł, `$0F` ó,
+`$13` ś, `$1A` ż), `$14` quotation mark (titles are `"…:"`), `$1C-$1F` the arrow characters. Mapping derived from
+context; `$0E` (ń?) and `$1A` also standing where ź is expected ("podpowiedż") – asked the user.
+
+The pages are the full feature list (README "Help text"): main menu at the bottom of the screen, test planet, clear
+planet, colours, tape/disk operations for a set of planets, additional/basic function sets, title-page texts, planet
+order, test the whole game, **save a stand-alone Robbo game**, the element palette "in the right part of the screen"
+(confirms the cursor layout from section 3: board on the left, palette columns 17-19), the planet editor, and an
+anti-piracy notice. "Planets" are Robbo's caves.
+
+Block renamed `D0C6D.DTA` → `HELP.DTA` (`git rm` of the old file), sources regenerated, MADS build byte-exact.
+
+Lesson: a Python write without `encoding='utf-8'` failed on "ą" *after* opening the file and left README.md empty;
+restored from git. Always pass the encoding when writing text with non-ASCII characters on Windows.
+
 ## Open questions
 
 
@@ -222,9 +246,9 @@ the name as unexplained until someone who knows confirms it.
   The singles 256, 388, 520, 652, 784 are 132 sectors apart.
 - Boot record init address $19DD – the program has no code there at boot time; what is it for?
 - `JMP $F556` in the jump table – an OS ROM routine or RAM under the OS?
-- Code still unreached: `$2F54` (`jsr $3379`) / `$3379-$35A3`, `$0BD0-$0C1B`, `$2470-$24DF`, `$9582-$9625`,
-  `$9C04-$9C3D`; data/text to classify: `$0803-$09A5` (display list + tables), `$0C6D-$1DD0` (4.4 KB, 88 % text-like
-  – boards? texts?), `$3142-$3333`, `$35D0-$3682` (display list), `$4000-$47FF`, `$9F7B-$A808` (texts).
+- Data to classify: `$0803-$09A5` (display list + tables), `$3142-$3333`, `$35D0-$3682` (display list),
+  `$4000-$47FF`, `$9F7B-$A808` (editor tables and texts); help-text preamble `$0C77`: `79 0C 80 01`.
+- Polish letters in the help text: is `$0E` ń? Does the font have a separate ź (the text uses `$1A` ż for it)?
 - Editor screen layout: is it a 16-column board window + palette (cursor X 0-19 skipping 16)?
 - The 26 remaining `sub_XXXX` in the engine and the editor code (no source): analyse and name.
 - Engine data tables: compare with Robbo's (e.g. `$33CC` = Robbo `R1.ASM` 1624 ff.).
