@@ -277,7 +277,7 @@ Test boards from the erased disk slots: ![Test board 1](img/test-board-1.png) ![
 
 Full explanation with listings: [PROTECTION.md](PROTECTION.md).
 
-Reported in the forum thread "Dyskowy Robbo Konstruktor na emulatorze" (atarionline.pl, DiscussionID=3815, 2016-2019):
+Reported in the forum thread [Dyskowy Robbo Konstruktor na emulatorze](https://atarionline.pl/forum/comments.php?DiscussionID=3815) (atarionline.pl, 2016-2019):
 the disk version erases the board "after a few minutes", when the brick wall (*murek*) is chosen in the palette; the cause found
 there was the copy protection reacting to the emulator's SIO acceleration. The code in this disk image (NOTES.md
 section 21):

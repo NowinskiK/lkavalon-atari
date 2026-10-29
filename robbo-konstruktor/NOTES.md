@@ -697,8 +697,8 @@ staging a folder.
 
 ## 21. The copy protection – "the planet clears itself" (2026-10-29)
 
-The user asked to read and file the forum thread "Dyskowy Robbo Konstruktor na emulatorze" (atarionline.pl,
-DiscussionID=3815, 39 posts, 2016-2019; read through a fetch agent). **Reported there**: the disk version clears
+The user asked to read and file the forum thread [Dyskowy Robbo Konstruktor na emulatorze](https://atarionline.pl/forum/comments.php?DiscussionID=3815)
+(atarionline.pl, 39 posts, 2016-2019; read through a fetch agent). **Reported there**: the disk version clears
 the board when the wall (*murek*) is "hit"; the original disk has an unreadable sector 989 (RNF) that the protection
 checks (miker, voy); switching off Altirra's "D: patch (Disk SIO)" and using PAL fixed it (QTZ); Krótki explained
 that the program uses POKEY `SERIN`, which SIO patches do not update, XORed with `DOSINI`, stored and checked when
@@ -755,7 +755,7 @@ the planet must stay (the original erases it).
 
 ## 23. The second protection – "błąd - za dużo robocików!" (2026-10-29)
 
-The user brought a reproduction (Polish): start from a non-original disk, open "operacje dyskowe", choose any active
+The user brought a reproduction (Polish, continuing the [forum thread](https://atarionline.pl/forum/comments.php?DiscussionID=3815)): start from a non-original disk, open "operacje dyskowe", choose any active
 option and answer the question either way – afterwards adding any element to a planet makes the test or the save
 fail with "błąd - za dużo robocików!"; with the modified .pro and the SIO patch on it does not happen. Clues from
 memory dumps: `$0513` must hold `30 12 A2`; the values are read only at the first "zapisać zestaw 01? tak nie";

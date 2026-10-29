@@ -122,7 +122,7 @@ then ends as `$19` with this image has not been checked yet.
 
 ## The second protection: "błąd - za dużo robocików!"
 
-The thread also reports a second fault on copied disks: after the first yes/no question (the forum found it in the
+The [thread](https://atarionline.pl/forum/comments.php?DiscussionID=3815) also reports a second fault on copied disks: after the first yes/no question (the forum found it in the
 disk menu, "zapisać zestaw 01? tak nie"; yes or no does not matter), every test or save of a planet that is not
 empty fails with "błąd - za dużo robocików!" (error – too many robots). The SIO patch has nothing to do with it, and
 once it has happened, putting the right bytes back does not help: the program has already changed its own code.
@@ -184,7 +184,7 @@ The 6502 emulator in this repository (`util/emu.py`) ran `PROT_BOOT` on this ima
 
 ## What to do
 
-- **First protection, emulator**: switch off the disk SIO acceleration and use PAL (forum, posts 9–15). This does
+- **First protection, emulator**: switch off the disk SIO acceleration and use PAL ([forum](https://atarionline.pl/forum/comments.php?DiscussionID=3815), posts 9–15). This does
   not help against the second one on a copied or cracked disk.
 - **Patch both**: [nocopyprot.asm](nocopyprot.asm) builds the program from the unchanged sources and adds two
   segments:
@@ -205,7 +205,7 @@ The 6502 emulator in this repository (`util/emu.py`) ran `PROT_BOOT` on this ima
 
 ## Credits
 
-The problem and the experiments: MDW, voy, miker, QTZ and Krótki in the atarionline.pl thread (2016–2019); QTZ located
+The problem and the experiments: MDW, voy, miker, QTZ and Krótki in the [atarionline.pl thread](https://atarionline.pl/forum/comments.php?DiscussionID=3815) (2016–2019); QTZ located
 the stored value at `$9F8B`, Krótki identified `SERIN` and `DOSINI`; the reproduction of the second error and the
 memory comparisons (`$0513` = `30 12 A2`, the changes around `$B47E`) pointed to the second check. The code analysis
 here: NOTES.md sections 21-23.

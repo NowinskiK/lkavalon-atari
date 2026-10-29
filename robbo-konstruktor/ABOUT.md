@@ -206,3 +206,5 @@ Codes are Robbo's level characters (README "Palette").
 - Screens and messages: `src/ED_TEXTS.ASM`, README "Editor texts".
 - Code: `NOTES.md` sections 3-12.
 - Robbo's instructions: `../robbo/d1/TITLE.ASM` (label `INST`).
+- Known problems with the disk version (copy protection), and the users who found them: forum thread
+  [Dyskowy Robbo Konstruktor na emulatorze](https://atarionline.pl/forum/comments.php?DiscussionID=3815); explained in [PROTECTION.md](PROTECTION.md).

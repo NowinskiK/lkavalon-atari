@@ -1,4 +1,5 @@
 ; Robbo Konstruktor with the copy protection switched off (PROTECTION.md).
+; Problem reported in: https://atarionline.pl/forum/comments.php?DiscussionID=3815
 ; The program itself is main.asm, unchanged (byte-exact with game.bin); this file adds three segments:
 ; 1. the trap in ELEM_MSG_: "jsr PLANET_CLR" at $9CF7 (20 DB 97) becomes three NOPs, so showing the wall "murek" in
 ;    the palette no longer erases the planet, whatever PROT_SUM holds;
