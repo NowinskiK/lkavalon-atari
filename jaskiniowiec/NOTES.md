@@ -22,6 +22,7 @@ and **why** things are the way they are.
 | 2026-10-29 | Reference screenshot saved as `img/jaskiniowiec.png` (section 14) |
 | 2026-10-29 | `util/levels.py` added; level maps and logo rendered to `img/levels/` (section 15) |
 | 2026-10-29 | Stale block files from the first split removed, repo cleaned (section 16) |
+| 2026-10-29 | `LEVEL.ASM` walked through; level 3 cave-room bug, text pages, logo height (section 17) |
 
 ## 1. From XEX to memory image
 
@@ -390,11 +391,53 @@ check with `git status --short --ignored`, delete exact paths only.
 matches `.xex` too (case-insensitive file system). It is needed only to regenerate `game.bin`; README and
 CLAUDE.md now say so. Committing it (a cracked commercial file) is left to the user.
 
+## 17. `LEVEL.ASM` walkthrough (2026-10-29)
+
+`src/LEVEL.ASM` ($9A00-$9E96) – everything between "play a level" and "show a screen":
+
+| Routine | What it does |
+|---|---|
+| `$9A00`, `$9A28`, `$9A8E`, `$9AB6`, `$9ADE`, `$9B2D` | level loaders 1, 3, 5, 4, 6, 2: copy the enemy set ($D0 bytes from $A517 + $D0·n) to $C500, clear $C5D0-$C5DF, copy the cave-room table ($41 bytes from $A9F7 + $41·n) to $C600, set map base (`$8FCC/$8FD0`), attribute table (`$8DF5/$8DF6`), colours ($9349-$934C) and copy the level font (`$9221` font A / `$9239` font B) |
+| `$9A79` | colours for font-A levels: `$B6 $F4 $FA $8C` |
+| `$9B55` / `$9B72` / `$9B8F` / `$9BAF` | text screens intro / next level / game over / victory: fade out, park the player, clear P/M, music position (`$9215`, X = 0 or 7), then `$9C5A` with screen type 0-3 |
+| `$9BDD` | text-screen colours `$16 $24 $FA $8C` |
+| `$9BF2` | draws a 20×10-tile page into both screen buffers (like the map: tile b → chars 2b, 2b+1) |
+| `$9C5A` | text-screen driver: page list from $9C3A (pointer, count), shows a page, fades in, waits for fire (`STRIG0`); without fire it switches pages every ~256 frames (`$13`) |
+| `$9CCC` | switches the status-line text (LMS at `$89D0/$8A34`) from the table at $9CEB |
+| `$9CFB` | **not** used by the levels: the ending installs it as VBI (`$B299`); scrolls the text at $A1A1 into the ending's line $B473 |
+| `$9D6D` | level completion: exit tile (`$9357` bit 4) with 32 treasures → next level (`$935C`); after 6 → `$9BAF` + ending `$AEF0`. On a new level: next-level screen, reset player/treasures, energy $60, **one extra life** (`inc $A7`), patch level digits, call the loader, redraw, spawn enemies |
+
+**Finding: level 3 has no cave rooms (crack damage or protection leftover).** Five loaders copy cave rooms with
+`A0 40 B9 xx xx 99 00 C6 88 10 F7` (`ldy #$40 / lda table,y / sta $C600,y / dey / bpl`). Level 3's loader
+($9A28) is 10 bytes longer: it has an extra protection check `lda $D20D / cmp #$80 / beq +3 / 3 × nop`
+(failure path NOPed), and its copy reads `A0 EA EA EA AA 99 00 C6 88 10 F7` – the bytes `40 B9 38` (operand
+`#$40`, `lda abs,y`, low byte of `$AA38`) are `EA EA EA`. Executed, it is `ldy #$EA / nop / nop / tax /
+sta $C600,y`, which fills $C600-$C6EA with the value read from `$D20D`. Nothing in the code writes these bytes
+(searched for stores to $9A44-$9A4F), so they are static in this dump. The intended table at `$AA38` exists and
+has the same format as the others (16 rooms × 4 bytes).
+Consequence: the cave-room scan (`$962B`) ends at once (value 0) or never matches a screen (any other value) →
+no cave rooms on level 3. Treasures exist only in cave rooms (`$A6` is incremented only at `$99F0`), and a level
+needs 32 → **level 3 most likely cannot be completed in this version**. Who caused it (a misplaced crack patch,
+or the original protection's failure path) can't be told from this dump. To confirm: play level 3 in an emulator,
+or compare with another dump. Fix would be 3 bytes: `$9A4A-$9A4C` = `40 B9 38`.
+
+**Resolved: `$7788` / `$7879`** (open question) are the level digits on the next-level text pages: page $7718
+row 5 col 12 ("etap _ kompletny") and page $77E0 row 7 col 13 ("powodzenia w etapie _"), from the table $9E49
+indexed by `$935C`.
+
+**Text pages and logo height.** The text pages (table $9C3A: intro $74C0/$7588, next level $7718/$77E0,
+game over $7650, victory $78A8/$7970/$7A38) lie inside `PICTURE.DTA`. Counting the game's display list ($8974:
+`4E 00 71` + 23 × `0E`) shows the logo is **24** mode-E lines ($7100-$74BF), not 28: the text pages follow
+directly. `util/levels.py` drew 28 lines (4 lines of page data at the bottom of `logo.png`) → fixed to 24,
+`logo.png` regenerated; level maps unchanged. Block descriptions updated (`PICTURE.DTA`, `LEVEL.ASM`), sources
+regenerated and verified with MADS. The intro page text was changed by the cracker ("FILE VERSION … CAMOSOFT").
+
 ## Open questions
 
 - Commit the original XEX to `bin/` (needs an exception in `.gitignore`)? User's decision.
 - Draw enemy start positions, treasures and cave-room entrances onto the level maps (`LEVELDAT.DTA`).
 - `D0500.DTA` ($0500-$07FF) and `D2800.DTA` ($2800-$2BFF, $2F00-$2FFF) – unknown.
 - `CMC.ASM`: `JMP $5968` ($F372) and `JSR $5B73` ($F654) point into the maps – probably player tables taken as code.
-- `$7788` / `$7879` are patched per level from $9E49 (inside the picture) – meaning unknown.
+- Confirm in an emulator that level 3 has no cave rooms (section 17); restore with `$9A4A-$9A4C` = `40 B9 38`?
+- Split `PICTURE.DTA` into the logo ($7100-$74BF) and the text pages ($74C0-$7BFF)? Render the text pages.
 - Runnable XEX: needs a loader for the blocks under the OS ROM and the hardware state.

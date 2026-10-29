@@ -52,7 +52,7 @@ def render_level(mem, rgb, mapb, font, pf):
 def render_logo(mem, rgb):
     cols = (0x76, 0x10, 0x24, 0x3A)            # COLOR4, COLOR0-2 from the init table ($929B)
     rows = []
-    for y in range(28):                        # mode E, 40 bytes per line at $7100
+    for y in range(24):                        # mode E, 24 lines x 40 bytes at $7100 (display list $8974)
         row = bytearray()
         for x in range(40):
             b = mem[0x7100 + y * 40 + x]

@@ -1,4 +1,4 @@
-; LEVEL.ASM - level loaders, text screens, scroller, level completion
+; LEVEL.ASM - level loaders, text screens, level completion; ending scroller VBI ($9CFB)
 ; $9A00-$9E96
 
          org $9A00

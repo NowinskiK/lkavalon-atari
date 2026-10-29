@@ -51,7 +51,7 @@ Code:
 | [src/ROOMS.ASM](src/ROOMS.ASM) | $948F-$96C7 | player map probe ($948F), cave rooms: own loop ($94F7) and set-up |
 | [src/FADE.ASM](src/FADE.ASM) | $96C8-$9795 | colour fade out/in |
 | [src/ITEMS.ASM](src/ITEMS.ASM) | $9796-$99FF | enemy/hazard contact, energy $A5 and lives $A7 ($9802), treasures: draw ($9837), pick up ($99E4, `$A6`) |
-| [src/LEVEL.ASM](src/LEVEL.ASM) | $9A00-$9E96 | 6 level loaders ($9A00…$9B2D), text screens ($9B55 intro, $9B72 next level, $9B8F game over, $9BAF victory), scroller ($9CFB), level completion ($9D6D) |
+| [src/LEVEL.ASM](src/LEVEL.ASM) | $9A00-$9E96 | 6 level loaders ($9A00…$9B2D), text screens ($9B55 intro, $9B72 next level, $9B8F game over, $9BAF victory; driver $9C5A), level completion ($9D6D); also the ending's scroller VBI ($9CFB, installed at $B299) |
 | [src/IRQ.ASM](src/IRQ.ASM) | $9E97-$9FDA | music init, NMI ($9EAE), IRQ ($9EC8), VBI ($9ED6) with keyboard cheat |
 | [src/ENDING.ASM](src/ENDING.ASM) | $AB7D-$B4ED | ending sequence ($AEF0) with its DLI ($ABDA) and display list ($ACFC) |
 | [src/SCREEN.ASM](src/SCREEN.ASM) | $BC00-$BFFF | playfield screen memory (2 buffers); holds the crack start stub at $BC00 until the first draw |
@@ -77,7 +77,7 @@ Data:
 | [src/MAP62.DTA](src/MAP62.DTA) | $6470-$6BFF | level 2 map (rest, see TRAINER.ASM) |
 | [src/FONT6C.FNT](src/FONT6C.FNT) | $6C00-$6FFF | status line font |
 | [src/TILES.DTA](src/TILES.DTA) | $7000-$70FF | tile attributes (solid, hazard, exit, treasure bits) |
-| [src/PICTURE.DTA](src/PICTURE.DTA) | $7100-$7BFF | title logo "JASKINIOWIEC" (mode E, 40 bytes per line; colours $10/$24/$3A on $76) above the playfield |
+| [src/PICTURE.DTA](src/PICTURE.DTA) | $7100-$7BFF | title logo "JASKINIOWIEC" $7100-$74BF (mode E, 24 lines × 40 bytes; colours $10/$24/$3A on $76), then the text screen pages $74C0-$7BFF (20×10 tiles each, table $9C3A) |
 | [src/TEXTS.DTA](src/TEXTS.DTA) | $9FDB-$A4E8 | cave room screen ($9FE3), status line ($A0AB, "JEDZENIE", "ZYCIA"), text pages and scroller ($A1A1) |
 | [src/LEVELDAT.DTA](src/LEVELDAT.DTA) | $A4E9-$AB7C | per-level tables: treasures ($A4E9), enemies per screen ($A4FD/$A50A), enemy sets ($A517…), cave rooms ($A9F7…) |
 | [src/MUSCOPY.DTA](src/MUSCOPY.DTA) | $B4EE-$BBFF | unused copy of `MUSIC.CMC` with XEX header (loader leftover) |
@@ -115,6 +115,12 @@ Title logo (`PICTURE.DTA`): ![Logo](img/levels/logo.png)
 - **Cheat**: typing `PIERWSZY` (shifted keys, table $9F75) sets lives to 8.
 - **Protection leftovers**: checks of $D20D / $C001 / $C002 in the VBI and `$9A28` are NOPed by the crack;
   `$8820` overwrites the sprite routine at $84E9 when `$DF` bit 7 is clear.
+- **Level 3 is probably unfinishable in this version**: in its loader (`$9A28`) the cave-room copy is broken –
+  `A0 EA EA EA AA` instead of `A0 40 B9 38 AA` (`ldy #$40 / lda $AA38,y`), so `$C600` gets a constant instead of
+  the table at $AA38. No cave rooms → no treasures (they exist only in cave rooms, `$99F0`) → 32 can't be reached.
+  Found by code reading; not yet confirmed by playing (NOTES.md section 17).
+- **Level number on the text screens**: `$9D6D` patches the digits N in "etap N kompletny" (`$7788`) and
+  "powodzenia w etapie N" (`$7879`) from the table at $9E49.
 
 $CA00-$FFF9 outside the blocks and the I/O area $D000-$D7FF are zero in `game.bin`.
 `main.asm` produces a segment file equal to `game.bin`, not a runnable executable

@@ -25,7 +25,7 @@
          ins "src/MAP62.DTA"        ; $6470-$6BFF level 2 map (rest)
          ins "src/FONT6C.FNT"       ; $6C00-$6FFF status line font
          ins "src/TILES.DTA"        ; $7000-$70FF tile attributes (read by $8DF0)
-         ins "src/PICTURE.DTA"      ; $7100-$7BFF title logo "JASKINIOWIEC" (mode E) above the playfield
+         ins "src/PICTURE.DTA"      ; $7100-$7BFF title logo (mode E, 24 lines, to $74BF) and text screen pages ($74C0)
 
          opt h+
          icl "src/SPRITE.ASM"       ; $7C00-$8873 software sprite engine, double-buffered screen
@@ -37,7 +37,7 @@
          icl "src/ROOMS.ASM"        ; $948F-$96C7 player map probe ($948F), cave rooms
          icl "src/FADE.ASM"         ; $96C8-$9795 colour fades
          icl "src/ITEMS.ASM"        ; $9796-$99FF enemy contact, energy and lives, treasures
-         icl "src/LEVEL.ASM"        ; $9A00-$9E96 level loaders, text screens, scroller, level completion
+         icl "src/LEVEL.ASM"        ; $9A00-$9E96 level loaders, text screens, level completion; ending scroller VBI ($9CFB)
          icl "src/IRQ.ASM"          ; $9E97-$9FDA NMI, IRQ, VBI (cheat code at $9F75)
 
          opt h-
